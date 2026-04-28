@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Data Engineering Lab</title>
+  <desc id="desc">Ilustrasi pipeline data dan dashboard analitik</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0B2B66"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="1350" cy="120" r="220" fill="#60A5FA" opacity="0.22"/>
+  <circle cx="260" cy="820" r="180" fill="#93C5FD" opacity="0.2"/>
+  <rect x="120" y="150" width="560" height="600" rx="28" fill="#0F172A" opacity="0.35"/>
+  <rect x="180" y="220" width="170" height="52" rx="12" fill="#60A5FA"/>
+  <rect x="180" y="300" width="430" height="24" rx="12" fill="#BFDBFE" opacity="0.9"/>
+  <rect x="180" y="340" width="350" height="24" rx="12" fill="#BFDBFE" opacity="0.7"/>
+  <rect x="180" y="380" width="390" height="24" rx="12" fill="#BFDBFE" opacity="0.7"/>
+  <rect x="180" y="450" width="120" height="220" rx="14" fill="#38BDF8"/>
+  <rect x="330" y="500" width="120" height="170" rx="14" fill="#60A5FA"/>
+  <rect x="480" y="540" width="120" height="130" rx="14" fill="#93C5FD"/>
+  <rect x="760" y="220" width="700" height="130" rx="20" fill="#0F172A" opacity="0.32"/>
+  <rect x="820" y="260" width="220" height="50" rx="14" fill="#38BDF8"/>
+  <rect x="1090" y="260" width="300" height="50" rx="14" fill="#BFDBFE" opacity="0.9"/>
+  <rect x="760" y="400" width="700" height="320" rx="28" fill="#0F172A" opacity="0.3"/>
+  <path d="M860 620 L980 520 L1120 580 L1270 470 L1380 540" fill="none" stroke="#7DD3FC" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="860" cy="620" r="14" fill="#BAE6FD"/>
+  <circle cx="980" cy="520" r="14" fill="#BAE6FD"/>
+  <circle cx="1120" cy="580" r="14" fill="#BAE6FD"/>
+  <circle cx="1270" cy="470" r="14" fill="#BAE6FD"/>
+  <circle cx="1380" cy="540" r="14" fill="#BAE6FD"/>
+  <text x="120" y="95" fill="#DBEAFE" font-size="56" font-family="Segoe UI, Arial, sans-serif" font-weight="700">Data Engineering</text>
+  <text x="120" y="845" fill="#BFDBFE" font-size="34" font-family="Segoe UI, Arial, sans-serif">Pipeline • ETL • Analytics • Healthcare Data</text>
+</svg>

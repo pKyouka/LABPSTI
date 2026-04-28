@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	body {
+		@apply bg-slate-100 text-slate-800;
+	}
+
+	.font-display {
+		font-family: 'Space Grotesk', sans-serif;
+	}
+}
+
+@layer components {
+	.panel-shell {
+		@apply max-w-7xl mx-auto sm:px-6 lg:px-8;
+	}
+
+	.panel-card {
+		@apply bg-white/85 backdrop-blur border border-white/70 rounded-3xl shadow-xl shadow-slate-200/70;
+	}
+
+	.panel-card-head {
+		@apply px-6 sm:px-8 pt-6 pb-4 border-b border-slate-100;
+	}
+
+	.panel-card-body {
+		@apply px-6 sm:px-8 py-6;
+	}
+
+	.panel-input {
+		@apply mt-1 block w-full rounded-xl border-slate-200 bg-white/90 shadow-sm focus:border-cyan-500 focus:ring-cyan-500;
+	}
+
+	.panel-select {
+		@apply mt-1 block w-full rounded-xl border-slate-200 bg-white/90 shadow-sm focus:border-cyan-500 focus:ring-cyan-500;
+	}
+
+	.panel-textarea {
+		@apply mt-1 block w-full rounded-2xl border-slate-200 bg-white/90 shadow-sm focus:border-cyan-500 focus:ring-cyan-500;
+	}
+
+	.table-head {
+		@apply bg-slate-50/80;
+	}
+
+	.table-head th {
+		@apply px-6 py-4 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider;
+	}
+
+	.table-row td {
+		@apply px-6 py-4 text-sm text-slate-600;
+	}
+}
