@@ -28,8 +28,10 @@
                             <x-input-label for="status" :value="__('Filter Status')" />
                             <select name="status" id="status" class="panel-select text-sm min-w-44">
                                 <option value="">Semua Status</option>
+                                <option value="menunggu" {{ request('status') === 'menunggu' ? 'selected' : '' }}>Menunggu ACC</option>
                                 <option value="dipinjam" {{ request('status') === 'dipinjam' ? 'selected' : '' }}>Dipinjam</option>
                                 <option value="dikembalikan" {{ request('status') === 'dikembalikan' ? 'selected' : '' }}>Dikembalikan</option>
+                                <option value="ditolak" {{ request('status') === 'ditolak' ? 'selected' : '' }}>Ditolak</option>
                             </select>
                         </div>
                         <div>
@@ -62,6 +64,7 @@
                                     <th>Jumlah</th>
                                     <th>Dipinjam</th>
                                     <th>Jatuh Tempo</th>
+                                    <th>Status ACC</th>
                                     <th>Status</th>
                                     <th class="text-right">Aksi</th>
                                 </tr>
@@ -76,12 +79,26 @@
                                         <td class="whitespace-nowrap">{{ $record->borrowed_at->format('d/m/Y H:i') }}</td>
                                         <td class="whitespace-nowrap">{{ $record->due_at?->format('d/m/Y H:i') ?? '-' }}</td>
                                         <td class="whitespace-nowrap">
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest {{ $record->status === 'dikembalikan' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest {{ $record->approval_status === 'approved' ? 'bg-emerald-50 text-emerald-700' : ($record->approval_status === 'rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700') }}">
+                                                {{ $record->approval_status }}
+                                            </span>
+                                        </td>
+                                        <td class="whitespace-nowrap">
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest {{ $record->status === 'dikembalikan' ? 'bg-emerald-50 text-emerald-700' : ($record->status === 'ditolak' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700') }}">
                                                 {{ $record->status }}
                                             </span>
                                         </td>
                                         <td class="whitespace-nowrap text-right text-sm font-medium">
-                                            @if($record->returned_at === null)
+                                            @if(auth()->user()->isAdmin() && $record->approval_status === 'pending')
+                                                <form action="{{ route('borrow_records.approve', $record) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="text-emerald-600 hover:text-emerald-800 font-black">ACC</button>
+                                                </form>
+                                                <form action="{{ route('borrow_records.reject', $record) }}" method="POST" class="inline ml-3">
+                                                    @csrf
+                                                    <button type="submit" class="text-rose-600 hover:text-rose-800 font-black" onclick="return confirm('Tolak peminjaman ini?')">Tolak</button>
+                                                </form>
+                                            @elseif($record->approval_status === 'approved' && $record->returned_at === null)
                                                 <form action="{{ route('borrow_records.return', $record) }}" method="POST" class="inline">
                                                     @csrf
                                                     <button type="submit" class="text-cyan-700 hover:text-cyan-900 font-black" onclick="return confirm('Tandai barang sudah dikembalikan?')">Kembalikan</button>
@@ -93,7 +110,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="px-6 py-8 whitespace-nowrap text-center text-slate-500">
+                                        <td colspan="9" class="px-6 py-8 whitespace-nowrap text-center text-slate-500">
                                             Belum ada data peminjaman.
                                         </td>
                                     </tr>

@@ -12,11 +12,15 @@ class LandingPageController extends Controller
 {
     public function index()
     {
-        $bulletins = Bulletin::with('category')->latest()->take(6)->get();
+        $bulletins = Bulletin::with('category')
+            ->where('approval_status', 'approved')
+            ->latest()
+            ->take(6)
+            ->get();
         $categories = Category::all()->unique('name');
         $stats = [
             'total_usage' => LabUsageRecord::count(),
-            'total_bulletins' => Bulletin::count(),
+            'total_bulletins' => Bulletin::where('approval_status', 'approved')->count(),
         ];
 
         // Chart data for landing page
@@ -37,6 +41,7 @@ class LandingPageController extends Controller
     public function bulletins()
     {
         $bulletins = Bulletin::with('category')
+            ->where('approval_status', 'approved')
             ->latest('published_at')
             ->latest('created_at')
             ->paginate(9);
@@ -46,11 +51,14 @@ class LandingPageController extends Controller
 
     public function showBulletin(Bulletin $bulletin)
     {
+        abort_if($bulletin->approval_status !== 'approved', 404);
+
         $bulletin->load('category');
 
         $relatedBulletins = Bulletin::with('category')
             ->where('id', '!=', $bulletin->id)
             ->where('category_id', $bulletin->category_id)
+            ->where('approval_status', 'approved')
             ->latest('published_at')
             ->take(3)
             ->get();

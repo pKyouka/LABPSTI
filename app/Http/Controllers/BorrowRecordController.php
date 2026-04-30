@@ -92,6 +92,8 @@ class BorrowRecordController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        $isAdmin = $user->isAdmin();
+
         if (! $user->isAdmin()) {
             $nim = $user->externalNim();
 
@@ -101,10 +103,10 @@ class BorrowRecordController extends Controller
             $validated['user_id_number'] = $nim;
         }
 
-        DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated, $isAdmin, $user) {
             $item = InventoryItem::whereKey($validated['inventory_item_id'])->lockForUpdate()->firstOrFail();
 
-            if ($item->available_stock < (int) $validated['quantity']) {
+            if ($isAdmin && $item->available_stock < (int) $validated['quantity']) {
                 throw ValidationException::withMessages([
                     'quantity' => 'Stok barang tidak mencukupi.',
                 ]);
@@ -119,13 +121,79 @@ class BorrowRecordController extends Controller
                 'due_at' => $validated['due_at'] ?? null,
                 'purpose' => $validated['purpose'],
                 'notes' => $validated['notes'] ?? null,
+                'status' => $isAdmin ? 'dipinjam' : 'menunggu',
+                'approval_status' => $isAdmin ? 'approved' : 'pending',
+                'approved_by' => $isAdmin ? $user->id : null,
+                'approved_at' => $isAdmin ? now() : null,
+            ]);
+
+            if ($isAdmin) {
+                $item->decrement('available_stock', (int) $validated['quantity']);
+            }
+        });
+
+        $message = $isAdmin
+            ? 'Peminjaman berhasil dicatat.'
+            : 'Peminjaman diajukan dan menunggu ACC admin.';
+
+        return redirect()->route('borrow_records.index')->with('success', $message);
+    }
+
+    public function approve(BorrowRecord $borrowRecord)
+    {
+        $user = Auth::user();
+
+        abort_unless($user->isAdmin(), 403);
+
+        DB::transaction(function () use ($borrowRecord, $user) {
+            if ($borrowRecord->approval_status !== 'pending') {
+                return;
+            }
+
+            $item = InventoryItem::whereKey($borrowRecord->inventory_item_id)->lockForUpdate()->firstOrFail();
+
+            if ($item->available_stock < (int) $borrowRecord->quantity) {
+                throw ValidationException::withMessages([
+                    'status' => 'Stok barang tidak mencukupi untuk ACC peminjaman ini.',
+                ]);
+            }
+
+            $borrowRecord->update([
+                'approval_status' => 'approved',
+                'approved_by' => $user->id,
+                'approved_at' => now(),
+                'rejected_by' => null,
+                'rejected_at' => null,
+                'rejection_reason' => null,
                 'status' => 'dipinjam',
             ]);
 
-            $item->decrement('available_stock', (int) $validated['quantity']);
+            $item->decrement('available_stock', (int) $borrowRecord->quantity);
         });
 
-        return redirect()->route('borrow_records.index')->with('success', 'Peminjaman berhasil dicatat.');
+        return redirect()->route('borrow_records.index')->with('success', 'Peminjaman berhasil di-ACC.');
+    }
+
+    public function reject(BorrowRecord $borrowRecord)
+    {
+        $user = Auth::user();
+
+        abort_unless($user->isAdmin(), 403);
+
+        if ($borrowRecord->approval_status !== 'pending') {
+            return redirect()->route('borrow_records.index')->with('success', 'Status peminjaman sudah diproses sebelumnya.');
+        }
+
+        $borrowRecord->update([
+            'approval_status' => 'rejected',
+            'approved_by' => null,
+            'approved_at' => null,
+            'rejected_by' => $user->id,
+            'rejected_at' => now(),
+            'status' => 'ditolak',
+        ]);
+
+        return redirect()->route('borrow_records.index')->with('success', 'Peminjaman ditolak.');
     }
 
     public function markReturned(BorrowRecord $borrowRecord)
@@ -137,6 +205,8 @@ class BorrowRecordController extends Controller
 
             abort_if($nim === null || (string) $borrowRecord->user_id_number !== $nim, 403);
         }
+
+        abort_if($borrowRecord->approval_status !== 'approved', 422, 'Peminjaman belum di-ACC admin.');
 
         DB::transaction(function () use ($borrowRecord) {
             $borrowRecord->loadMissing('inventoryItem');

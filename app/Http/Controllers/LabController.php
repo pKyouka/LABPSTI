@@ -11,7 +11,12 @@ class LabController extends Controller
 {
     public function show(Category $category)
     {
-        $bulletins = Bulletin::with('category')->where('category_id', $category->id)->latest()->take(3)->get();
+        $bulletins = Bulletin::with('category')
+            ->where('category_id', $category->id)
+            ->where('approval_status', 'approved')
+            ->latest()
+            ->take(3)
+            ->get();
         $usageCount = LabUsageRecord::where('category_id', $category->id)->count();
         $categories = Category::all()->unique('name');
 
@@ -30,6 +35,7 @@ class LabController extends Controller
 
         $relatedBulletins = Bulletin::with('category')->where('category_id', $category->id)
             ->where('id', '!=', $bulletin->id)
+            ->where('approval_status', 'approved')
             ->latest('published_at')
             ->take(3)
             ->get();

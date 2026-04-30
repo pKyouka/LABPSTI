@@ -32,6 +32,7 @@
                                     @if(auth()->user()->isAdmin())
                                         <th>Pembuat</th>
                                     @endif
+                                    <th>Status ACC</th>
                                     <th>Tanggal Publish</th>
                                     <th class="text-right">Aksi</th>
                                 </tr>
@@ -53,10 +54,25 @@
                                             </td>
                                         @endif
                                         <td class="whitespace-nowrap">
+                                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-black rounded-full {{ $bulletin->approval_status === 'approved' ? 'bg-emerald-100 text-emerald-700' : ($bulletin->approval_status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700') }}">
+                                                {{ $bulletin->approval_status }}
+                                            </span>
+                                        </td>
+                                        <td class="whitespace-nowrap">
                                             {{ $bulletin->published_at ? $bulletin->published_at->format('d M Y') : 'Draft' }}
                                         </td>
                                         <td class="whitespace-nowrap text-right text-sm font-medium space-x-3">
                                             <a href="{{ route('bulletins.edit', $bulletin) }}" class="text-cyan-700 hover:text-cyan-900 font-black">Edit</a>
+                                            @if(auth()->user()->isAdmin() && $bulletin->approval_status === 'pending')
+                                                <form action="{{ route('bulletins.approve', $bulletin) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="text-emerald-600 hover:text-emerald-800 font-black">ACC</button>
+                                                </form>
+                                                <form action="{{ route('bulletins.reject', $bulletin) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="text-rose-600 hover:text-rose-800 font-black" onclick="return confirm('Tolak buletin ini?')">Tolak</button>
+                                                </form>
+                                            @endif
                                             <form action="{{ route('bulletins.destroy', $bulletin) }}" method="POST" class="inline">
                                                 @csrf
                                                 @method('DELETE')
@@ -66,7 +82,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="{{ auth()->user()->isAdmin() ? 5 : 4 }}" class="px-6 py-8 whitespace-nowrap text-center text-slate-500">
+                                        <td colspan="{{ auth()->user()->isAdmin() ? 6 : 5 }}" class="px-6 py-8 whitespace-nowrap text-center text-slate-500">
                                             Belum ada buletin.
                                         </td>
                                     </tr>

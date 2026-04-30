@@ -8,10 +8,25 @@ use Illuminate\Support\Str;
 
 class Bulletin extends Model
 {
-    protected $fillable = ['title', 'content', 'image', 'category_id', 'published_at', 'user_id'];
+    protected $fillable = [
+        'title',
+        'content',
+        'image',
+        'category_id',
+        'published_at',
+        'user_id',
+        'approval_status',
+        'approved_by',
+        'approved_at',
+        'rejected_by',
+        'rejected_at',
+        'rejection_reason',
+    ];
 
     protected $casts = [
         'published_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     public function category()
@@ -22,6 +37,11 @@ class Bulletin extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function getImageUrlAttribute(): string

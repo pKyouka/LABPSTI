@@ -33,6 +33,8 @@ class BulletinController extends Controller
 
     public function store(Request $request)
     {
+        $user = Auth::user();
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required',
@@ -46,11 +48,29 @@ class BulletinController extends Controller
             $validated['image'] = $path;
         }
 
-        $validated['user_id'] = Auth::id();
+        $validated['user_id'] = $user->id;
+
+        if ($user->isAdmin()) {
+            $validated['approval_status'] = 'approved';
+            $validated['approved_by'] = $user->id;
+            $validated['approved_at'] = now();
+        } else {
+            $validated['approval_status'] = 'pending';
+            $validated['approved_by'] = null;
+            $validated['approved_at'] = null;
+            $validated['rejected_by'] = null;
+            $validated['rejected_at'] = null;
+            $validated['rejection_reason'] = null;
+            $validated['published_at'] = null;
+        }
 
         Bulletin::create($validated);
 
-        return redirect()->route('bulletins.index')->with('success', 'Bulletin created successfully.');
+        $message = $user->isAdmin()
+            ? 'Buletin berhasil dipublikasikan.'
+            : 'Buletin berhasil diajukan dan menunggu ACC admin.';
+
+        return redirect()->route('bulletins.index')->with('success', $message);
     }
 
     public function edit(Bulletin $bulletin)
@@ -64,6 +84,7 @@ class BulletinController extends Controller
     public function update(Request $request, Bulletin $bulletin)
     {
         $this->ensureCanManage($bulletin);
+        $user = Auth::user();
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -81,9 +102,59 @@ class BulletinController extends Controller
             $validated['image'] = $path;
         }
 
+        if (! $user->isAdmin()) {
+            $validated['approval_status'] = 'pending';
+            $validated['approved_by'] = null;
+            $validated['approved_at'] = null;
+            $validated['rejected_by'] = null;
+            $validated['rejected_at'] = null;
+            $validated['rejection_reason'] = null;
+            $validated['published_at'] = null;
+        }
+
         $bulletin->update($validated);
 
-        return redirect()->route('bulletins.index')->with('success', 'Bulletin updated successfully.');
+        $message = $user->isAdmin()
+            ? 'Buletin berhasil diperbarui.'
+            : 'Perubahan buletin diajukan ulang dan menunggu ACC admin.';
+
+        return redirect()->route('bulletins.index')->with('success', $message);
+    }
+
+    public function approve(Bulletin $bulletin)
+    {
+        $user = Auth::user();
+
+        abort_unless($user->isAdmin(), 403);
+
+        $bulletin->update([
+            'approval_status' => 'approved',
+            'approved_by' => $user->id,
+            'approved_at' => now(),
+            'rejected_by' => null,
+            'rejected_at' => null,
+            'rejection_reason' => null,
+            'published_at' => $bulletin->published_at ?? now(),
+        ]);
+
+        return redirect()->route('bulletins.index')->with('success', 'Buletin berhasil di-ACC.');
+    }
+
+    public function reject(Bulletin $bulletin)
+    {
+        $user = Auth::user();
+
+        abort_unless($user->isAdmin(), 403);
+
+        $bulletin->update([
+            'approval_status' => 'rejected',
+            'approved_by' => null,
+            'approved_at' => null,
+            'rejected_by' => $user->id,
+            'rejected_at' => now(),
+        ]);
+
+        return redirect()->route('bulletins.index')->with('success', 'Buletin ditolak.');
     }
 
     public function destroy(Bulletin $bulletin)

@@ -17,6 +17,12 @@ class BorrowRecord extends Model
         'purpose',
         'notes',
         'status',
+        'approval_status',
+        'approved_by',
+        'approved_at',
+        'rejected_by',
+        'rejected_at',
+        'rejection_reason',
     ];
 
     protected $casts = [
@@ -24,6 +30,8 @@ class BorrowRecord extends Model
         'borrowed_at' => 'datetime',
         'due_at' => 'datetime',
         'returned_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     public function inventoryItem()

@@ -31,6 +31,8 @@ Route::middleware('auth')->group(function () {
     Route::get('bulletins/{bulletin}/edit', [BulletinController::class, 'edit'])->name('bulletins.edit');
     Route::put('bulletins/{bulletin}', [BulletinController::class, 'update'])->name('bulletins.update');
     Route::delete('bulletins/{bulletin}', [BulletinController::class, 'destroy'])->name('bulletins.destroy');
+    Route::post('bulletins/{bulletin}/approve', [BulletinController::class, 'approve'])->name('bulletins.approve');
+    Route::post('bulletins/{bulletin}/reject', [BulletinController::class, 'reject'])->name('bulletins.reject');
 
     // Usage record is available for all authenticated users, but scoped per role in controller.
     Route::resource('usage_records', LabUsageRecordController::class)->except(['show', 'edit', 'update']);
@@ -44,6 +46,8 @@ Route::middleware('auth')->group(function () {
     Route::get('borrow_records', [BorrowRecordController::class, 'index'])->name('borrow_records.index');
     Route::get('borrow_records/create', [BorrowRecordController::class, 'create'])->name('borrow_records.create');
     Route::post('borrow_records', [BorrowRecordController::class, 'store'])->name('borrow_records.store');
+    Route::post('borrow_records/{borrowRecord}/approve', [BorrowRecordController::class, 'approve'])->name('borrow_records.approve');
+    Route::post('borrow_records/{borrowRecord}/reject', [BorrowRecordController::class, 'reject'])->name('borrow_records.reject');
     Route::post('borrow_records/{borrowRecord}/return', [BorrowRecordController::class, 'markReturned'])->name('borrow_records.return');
 });
 
