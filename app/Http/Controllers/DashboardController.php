@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bulletin;
+use App\Models\BorrowRecord;
+use App\Models\InventoryItem;
 use App\Models\LabUsageRecord;
 use App\Models\Category;
 use Illuminate\Support\Facades\DB;
@@ -17,15 +19,18 @@ class DashboardController extends Controller
         $nim = $user?->externalNim();
 
         $usageQuery = LabUsageRecord::query();
+        $borrowQuery = BorrowRecord::query();
 
         if (! $isAdmin && $nim !== null) {
             $usageQuery->where('user_id_number', $nim);
+            $borrowQuery->where('user_id_number', $nim);
         }
 
         $stats = [
             'bulletin_count' => Bulletin::count(),
             'usage_count' => (clone $usageQuery)->count(),
-            'categories' => Category::count(),
+            'borrow_count' => (clone $borrowQuery)->count(),
+            'item_count' => InventoryItem::count(),
         ];
 
         $usagePerLab = $usageQuery

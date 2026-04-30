@@ -23,6 +23,12 @@
                     <x-nav-link :href="route('usage_records.index')" :active="request()->routeIs('usage_records.*')">
                         {{ __('Record Penggunaan') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('inventory_items.index')" :active="request()->routeIs('inventory_items.*')">
+                        {{ __('Barang & Alat') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('borrow_records.index')" :active="request()->routeIs('borrow_records.*')">
+                        {{ __('Peminjaman') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -89,6 +95,12 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('usage_records.index')" :active="request()->routeIs('usage_records.*')">
                 {{ __('Record Penggunaan') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('inventory_items.index')" :active="request()->routeIs('inventory_items.*')">
+                {{ __('Barang & Alat') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('borrow_records.index')" :active="request()->routeIs('borrow_records.*')">
+                {{ __('Peminjaman') }}
             </x-responsive-nav-link>
         </div>
 

@@ -8,7 +8,7 @@
     <div class="py-8 sm:py-10">
         <div class="panel-shell">
             <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
                 <div class="panel-card p-8 hover:-translate-y-0.5 transition-transform duration-300">
                     <div class="text-[11px] font-black text-slate-400 uppercase tracking-[0.18em] mb-4">Total Buletin</div>
                     <div class="font-display text-4xl font-bold text-cyan-600">{{ $stats['bulletin_count'] }}</div>
@@ -18,8 +18,12 @@
                     <div class="font-display text-4xl font-bold text-blue-700">{{ $stats['usage_count'] }}</div>
                 </div>
                 <div class="panel-card p-8 hover:-translate-y-0.5 transition-transform duration-300">
-                    <div class="text-[11px] font-black text-slate-400 uppercase tracking-[0.18em] mb-4">Kategori Lab</div>
-                    <div class="font-display text-4xl font-bold text-emerald-600">{{ $stats['categories'] }}</div>
+                    <div class="text-[11px] font-black text-slate-400 uppercase tracking-[0.18em] mb-4">Total Peminjaman</div>
+                    <div class="font-display text-4xl font-bold text-emerald-600">{{ $stats['borrow_count'] }}</div>
+                </div>
+                <div class="panel-card p-8 hover:-translate-y-0.5 transition-transform duration-300">
+                    <div class="text-[11px] font-black text-slate-400 uppercase tracking-[0.18em] mb-4">Total Barang</div>
+                    <div class="font-display text-4xl font-bold text-slate-900">{{ $stats['item_count'] }}</div>
                 </div>
             </div>
 
@@ -51,12 +55,24 @@
                             <a href="{{ route('usage_records.create') }}" class="inline-flex items-center justify-center px-6 py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-slate-800 transition shadow-lg shadow-slate-300/50 uppercase tracking-widest text-xs">
                                 Input Penggunaan Lab
                             </a>
+                            <a href="{{ route('inventory_items.create') }}" class="inline-flex items-center justify-center px-6 py-4 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 uppercase tracking-widest text-xs">
+                                Tambah Barang Baru
+                            </a>
+                            <a href="{{ route('borrow_records.create') }}" class="inline-flex items-center justify-center px-6 py-4 bg-blue-700 text-white font-black rounded-2xl hover:bg-blue-800 transition shadow-lg shadow-blue-200 uppercase tracking-widest text-xs">
+                                Input Peminjaman
+                            </a>
                             <div class="grid grid-cols-2 gap-4 mt-2">
                                 <a href="{{ route('bulletins.index') }}" class="inline-flex items-center justify-center px-4 py-3 bg-cyan-50 text-cyan-700 font-black rounded-xl hover:bg-cyan-100 transition text-xs">
                                     Kelola Buletin
                                 </a>
                                 <a href="{{ route('usage_records.index') }}" class="inline-flex items-center justify-center px-4 py-3 bg-cyan-50 text-cyan-700 font-black rounded-xl hover:bg-cyan-100 transition text-xs">
                                     Lihat Record
+                                </a>
+                                <a href="{{ route('inventory_items.index') }}" class="inline-flex items-center justify-center px-4 py-3 bg-cyan-50 text-cyan-700 font-black rounded-xl hover:bg-cyan-100 transition text-xs">
+                                    Kelola Barang
+                                </a>
+                                <a href="{{ route('borrow_records.index') }}" class="inline-flex items-center justify-center px-4 py-3 bg-cyan-50 text-cyan-700 font-black rounded-xl hover:bg-cyan-100 transition text-xs">
+                                    Lihat Peminjaman
                                 </a>
                             </div>
                         @else
@@ -68,6 +84,9 @@
                             </a>
                             <a href="{{ route('usage_records.create') }}" class="inline-flex items-center justify-center px-6 py-4 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 uppercase tracking-widest text-xs">
                                 Input Penggunaan Lab
+                            </a>
+                            <a href="{{ route('borrow_records.create') }}" class="inline-flex items-center justify-center px-6 py-4 bg-blue-700 text-white font-black rounded-2xl hover:bg-blue-800 transition shadow-lg shadow-blue-200 uppercase tracking-widest text-xs">
+                                Ajukan Peminjaman
                             </a>
                             <p class="text-sm text-slate-500">Infografis di samping hanya menampilkan data penggunaan dari akun Anda.</p>
                         @endif

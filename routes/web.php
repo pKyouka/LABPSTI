@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BulletinController;
+use App\Http\Controllers\BorrowRecordController;
+use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\LabUsageRecordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingPageController;
@@ -32,6 +34,17 @@ Route::middleware('auth')->group(function () {
 
     // Usage record is available for all authenticated users, but scoped per role in controller.
     Route::resource('usage_records', LabUsageRecordController::class)->except(['show', 'edit', 'update']);
+
+    Route::get('inventory_items', [InventoryItemController::class, 'index'])->name('inventory_items.index');
+    Route::get('inventory_items/create', [InventoryItemController::class, 'create'])->name('inventory_items.create');
+    Route::get('inventory_items/{inventoryItem}', [InventoryItemController::class, 'show'])->name('inventory_items.show');
+    Route::post('inventory_items', [InventoryItemController::class, 'store'])->name('inventory_items.store');
+    Route::delete('inventory_items/{inventoryItem}', [InventoryItemController::class, 'destroy'])->name('inventory_items.destroy');
+
+    Route::get('borrow_records', [BorrowRecordController::class, 'index'])->name('borrow_records.index');
+    Route::get('borrow_records/create', [BorrowRecordController::class, 'create'])->name('borrow_records.create');
+    Route::post('borrow_records', [BorrowRecordController::class, 'store'])->name('borrow_records.store');
+    Route::post('borrow_records/{borrowRecord}/return', [BorrowRecordController::class, 'markReturned'])->name('borrow_records.return');
 });
 
 require __DIR__.'/auth.php';

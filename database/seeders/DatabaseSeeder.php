@@ -40,6 +40,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        $this->call(InventoryItemSeeder::class);
         $this->call(HistoricalActivitySeeder::class);
     }
 }
