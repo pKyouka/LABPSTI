@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Bulletin;
 use App\Models\LabUsageRecord;
 use App\Models\Category;
+use App\Models\InventoryItem;
 
 class LandingPageController extends Controller
 {
@@ -35,7 +36,12 @@ class LandingPageController extends Controller
                 ];
             });
 
-        return view('welcome', compact('bulletins', 'categories', 'stats', 'usagePerLab'));
+        $inventoryItems = InventoryItem::where('is_active', true)
+            ->where('available_stock', '>', 0)
+            ->orderBy('name')
+            ->get();
+
+        return view('welcome', compact('bulletins', 'categories', 'stats', 'usagePerLab', 'inventoryItems'));
     }
 
     public function bulletins()
@@ -47,6 +53,27 @@ class LandingPageController extends Controller
             ->paginate(9);
 
         return view('bulletins.public-index', compact('bulletins'));
+    }
+
+    public function inventory()
+    {
+        $inventoryQuery = InventoryItem::query()
+            ->where('is_active', true)
+            ->where('available_stock', '>', 0);
+
+        $summary = [
+            'items_count' => (clone $inventoryQuery)->count(),
+            'available_stock_total' => (clone $inventoryQuery)->sum('available_stock'),
+            'overall_stock_total' => (clone $inventoryQuery)->sum('total_stock'),
+            'categories_count' => (clone $inventoryQuery)->whereNotNull('category')->distinct('category')->count('category'),
+        ];
+
+        $inventoryItems = $inventoryQuery
+            ->orderByDesc('available_stock')
+            ->orderBy('name')
+            ->paginate(12);
+
+        return view('inventory.public-index', compact('inventoryItems', 'summary'));
     }
 
     public function showBulletin(Bulletin $bulletin)

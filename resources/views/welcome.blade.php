@@ -43,6 +43,7 @@
                             @endforeach
                         </div>
                     </div>
+                    <a href="#inventory" class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-bold transition">List Inventaris</a>
                     <a href="#bulletins" class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-bold transition">Kabar Berita</a>
                     <a href="#stats" class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-bold transition">Statistik</a>
                 </div>
@@ -247,6 +248,65 @@
         </div>
     </section>
 
+    <!-- Inventory Overview Section -->
+    <section id="inventory" class="py-24 bg-slate-50 border-y border-slate-100">
+        @php
+            $inventoryCount = isset($inventoryItems) ? $inventoryItems->count() : 0;
+            $availableStockTotal = isset($inventoryItems) ? (int) $inventoryItems->sum('available_stock') : 0;
+            $overallStockTotal = isset($inventoryItems) ? (int) $inventoryItems->sum('total_stock') : 0;
+            $inventoryCategories = isset($inventoryItems)
+                ? $inventoryItems->pluck('category')->filter()->unique()->count()
+                : 0;
+        @endphp
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-black text-slate-900">List Inventaris</h2>
+                <p class="mt-3 text-slate-500">Ringkasan inventaris untuk pengunjung. Daftar barang lengkap tersedia di halaman khusus agar tampilan tetap rapi.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="relative overflow-hidden bg-white rounded-3xl border border-blue-100 p-6 shadow-sm">
+                    <div class="absolute -right-7 -top-7 w-20 h-20 rounded-full bg-blue-100"></div>
+                    <div class="relative">
+                        <div class="text-xs font-black uppercase tracking-widest text-slate-500">Item Tersedia</div>
+                        <div class="mt-3 text-4xl font-black text-blue-700">{{ $inventoryCount }}</div>
+                        <div class="mt-2 text-xs font-semibold text-slate-500">Barang aktif yang siap dipinjam</div>
+                    </div>
+                </div>
+                <div class="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl border border-emerald-400 p-6 shadow-sm text-white">
+                    <div class="text-xs font-black uppercase tracking-widest text-emerald-100">Total Stok Siap Pinjam</div>
+                    <div class="mt-3 text-4xl font-black">{{ $availableStockTotal }}</div>
+                    <div class="mt-2 text-xs font-semibold text-emerald-100">Unit yang tersedia saat ini</div>
+                </div>
+                <div class="relative overflow-hidden bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                    <div class="absolute -left-10 -bottom-10 w-24 h-24 rounded-full bg-slate-100"></div>
+                    <div class="relative">
+                        <div class="text-xs font-black uppercase tracking-widest text-slate-500">Total Seluruh Stok</div>
+                        <div class="mt-3 text-4xl font-black text-slate-900">{{ $overallStockTotal }}</div>
+                        <div class="mt-2 text-xs font-semibold text-slate-500">Akumulasi seluruh item inventaris</div>
+                    </div>
+                </div>
+                <div class="relative overflow-hidden bg-gradient-to-br from-indigo-500 to-blue-600 rounded-3xl border border-indigo-400 p-6 shadow-sm text-white">
+                    <div class="text-xs font-black uppercase tracking-widest text-indigo-100">Kategori Barang</div>
+                    <div class="mt-3 text-4xl font-black">{{ $inventoryCategories }}</div>
+                    <div class="mt-2 text-xs font-semibold text-indigo-100">Jenis perlengkapan tersedia</div>
+                </div>
+            </div>
+
+            <div class="mt-8 rounded-3xl bg-white border border-slate-100 p-6 md:p-8 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+                <div>
+                    <h3 class="text-xl font-black text-slate-900">Lihat Semua List Inventaris</h3>
+                    <p class="mt-1 text-sm text-slate-500">Halaman khusus menampilkan semua barang, stok tersedia, kategori, kondisi, dan lokasi secara lebih rapi.</p>
+                </div>
+                <a href="{{ route('landing.inventory') }}" class="inline-flex items-center justify-center px-7 py-3 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-700 transition">
+                    Buka Halaman Inventaris
+                    <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="bg-slate-900 text-white py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-16">
@@ -260,6 +320,7 @@
                 <h3 class="text-xs font-black text-blue-500 mb-8 uppercase tracking-[0.2em]">Navigasi</h3>
                 <ul class="space-y-4 text-sm font-bold text-slate-300">
                     <li><a href="#info" class="hover:text-blue-400 transition">Halaman Utama</a></li>
+                    <li><a href="{{ route('landing.inventory') }}" class="hover:text-blue-400 transition">List Inventaris</a></li>
                     <li><a href="#bulletins" class="hover:text-blue-400 transition">Kabar Berita</a></li>
                     <li><a href="#stats" class="hover:text-blue-400 transition">Statistik</a></li>
                     <li><a href="{{ route('login') }}" class="hover:text-blue-400 transition">Admin Panel</a></li>

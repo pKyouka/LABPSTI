@@ -11,6 +11,7 @@ use App\Http\Controllers\LabController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingPageController::class, 'index'])->name('landing');
+Route::get('/inventaris', [LandingPageController::class, 'inventory'])->name('landing.inventory');
 Route::get('/kabar-berita', [LandingPageController::class, 'bulletins'])->name('landing.bulletins');
 Route::get('/kabar-berita/{bulletin}', [LandingPageController::class, 'showBulletin'])->name('landing.bulletins.show');
 Route::get('/lab/{category}', [LabController::class, 'show'])->name('lab.show');
