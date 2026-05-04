@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\BorrowRecord;
 use App\Models\InventoryItem;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class BorrowRecordController extends Controller
@@ -90,6 +92,7 @@ class BorrowRecordController extends Controller
             'due_at' => 'nullable|date|after_or_equal:borrowed_at',
             'purpose' => 'required|string',
             'notes' => 'nullable|string',
+            'request_pdf' => 'required|file|mimes:pdf|max:5120',
         ]);
 
         $isAdmin = $user->isAdmin();
@@ -105,6 +108,7 @@ class BorrowRecordController extends Controller
 
         DB::transaction(function () use ($validated, $isAdmin, $user) {
             $item = InventoryItem::whereKey($validated['inventory_item_id'])->lockForUpdate()->firstOrFail();
+            $requestPdfPath = $validated['request_pdf']->store('borrow-records', 'public');
 
             if ($isAdmin && $item->available_stock < (int) $validated['quantity']) {
                 throw ValidationException::withMessages([
@@ -121,6 +125,7 @@ class BorrowRecordController extends Controller
                 'due_at' => $validated['due_at'] ?? null,
                 'purpose' => $validated['purpose'],
                 'notes' => $validated['notes'] ?? null,
+                'request_pdf_path' => $requestPdfPath,
                 'status' => $isAdmin ? 'dipinjam' : 'menunggu',
                 'approval_status' => $isAdmin ? 'approved' : 'pending',
                 'approved_by' => $isAdmin ? $user->id : null,
@@ -145,7 +150,12 @@ class BorrowRecordController extends Controller
 
         abort_unless($user->isAdmin(), 403);
 
-        DB::transaction(function () use ($borrowRecord, $user) {
+        $validated = request()->validate([
+            'ready_at' => 'required|date',
+            'pickup_at' => 'required|date|after_or_equal:ready_at',
+        ]);
+
+        DB::transaction(function () use ($borrowRecord, $user, $validated) {
             if ($borrowRecord->approval_status !== 'pending') {
                 return;
             }
@@ -162,6 +172,8 @@ class BorrowRecordController extends Controller
                 'approval_status' => 'approved',
                 'approved_by' => $user->id,
                 'approved_at' => now(),
+                'ready_at' => $validated['ready_at'],
+                'pickup_at' => $validated['pickup_at'],
                 'rejected_by' => null,
                 'rejected_at' => null,
                 'rejection_reason' => null,
@@ -170,6 +182,15 @@ class BorrowRecordController extends Controller
 
             $item->decrement('available_stock', (int) $borrowRecord->quantity);
         });
+
+        $borrowRecord->refresh()->loadMissing('inventoryItem');
+        $approvalPdf = $this->generateApprovalPdf($borrowRecord);
+
+        $borrowRecord->update([
+            'approval_pdf_path' => $approvalPdf['path'],
+            'approval_pdf_md5' => $approvalPdf['md5'],
+            'approval_pdf_sha256' => $approvalPdf['sha256'],
+        ]);
 
         return redirect()->route('borrow_records.index')->with('success', 'Peminjaman berhasil di-ACC.');
     }
@@ -225,5 +246,25 @@ class BorrowRecordController extends Controller
         });
 
         return redirect()->route('borrow_records.index')->with('success', 'Barang sudah dikembalikan.');
+    }
+
+    private function generateApprovalPdf(BorrowRecord $borrowRecord): array
+    {
+        $pdf = Pdf::loadView('borrow_records.pdf', [
+            'record' => $borrowRecord,
+        ])->setPaper('a4');
+
+        $path = 'borrow-records/approval-'.$borrowRecord->id.'-'.now()->format('YmdHis').'.pdf';
+        $output = $pdf->output();
+        $md5 = md5($output);
+        $sha256 = hash('sha256', $output);
+
+        Storage::disk('public')->put($path, $output);
+
+        return [
+            'path' => $path,
+            'md5' => $md5,
+            'sha256' => $sha256,
+        ];
     }
 }

@@ -64,6 +64,11 @@
                                     <th>Jumlah</th>
                                     <th>Dipinjam</th>
                                     <th>Jatuh Tempo</th>
+                                    <th>PDF</th>
+                                    <th>PDF ACC</th>
+                                    <th>Validasi</th>
+                                    <th>Ready</th>
+                                    <th>Bisa Diambil</th>
                                     <th>Status ACC</th>
                                     <th>Status</th>
                                     <th class="text-right">Aksi</th>
@@ -79,6 +84,31 @@
                                         <td class="whitespace-nowrap">{{ $record->borrowed_at->format('d/m/Y H:i') }}</td>
                                         <td class="whitespace-nowrap">{{ $record->due_at?->format('d/m/Y H:i') ?? '-' }}</td>
                                         <td class="whitespace-nowrap">
+                                            @if($record->request_pdf_path)
+                                                <a href="{{ asset('storage/'.$record->request_pdf_path) }}" target="_blank" class="text-cyan-700 hover:text-cyan-900 font-black">Lihat PDF</a>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td class="whitespace-nowrap">
+                                            @if($record->approval_pdf_path)
+                                                <a href="{{ asset('storage/'.$record->approval_pdf_path) }}" target="_blank" class="text-emerald-700 hover:text-emerald-900 font-black">PDF ACC</a>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td class="whitespace-nowrap">
+                                            @if($record->approval_pdf_path)
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest {{ $record->approvalPdfIsValid() ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
+                                                    {{ $record->approvalPdfIsValid() ? 'Real' : 'Tidak Valid' }}
+                                                </span>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td class="whitespace-nowrap">{{ $record->ready_at?->format('d/m/Y H:i') ?? '-' }}</td>
+                                        <td class="whitespace-nowrap">{{ $record->pickup_at?->format('d/m/Y H:i') ?? '-' }}</td>
+                                        <td class="whitespace-nowrap">
                                             <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest {{ $record->approval_status === 'approved' ? 'bg-emerald-50 text-emerald-700' : ($record->approval_status === 'rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700') }}">
                                                 {{ $record->approval_status }}
                                             </span>
@@ -90,8 +120,16 @@
                                         </td>
                                         <td class="whitespace-nowrap text-right text-sm font-medium">
                                             @if(auth()->user()->isAdmin() && $record->approval_status === 'pending')
-                                                <form action="{{ route('borrow_records.approve', $record) }}" method="POST" class="inline">
+                                                <form action="{{ route('borrow_records.approve', $record) }}" method="POST" class="inline-flex items-end gap-2 flex-wrap">
                                                     @csrf
+                                                    <label class="flex flex-col gap-1 text-left text-[11px] font-black uppercase tracking-widest text-slate-500">
+                                                        Ready
+                                                        <input type="datetime-local" name="ready_at" required class="panel-input text-xs min-w-40" value="{{ old('ready_at') }}">
+                                                    </label>
+                                                    <label class="flex flex-col gap-1 text-left text-[11px] font-black uppercase tracking-widest text-slate-500">
+                                                        Bisa Diambil
+                                                        <input type="datetime-local" name="pickup_at" required class="panel-input text-xs min-w-40" value="{{ old('pickup_at') }}">
+                                                    </label>
                                                     <button type="submit" class="text-emerald-600 hover:text-emerald-800 font-black">ACC</button>
                                                 </form>
                                                 <form action="{{ route('borrow_records.reject', $record) }}" method="POST" class="inline ml-3">
@@ -110,7 +148,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="px-6 py-8 whitespace-nowrap text-center text-slate-500">
+                                        <td colspan="14" class="px-6 py-8 whitespace-nowrap text-center text-slate-500">
                                             Belum ada data peminjaman.
                                         </td>
                                     </tr>

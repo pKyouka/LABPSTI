@@ -7,6 +7,11 @@
             <p class="text-sm text-slate-500 max-w-3xl">
                 Klik kartu barang untuk memilih item yang akan dipinjam. Daftar di bawah sudah dikelompokkan per kategori agar cepat dipindai.
             </p>
+            <div class="mt-3">
+                <a href="{{ asset('documents/SURAT%20PENGAJUAN%20PEMINJAMAN%20PERALATAN%20LABORATORIUM%20RISET.docx') }}" download class="inline-flex items-center px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition shadow-lg shadow-emerald-200">
+                    Unduh Template Surat Peminjaman
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -157,7 +162,7 @@
                             </div>
                         </div>
 
-                        <form id="borrow-form" action="{{ route('borrow_records.store') }}" method="POST">
+                        <form id="borrow-form" action="{{ route('borrow_records.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <input type="hidden" name="inventory_item_id" :value="selectedItemId">
 
@@ -203,6 +208,13 @@
                                 <x-input-label for="notes" :value="__('Catatan')" />
                                 <textarea id="notes" name="notes" rows="3" class="panel-textarea">{{ old('notes') }}</textarea>
                                 <x-input-error :messages="$errors->get('notes')" class="mt-2" />
+                            </div>
+
+                            <div class="mb-4">
+                                <x-input-label for="request_pdf" :value="__('PDF Peminjaman')" />
+                                <input id="request_pdf" type="file" name="request_pdf" accept="application/pdf" class="panel-input" required />
+                                <p class="mt-2 text-xs text-slate-500">Unggah surat atau formulir peminjaman dalam format PDF.</p>
+                                <x-input-error :messages="$errors->get('request_pdf')" class="mt-2" />
                             </div>
 
                             <div class="flex items-center justify-end mt-4">
