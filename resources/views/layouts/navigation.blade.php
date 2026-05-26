@@ -29,6 +29,11 @@
                     <x-nav-link :href="route('borrow_records.index')" :active="request()->routeIs('borrow_records.*')">
                         {{ __('Peminjaman') }}
                     </x-nav-link>
+                    @if(Auth::user()->isAdmin())
+                    <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                        {{ __('Laporan') }}
+                    </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -99,10 +104,15 @@
             <x-responsive-nav-link :href="route('inventory_items.index')" :active="request()->routeIs('inventory_items.*')">
                 {{ __('Barang & Alat') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('borrow_records.index')" :active="request()->routeIs('borrow_records.*')">
-                {{ __('Peminjaman') }}
-            </x-responsive-nav-link>
-        </div>
+             <x-responsive-nav-link :href="route('borrow_records.index')" :active="request()->routeIs('borrow_records.*')">
+                 {{ __('Peminjaman') }}
+             </x-responsive-nav-link>
+             @if(Auth::user()->isAdmin())
+             <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                 {{ __('Laporan') }}
+             </x-responsive-nav-link>
+             @endif
+         </div>
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-slate-200">

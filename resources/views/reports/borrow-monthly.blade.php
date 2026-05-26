@@ -1,0 +1,149 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex justify-between items-center gap-4">
+            <h2 class="font-display font-bold text-2xl text-slate-900 leading-tight">
+                {{ __('Laporan Peminjaman Bulanan') }}
+            </h2>
+            <a href="{{ route('reports.index') }}" class="inline-flex items-center px-6 py-2.5 bg-slate-600 text-white font-black rounded-xl hover:bg-slate-700 transition shadow-lg shadow-slate-200 uppercase tracking-widest text-[10px]">
+                Kembali ke Laporan
+            </a>
+        </div>
+    </x-slot>
+
+    <div class="py-8 sm:py-10">
+        <div class="panel-shell">
+            <div class="panel-card overflow-hidden mb-6">
+                <div class="panel-card-body">
+                    <div class="bg-cyan-50 border border-cyan-200 rounded-lg p-4 mb-4">
+                        <p class="text-sm text-cyan-700 font-semibold">
+                            Laporan Bulanan: {{ $monthStart->locale('id')->isoFormat('MMMM YYYY') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Summary -->
+            <div class="panel-card overflow-hidden mb-6">
+                <div class="panel-card-body">
+                    <h3 class="text-lg font-black text-slate-900 mb-4">Ringkasan per Minggu</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        @foreach($weeklyStats as $weekKey => $week)
+                            <div class="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg p-4">
+                                <div class="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-2">
+                                    Minggu {{ $loop->iteration }}
+                                </div>
+                                <div class="text-xs text-slate-600 mb-3">
+                                    {{ $week['start']->format('d/m') }} - {{ $week['end']->format('d/m/Y') }}
+                                </div>
+                                <div class="font-display text-2xl font-bold text-cyan-600 mb-1">
+                                    {{ $week['count'] }}
+                                </div>
+                                <div class="text-xs text-slate-600 font-semibold">
+                                    peminjaman
+                                </div>
+                                <div class="text-xs text-slate-500 mt-1">
+                                    {{ $week['quantity'] }} unit
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily Stats -->
+            <div class="panel-card overflow-hidden mb-6">
+                <div class="panel-card-body">
+                    <h3 class="text-lg font-black text-slate-900 mb-4">Statistik Harian</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm divide-y divide-slate-200">
+                            <thead>
+                                <tr class="bg-slate-50">
+                                    <th class="text-left px-4 py-3 font-black text-slate-700 text-xs uppercase">Tanggal</th>
+                                    <th class="text-left px-4 py-3 font-black text-slate-700 text-xs uppercase">Hari</th>
+                                    <th class="text-center px-4 py-3 font-black text-slate-700 text-xs uppercase">Jumlah Peminjaman</th>
+                                    <th class="text-center px-4 py-3 font-black text-slate-700 text-xs uppercase">Total Unit</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                @foreach($dailyStats as $dateStr => $stat)
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="px-4 py-3 font-semibold text-slate-900">{{ $stat['date']->format('d') }}</td>
+                                        <td class="px-4 py-3 text-slate-700">{{ $stat['date']->locale('id')->isoFormat('dddd') }}</td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="inline-flex px-3 py-1 text-xs font-black text-white bg-blue-600 rounded-full">
+                                                {{ $stat['count'] }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="inline-flex px-3 py-1 text-xs font-black text-white bg-emerald-600 rounded-full">
+                                                {{ $stat['quantity'] }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Records -->
+            <div class="panel-card overflow-hidden">
+                <div class="panel-card-body">
+                    @if($records->count() === 0)
+                        <div class="text-center py-8">
+                            <p class="text-slate-500 font-semibold">Tidak ada peminjaman pada bulan ini</p>
+                        </div>
+                    @else
+                        <h3 class="text-lg font-black text-slate-900 mb-4">Detail Peminjaman per Hari</h3>
+                        @foreach($records as $dateStr => $dayRecords)
+                            <div class="mb-4 pb-4 border-b border-slate-200 last:border-b-0">
+                                <h4 class="font-black text-slate-900 mb-2">
+                                    {{ \Carbon\Carbon::parse($dateStr)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
+                                </h4>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full text-sm divide-y divide-slate-200">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">Barang</th>
+                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">Peminjam</th>
+                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">NIM</th>
+                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">Qty</th>
+                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-200">
+                                            @foreach($dayRecords as $record)
+                                                <tr class="hover:bg-slate-50">
+                                                    <td class="px-3 py-2 font-semibold text-slate-900">{{ $record->inventoryItem?->name }}</td>
+                                                    <td class="px-3 py-2 text-slate-700">{{ $record->user_name }}</td>
+                                                    <td class="px-3 py-2 text-slate-700">{{ $record->user_id_number }}</td>
+                                                    <td class="px-3 py-2 font-semibold text-slate-900">{{ $record->quantity }}</td>
+                                                    <td class="px-3 py-2">
+                                                        <span class="inline-flex px-2 py-1 text-xs font-black rounded
+                                                            @if($record->status === 'dipinjam')
+                                                                bg-blue-100 text-blue-800
+                                                            @elseif($record->status === 'dikembalikan')
+                                                                bg-emerald-100 text-emerald-800
+                                                            @elseif($record->status === 'menunggu')
+                                                                bg-yellow-100 text-yellow-800
+                                                            @else
+                                                                bg-red-100 text-red-800
+                                                            @endif
+                                                        ">
+                                                            {{ ucfirst($record->status) }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @endforeach
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
