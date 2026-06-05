@@ -8,6 +8,7 @@ use App\Http\Controllers\LabUsageRecordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LabController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingPageController::class, 'index'])->name('landing');
@@ -50,6 +51,15 @@ Route::middleware('auth')->group(function () {
     Route::post('borrow_records/{borrowRecord}/approve', [BorrowRecordController::class, 'approve'])->name('borrow_records.approve');
     Route::post('borrow_records/{borrowRecord}/reject', [BorrowRecordController::class, 'reject'])->name('borrow_records.reject');
     Route::post('borrow_records/{borrowRecord}/return', [BorrowRecordController::class, 'markReturned'])->name('borrow_records.return');
+
+    // Reports (Admin only)
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/borrow/daily', [ReportController::class, 'borrowDaily'])->name('reports.borrow.daily');
+    Route::get('reports/borrow/weekly', [ReportController::class, 'borrowWeekly'])->name('reports.borrow.weekly');
+    Route::get('reports/borrow/monthly', [ReportController::class, 'borrowMonthly'])->name('reports.borrow.monthly');
+    Route::get('reports/usage/daily', [ReportController::class, 'usageDaily'])->name('reports.usage.daily');
+    Route::get('reports/usage/weekly', [ReportController::class, 'usageWeekly'])->name('reports.usage.weekly');
+    Route::get('reports/usage/monthly', [ReportController::class, 'usageMonthly'])->name('reports.usage.monthly');
 });
 
 require __DIR__.'/auth.php';
