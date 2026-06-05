@@ -7,13 +7,14 @@ use App\Models\LabUsageRecord;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
     public function index()
     {
         $user = Auth::user();
-        
+
         if (!$user || !$user->isAdmin()) {
             abort(403);
         }
@@ -41,13 +42,13 @@ class ReportController extends Controller
     public function borrowDaily()
     {
         $user = Auth::user();
-        
+
         if (!$user || !$user->isAdmin()) {
             abort(403);
         }
 
         $today = Carbon::today();
-        
+
         $records = BorrowRecord::whereDate('created_at', $today)
             ->with('inventoryItem')
             ->get()
@@ -67,7 +68,7 @@ class ReportController extends Controller
     public function borrowWeekly()
     {
         $user = Auth::user();
-        
+
         if (!$user || !$user->isAdmin()) {
             abort(403);
         }
@@ -98,13 +99,16 @@ class ReportController extends Controller
     public function borrowMonthly()
     {
         $user = Auth::user();
-        
+
         if (!$user || !$user->isAdmin()) {
             abort(403);
         }
 
-        $monthStart = Carbon::today()->startOfMonth();
-        $monthEnd = Carbon::today()->endOfMonth();
+        $selectedMonth = request('month', Carbon::now()->format('m'));
+        $selectedYear = request('year', Carbon::now()->format('Y'));
+
+        $monthStart = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
+        $monthEnd = $monthStart->copy()->endOfMonth();
 
         $records = BorrowRecord::whereBetween('created_at', [$monthStart, $monthEnd])
             ->with('inventoryItem')
@@ -131,33 +135,94 @@ class ReportController extends Controller
             if ($currentWeekEnd > $monthEnd) {
                 $currentWeekEnd = $monthEnd;
             }
-            
+
             $weekKey = $currentWeekStart->format('Y-m-d');
             $weekRecords = BorrowRecord::whereBetween('created_at', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
-            
+
             $weeklyStats[$weekKey] = [
                 'start' => $currentWeekStart->copy(),
                 'end' => $currentWeekEnd->copy(),
                 'count' => $weekRecords->count(),
                 'quantity' => $weekRecords->sum('quantity'),
             ];
-            
+
             $currentWeekStart->addDays(7);
         }
 
-        return view('reports.borrow-monthly', compact('records', 'dailyStats', 'weeklyStats', 'monthStart', 'monthEnd'));
+        return view('reports.borrow-monthly', compact('records', 'dailyStats', 'weeklyStats', 'monthStart', 'monthEnd', 'selectedMonth', 'selectedYear'));
+    }
+
+    public function borrowMonthlyPdf()
+    {
+        $user = Auth::user();
+
+        if (!$user || !$user->isAdmin()) {
+            abort(403);
+        }
+
+        $selectedMonth = request('month', Carbon::now()->format('m'));
+        $selectedYear = request('year', Carbon::now()->format('Y'));
+
+        $monthStart = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
+        $monthEnd = $monthStart->copy()->endOfMonth();
+
+        $records = BorrowRecord::whereBetween('created_at', [$monthStart, $monthEnd])
+            ->with('inventoryItem')
+            ->get()
+            ->groupBy(function ($item) {
+                return $item->created_at->format('Y-m-d');
+            });
+
+        $dailyStats = [];
+        for ($date = clone $monthStart; $date <= $monthEnd; $date->addDay()) {
+            $dateStr = $date->format('Y-m-d');
+            $dailyStats[$dateStr] = [
+                'date' => $date->copy(),
+                'count' => $records->get($dateStr)?->count() ?? 0,
+                'quantity' => $records->get($dateStr)?->sum('quantity') ?? 0,
+            ];
+        }
+
+        $weeklyStats = [];
+        $currentWeekStart = clone $monthStart;
+        while ($currentWeekStart <= $monthEnd) {
+            $currentWeekEnd = $currentWeekStart->copy()->addDays(6);
+            if ($currentWeekEnd > $monthEnd) {
+                $currentWeekEnd = $monthEnd;
+            }
+
+            $weekKey = $currentWeekStart->format('Y-m-d');
+            $weekRecords = BorrowRecord::whereBetween('created_at', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
+
+            $weeklyStats[$weekKey] = [
+                'start' => $currentWeekStart->copy(),
+                'end' => $currentWeekEnd->copy(),
+                'count' => $weekRecords->count(),
+                'quantity' => $weekRecords->sum('quantity'),
+            ];
+
+            $currentWeekStart->addDays(7);
+        }
+
+        $totalRecords = $records->flatten()->count();
+        $totalQuantity = $records->flatten()->sum('quantity');
+
+        $pdf = Pdf::loadView('reports.pdf.borrow-monthly', compact('records', 'dailyStats', 'weeklyStats', 'monthStart', 'monthEnd', 'selectedMonth', 'selectedYear', 'totalRecords', 'totalQuantity'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download("laporan-peminjaman-{$selectedYear}-{$selectedMonth}.pdf");
     }
 
     public function usageDaily()
     {
         $user = Auth::user();
-        
+
         if (!$user || !$user->isAdmin()) {
             abort(403);
         }
 
         $today = Carbon::today();
-        
+
         $records = LabUsageRecord::whereDate('created_at', $today)
             ->with('category')
             ->get()
@@ -176,7 +241,7 @@ class ReportController extends Controller
     public function usageWeekly()
     {
         $user = Auth::user();
-        
+
         if (!$user || !$user->isAdmin()) {
             abort(403);
         }
@@ -206,13 +271,16 @@ class ReportController extends Controller
     public function usageMonthly()
     {
         $user = Auth::user();
-        
+
         if (!$user || !$user->isAdmin()) {
             abort(403);
         }
 
-        $monthStart = Carbon::today()->startOfMonth();
-        $monthEnd = Carbon::today()->endOfMonth();
+        $selectedMonth = request('month', Carbon::now()->format('m'));
+        $selectedYear = request('year', Carbon::now()->format('Y'));
+
+        $monthStart = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
+        $monthEnd = $monthStart->copy()->endOfMonth();
 
         $records = LabUsageRecord::whereBetween('created_at', [$monthStart, $monthEnd])
             ->with('category')
@@ -238,19 +306,77 @@ class ReportController extends Controller
             if ($currentWeekEnd > $monthEnd) {
                 $currentWeekEnd = $monthEnd;
             }
-            
+
             $weekKey = $currentWeekStart->format('Y-m-d');
             $weekRecords = LabUsageRecord::whereBetween('created_at', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
-            
+
             $weeklyStats[$weekKey] = [
                 'start' => $currentWeekStart->copy(),
                 'end' => $currentWeekEnd->copy(),
                 'count' => $weekRecords->count(),
             ];
-            
+
             $currentWeekStart->addDays(7);
         }
 
-        return view('reports.usage-monthly', compact('records', 'dailyStats', 'weeklyStats', 'monthStart', 'monthEnd'));
+        return view('reports.usage-monthly', compact('records', 'dailyStats', 'weeklyStats', 'monthStart', 'monthEnd', 'selectedMonth', 'selectedYear'));
+    }
+
+    public function usageMonthlyPdf()
+    {
+        $user = Auth::user();
+
+        if (!$user || !$user->isAdmin()) {
+            abort(403);
+        }
+
+        $selectedMonth = request('month', Carbon::now()->format('m'));
+        $selectedYear = request('year', Carbon::now()->format('Y'));
+
+        $monthStart = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
+        $monthEnd = $monthStart->copy()->endOfMonth();
+
+        $records = LabUsageRecord::whereBetween('created_at', [$monthStart, $monthEnd])
+            ->with('category')
+            ->get()
+            ->groupBy(function ($item) {
+                return $item->created_at->format('Y-m-d');
+            });
+
+        $dailyStats = [];
+        for ($date = clone $monthStart; $date <= $monthEnd; $date->addDay()) {
+            $dateStr = $date->format('Y-m-d');
+            $dailyStats[$dateStr] = [
+                'date' => $date->copy(),
+                'count' => $records->get($dateStr)?->count() ?? 0,
+            ];
+        }
+
+        $weeklyStats = [];
+        $currentWeekStart = clone $monthStart;
+        while ($currentWeekStart <= $monthEnd) {
+            $currentWeekEnd = $currentWeekStart->copy()->addDays(6);
+            if ($currentWeekEnd > $monthEnd) {
+                $currentWeekEnd = $monthEnd;
+            }
+
+            $weekKey = $currentWeekStart->format('Y-m-d');
+            $weekRecords = LabUsageRecord::whereBetween('created_at', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
+
+            $weeklyStats[$weekKey] = [
+                'start' => $currentWeekStart->copy(),
+                'end' => $currentWeekEnd->copy(),
+                'count' => $weekRecords->count(),
+            ];
+
+            $currentWeekStart->addDays(7);
+        }
+
+        $totalRecords = $records->flatten()->count();
+
+        $pdf = Pdf::loadView('reports.pdf.usage-monthly', compact('records', 'dailyStats', 'weeklyStats', 'monthStart', 'monthEnd', 'selectedMonth', 'selectedYear', 'totalRecords'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download("laporan-penggunaan-lab-{$selectedYear}-{$selectedMonth}.pdf");
     }
 }

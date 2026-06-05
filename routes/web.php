@@ -57,9 +57,11 @@ Route::middleware('auth')->group(function () {
     Route::get('reports/borrow/daily', [ReportController::class, 'borrowDaily'])->name('reports.borrow.daily');
     Route::get('reports/borrow/weekly', [ReportController::class, 'borrowWeekly'])->name('reports.borrow.weekly');
     Route::get('reports/borrow/monthly', [ReportController::class, 'borrowMonthly'])->name('reports.borrow.monthly');
+    Route::get('reports/borrow/monthly/pdf', [ReportController::class, 'borrowMonthlyPdf'])->name('reports.borrow.monthly.pdf');
     Route::get('reports/usage/daily', [ReportController::class, 'usageDaily'])->name('reports.usage.daily');
     Route::get('reports/usage/weekly', [ReportController::class, 'usageWeekly'])->name('reports.usage.weekly');
     Route::get('reports/usage/monthly', [ReportController::class, 'usageMonthly'])->name('reports.usage.monthly');
+    Route::get('reports/usage/monthly/pdf', [ReportController::class, 'usageMonthlyPdf'])->name('reports.usage.monthly.pdf');
 });
 
 require __DIR__.'/auth.php';

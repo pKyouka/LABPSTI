@@ -12,6 +12,44 @@
 
     <div class="py-8 sm:py-10">
         <div class="panel-shell">
+            <!-- Month Selector -->
+            <div class="panel-card overflow-hidden mb-6">
+                <div class="panel-card-body">
+                    <form method="GET" action="{{ route('reports.borrow.monthly') }}" class="flex flex-wrap items-end gap-4">
+                        <div>
+                            <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Bulan</label>
+                            <select name="month" class="rounded-lg border-slate-300 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                                @for($m = 1; $m <= 12; $m++)
+                                    <option value="{{ str_pad($m, 2, '0', STR_PAD_LEFT) }}" {{ $selectedMonth == str_pad($m, 2, '0', STR_PAD_LEFT) ? 'selected' : '' }}>
+                                        {{ Carbon\Carbon::create()->month($m)->locale('id')->isoFormat('MMMM') }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Tahun</label>
+                            <select name="year" class="rounded-lg border-slate-300 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                                @for($y = date('Y') - 5; $y <= date('Y') + 1; $y++)
+                                    <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div>
+                            <button type="submit" class="inline-flex items-center px-6 py-2.5 bg-cyan-600 text-white font-black rounded-lg hover:bg-cyan-700 transition text-xs uppercase tracking-widest">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                Lihat Laporan
+                            </button>
+                        </div>
+                        <div>
+                            <a href="{{ route('reports.borrow.monthly.pdf', ['month' => $selectedMonth, 'year' => $selectedYear]) }}" class="inline-flex items-center px-6 py-2.5 bg-red-600 text-white font-black rounded-lg hover:bg-red-700 transition text-xs uppercase tracking-widest">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                Export PDF
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="panel-card overflow-hidden mb-6">
                 <div class="panel-card-body">
                     <div class="bg-cyan-50 border border-cyan-200 rounded-lg p-4 mb-4">
