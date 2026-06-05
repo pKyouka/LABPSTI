@@ -24,14 +24,14 @@ class ReportController extends Controller
         $monthStart = Carbon::today()->startOfMonth();
 
         // Borrow records stats
-        $borrowToday = BorrowRecord::whereDate('created_at', $today)->count();
-        $borrowWeek = BorrowRecord::whereBetween('created_at', [$weekStart, Carbon::today()->endOfDay()])->count();
-        $borrowMonth = BorrowRecord::whereBetween('created_at', [$monthStart, Carbon::today()->endOfMonth()])->count();
+        $borrowToday = BorrowRecord::whereDate('borrowed_at', $today)->count();
+        $borrowWeek = BorrowRecord::whereBetween('borrowed_at', [$weekStart, Carbon::today()->endOfDay()])->count();
+        $borrowMonth = BorrowRecord::whereBetween('borrowed_at', [$monthStart, Carbon::today()->endOfMonth()])->count();
 
         // Lab usage records stats
-        $usageToday = LabUsageRecord::whereDate('created_at', $today)->count();
-        $usageWeek = LabUsageRecord::whereBetween('created_at', [$weekStart, Carbon::today()->endOfDay()])->count();
-        $usageMonth = LabUsageRecord::whereBetween('created_at', [$monthStart, Carbon::today()->endOfMonth()])->count();
+        $usageToday = LabUsageRecord::whereDate('start_time', $today)->count();
+        $usageWeek = LabUsageRecord::whereBetween('start_time', [$weekStart, Carbon::today()->endOfDay()])->count();
+        $usageMonth = LabUsageRecord::whereBetween('start_time', [$monthStart, Carbon::today()->endOfMonth()])->count();
 
         return view('reports.index', compact(
             'borrowToday', 'borrowWeek', 'borrowMonth',
@@ -49,7 +49,7 @@ class ReportController extends Controller
 
         $today = Carbon::today();
 
-        $records = BorrowRecord::whereDate('created_at', $today)
+        $records = BorrowRecord::whereDate('borrowed_at', $today)
             ->with('inventoryItem')
             ->get()
             ->groupBy('inventory_item_id')
@@ -76,11 +76,11 @@ class ReportController extends Controller
         $weekStart = Carbon::today()->startOfWeek();
         $weekEnd = Carbon::today()->endOfWeek();
 
-        $records = BorrowRecord::whereBetween('created_at', [$weekStart, $weekEnd])
+        $records = BorrowRecord::whereBetween('borrowed_at', [$weekStart, $weekEnd])
             ->with('inventoryItem')
             ->get()
             ->groupBy(function ($item) {
-                return $item->created_at->format('Y-m-d');
+                return $item->borrowed_at->format('Y-m-d');
             });
 
         $dailyStats = [];
@@ -110,11 +110,11 @@ class ReportController extends Controller
         $monthStart = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
 
-        $records = BorrowRecord::whereBetween('created_at', [$monthStart, $monthEnd])
+        $records = BorrowRecord::whereBetween('borrowed_at', [$monthStart, $monthEnd])
             ->with('inventoryItem')
             ->get()
             ->groupBy(function ($item) {
-                return $item->created_at->format('Y-m-d');
+                return $item->borrowed_at->format('Y-m-d');
             });
 
         $dailyStats = [];
@@ -137,7 +137,7 @@ class ReportController extends Controller
             }
 
             $weekKey = $currentWeekStart->format('Y-m-d');
-            $weekRecords = BorrowRecord::whereBetween('created_at', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
+            $weekRecords = BorrowRecord::whereBetween('borrowed_at', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
 
             $weeklyStats[$weekKey] = [
                 'start' => $currentWeekStart->copy(),
@@ -166,11 +166,11 @@ class ReportController extends Controller
         $monthStart = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
 
-        $records = BorrowRecord::whereBetween('created_at', [$monthStart, $monthEnd])
+        $records = BorrowRecord::whereBetween('borrowed_at', [$monthStart, $monthEnd])
             ->with('inventoryItem')
             ->get()
             ->groupBy(function ($item) {
-                return $item->created_at->format('Y-m-d');
+                return $item->borrowed_at->format('Y-m-d');
             });
 
         $dailyStats = [];
@@ -192,7 +192,7 @@ class ReportController extends Controller
             }
 
             $weekKey = $currentWeekStart->format('Y-m-d');
-            $weekRecords = BorrowRecord::whereBetween('created_at', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
+            $weekRecords = BorrowRecord::whereBetween('borrowed_at', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
 
             $weeklyStats[$weekKey] = [
                 'start' => $currentWeekStart->copy(),
@@ -223,7 +223,7 @@ class ReportController extends Controller
 
         $today = Carbon::today();
 
-        $records = LabUsageRecord::whereDate('created_at', $today)
+        $records = LabUsageRecord::whereDate('start_time', $today)
             ->with('category')
             ->get()
             ->groupBy('category_id')
@@ -249,11 +249,11 @@ class ReportController extends Controller
         $weekStart = Carbon::today()->startOfWeek();
         $weekEnd = Carbon::today()->endOfWeek();
 
-        $records = LabUsageRecord::whereBetween('created_at', [$weekStart, $weekEnd])
+        $records = LabUsageRecord::whereBetween('start_time', [$weekStart, $weekEnd])
             ->with('category')
             ->get()
             ->groupBy(function ($item) {
-                return $item->created_at->format('Y-m-d');
+                return $item->start_time->format('Y-m-d');
             });
 
         $dailyStats = [];
@@ -282,11 +282,11 @@ class ReportController extends Controller
         $monthStart = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
 
-        $records = LabUsageRecord::whereBetween('created_at', [$monthStart, $monthEnd])
+        $records = LabUsageRecord::whereBetween('start_time', [$monthStart, $monthEnd])
             ->with('category')
             ->get()
             ->groupBy(function ($item) {
-                return $item->created_at->format('Y-m-d');
+                return $item->start_time->format('Y-m-d');
             });
 
         $dailyStats = [];
@@ -308,7 +308,7 @@ class ReportController extends Controller
             }
 
             $weekKey = $currentWeekStart->format('Y-m-d');
-            $weekRecords = LabUsageRecord::whereBetween('created_at', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
+            $weekRecords = LabUsageRecord::whereBetween('start_time', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
 
             $weeklyStats[$weekKey] = [
                 'start' => $currentWeekStart->copy(),
@@ -336,11 +336,11 @@ class ReportController extends Controller
         $monthStart = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
 
-        $records = LabUsageRecord::whereBetween('created_at', [$monthStart, $monthEnd])
+        $records = LabUsageRecord::whereBetween('start_time', [$monthStart, $monthEnd])
             ->with('category')
             ->get()
             ->groupBy(function ($item) {
-                return $item->created_at->format('Y-m-d');
+                return $item->start_time->format('Y-m-d');
             });
 
         $dailyStats = [];
@@ -361,7 +361,7 @@ class ReportController extends Controller
             }
 
             $weekKey = $currentWeekStart->format('Y-m-d');
-            $weekRecords = LabUsageRecord::whereBetween('created_at', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
+            $weekRecords = LabUsageRecord::whereBetween('start_time', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
 
             $weeklyStats[$weekKey] = [
                 'start' => $currentWeekStart->copy(),
