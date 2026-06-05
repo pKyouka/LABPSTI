@@ -15,10 +15,10 @@
             <!-- Month Selector -->
             <div class="panel-card overflow-hidden mb-6">
                 <div class="panel-card-body">
-                    <form method="GET" action="{{ route('reports.usage.monthly') }}" class="flex flex-wrap items-end gap-4">
+                    <form method="GET" action="{{ route('reports.usage.monthly') }}" id="monthFilterForm" class="flex flex-wrap items-end gap-4">
                         <div>
                             <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Bulan</label>
-                            <select name="month" class="rounded-lg border-slate-300 text-sm focus:border-rose-500 focus:ring-rose-500">
+                            <select name="month" id="monthSelect" class="rounded-lg border-slate-300 text-sm focus:border-rose-500 focus:ring-rose-500">
                                 @for($m = 1; $m <= 12; $m++)
                                     <option value="{{ str_pad($m, 2, '0', STR_PAD_LEFT) }}" {{ $selectedMonth == str_pad($m, 2, '0', STR_PAD_LEFT) ? 'selected' : '' }}>
                                         {{ Carbon\Carbon::create()->month($m)->locale('id')->isoFormat('MMMM') }}
@@ -28,17 +28,11 @@
                         </div>
                         <div>
                             <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Tahun</label>
-                            <select name="year" class="rounded-lg border-slate-300 text-sm focus:border-rose-500 focus:ring-rose-500">
+                            <select name="year" id="yearSelect" class="rounded-lg border-slate-300 text-sm focus:border-rose-500 focus:ring-rose-500">
                                 @for($y = date('Y') - 5; $y <= date('Y') + 1; $y++)
                                     <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
                                 @endfor
                             </select>
-                        </div>
-                        <div>
-                            <button type="submit" class="inline-flex items-center px-6 py-2.5 bg-rose-600 text-white font-black rounded-lg hover:bg-rose-700 transition text-xs uppercase tracking-widest">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                                Lihat Laporan
-                            </button>
                         </div>
                         <div>
                             <a href="{{ route('reports.usage.monthly.pdf', ['month' => $selectedMonth, 'year' => $selectedYear]) }}" class="inline-flex items-center px-6 py-2.5 bg-red-600 text-white font-black rounded-lg hover:bg-red-700 transition text-xs uppercase tracking-widest">
@@ -147,7 +141,14 @@
                                                     <td class="px-3 py-2 text-slate-700">{{ $record->user_name }}</td>
                                                     <td class="px-3 py-2 text-slate-700">{{ $record->user_id_number }}</td>
                                                     <td class="px-3 py-2 text-slate-700 text-xs">
-                                                        {{ $record->start_time->format('H:i') }} - {{ $record->end_time->format('H:i') }}
+                                                        @if($record->start_time)
+                                                            {{ $record->start_time->format('H:i') }}
+                                                            @if($record->end_time)
+                                                                - {{ $record->end_time->format('H:i') }}
+                                                            @endif
+                                                        @else
+                                                            -
+                                                        @endif
                                                     </td>
                                                 </tr>
                                             @endforeach
@@ -161,4 +162,15 @@
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        document.getElementById('monthSelect').addEventListener('change', function() {
+            document.getElementById('monthFilterForm').submit();
+        });
+        document.getElementById('yearSelect').addEventListener('change', function() {
+            document.getElementById('monthFilterForm').submit();
+        });
+    </script>
+    @endpush
 </x-app-layout>

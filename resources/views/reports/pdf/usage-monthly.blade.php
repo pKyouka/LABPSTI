@@ -126,7 +126,16 @@
                                     <td>{{ $record->category?->name }}</td>
                                     <td>{{ $record->user_name }}</td>
                                     <td>{{ $record->user_id_number }}</td>
-                                    <td>{{ $record->start_time->format('H:i') }} - {{ $record->end_time->format('H:i') }}</td>
+                                    <td>
+                                    @if($record->start_time)
+                                        {{ $record->start_time->format('H:i') }}
+                                        @if($record->end_time)
+                                            - {{ $record->end_time->format('H:i') }}
+                                        @endif
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 </tr>
                             @endforeach
                         </tbody>
