@@ -16,7 +16,7 @@
                 :: C O R E V A L U E :: Akhlak Mulia, Amanah, Profesional, Kolaboratif, Unggul
             </div>
             <div class="hidden md:block italic">
-                “Health Information Technology, Empowering Healthier Life.”
+                “Health Information Technology, Empowering Healthier Life..”
             </div>
         </div>
     </div>
