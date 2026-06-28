@@ -107,7 +107,7 @@ class ReportController extends Controller
         $selectedMonth = request('month', Carbon::now()->format('m'));
         $selectedYear = request('year', Carbon::now()->format('Y'));
 
-        $monthStart = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
+        $monthStart = Carbon::createFromDate((int) $selectedYear, (int) $selectedMonth, 1)->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
 
         $records = BorrowRecord::whereBetween('borrowed_at', [$monthStart, $monthEnd])
@@ -163,7 +163,7 @@ class ReportController extends Controller
         $selectedMonth = request('month', Carbon::now()->format('m'));
         $selectedYear = request('year', Carbon::now()->format('Y'));
 
-        $monthStart = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
+        $monthStart = Carbon::createFromDate((int) $selectedYear, (int) $selectedMonth, 1)->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
 
         $records = BorrowRecord::whereBetween('borrowed_at', [$monthStart, $monthEnd])
@@ -279,7 +279,7 @@ class ReportController extends Controller
         $selectedMonth = request('month', Carbon::now()->format('m'));
         $selectedYear = request('year', Carbon::now()->format('Y'));
 
-        $monthStart = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
+        $monthStart = Carbon::createFromDate((int) $selectedYear, (int) $selectedMonth, 1)->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
 
         $records = LabUsageRecord::whereBetween('start_time', [$monthStart, $monthEnd])
@@ -333,7 +333,7 @@ class ReportController extends Controller
         $selectedMonth = request('month', Carbon::now()->format('m'));
         $selectedYear = request('year', Carbon::now()->format('Y'));
 
-        $monthStart = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
+        $monthStart = Carbon::createFromDate((int) $selectedYear, (int) $selectedMonth, 1)->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
 
         $records = LabUsageRecord::whereBetween('start_time', [$monthStart, $monthEnd])

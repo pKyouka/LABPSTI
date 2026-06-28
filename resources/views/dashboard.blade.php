@@ -93,6 +93,55 @@
                     </div>
                 </div>
             </div>
+
+            @if(!$isAdmin && $vmBorrowRequests->isNotEmpty())
+            <div class="mt-8">
+                <div class="panel-card p-8">
+                    <h3 class="text-lg font-black text-slate-900 mb-2 flex items-center">
+                        <svg class="w-5 h-5 mr-3 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-4M9 3l6 6M9 3v6h6"></path></svg>
+                        Peminjaman VM Saya
+                    </h3>
+                    <p class="text-sm text-slate-500 mb-6">Status terkini permintaan peminjaman Virtual Machine Anda.</p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-slate-200">
+                                    <th class="text-left py-2 px-3 text-xs font-black text-slate-400 uppercase tracking-wider">OS</th>
+                                    <th class="text-left py-2 px-3 text-xs font-black text-slate-400 uppercase tracking-wider">Mulai</th>
+                                    <th class="text-left py-2 px-3 text-xs font-black text-slate-400 uppercase tracking-wider">Durasi</th>
+                                    <th class="text-left py-2 px-3 text-xs font-black text-slate-400 uppercase tracking-wider">Status</th>
+                                    <th class="text-left py-2 px-3 text-xs font-black text-slate-400 uppercase tracking-wider"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @foreach($vmBorrowRequests as $vm)
+                                <tr class="hover:bg-slate-50">
+                                    <td class="py-3 px-3 font-medium text-slate-800">{{ strtoupper($vm->os_type) }} {{ $vm->os_version }}</td>
+                                    <td class="py-3 px-3 text-slate-600">{{ $vm->start_date->format('d M Y') }}</td>
+                                    <td class="py-3 px-3 text-slate-600">{{ $vm->duration_days }} hari</td>
+                                    <td class="py-3 px-3">
+                                        @if($vm->status === 'approved')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">Disetujui</span>
+                                        @elseif($vm->status === 'rejected')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">Ditolak</span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Menunggu</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-3 px-3">
+                                        <a href="{{ route('vm_borrow.show', $vm) }}" class="text-cyan-600 hover:text-cyan-800 font-bold text-xs">Detail →</a>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-4">
+                        <a href="{{ route('vm_borrow.index') }}" class="text-sm text-cyan-600 hover:text-cyan-800 font-bold">Lihat semua →</a>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 

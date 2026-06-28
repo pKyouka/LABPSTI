@@ -7,6 +7,7 @@ use App\Models\BorrowRecord;
 use App\Models\InventoryItem;
 use App\Models\LabUsageRecord;
 use App\Models\Category;
+use App\Models\VmBorrowRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -45,9 +46,17 @@ class DashboardController extends Controller
                 ];
             });
 
+        $vmBorrowRequests = collect();
+        if (! $isAdmin && $user !== null) {
+            $vmBorrowRequests = VmBorrowRequest::where('user_id', $user->id)
+                ->latest()
+                ->take(5)
+                ->get();
+        }
+
         $dashboardTitle = $isAdmin ? 'Dashboard Admin' : 'Dashboard Mahasiswa';
         $chartTitle = $isAdmin ? 'Statistik Penggunaan per Lab' : 'Infografis Penggunaan Lab Anda';
 
-        return view('dashboard', compact('stats', 'usagePerLab', 'dashboardTitle', 'chartTitle', 'isAdmin'));
+        return view('dashboard', compact('stats', 'usagePerLab', 'dashboardTitle', 'chartTitle', 'isAdmin', 'vmBorrowRequests'));
     }
 }

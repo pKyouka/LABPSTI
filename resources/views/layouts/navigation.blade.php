@@ -29,6 +29,9 @@
                     <x-nav-link :href="route('borrow_records.index')" :active="request()->routeIs('borrow_records.*')">
                         {{ __('Peminjaman') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('vm_borrow.index')" :active="request()->routeIs('vm_borrow.*')">
+                        {{ __('VM') }}
+                    </x-nav-link>
                     @if(Auth::user()->isAdmin())
                     <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                         {{ __('Laporan') }}
@@ -106,6 +109,9 @@
             </x-responsive-nav-link>
              <x-responsive-nav-link :href="route('borrow_records.index')" :active="request()->routeIs('borrow_records.*')">
                  {{ __('Peminjaman') }}
+             </x-responsive-nav-link>
+             <x-responsive-nav-link :href="route('vm_borrow.index')" :active="request()->routeIs('vm_borrow.*')">
+                 {{ __('VM') }}
              </x-responsive-nav-link>
              @if(Auth::user()->isAdmin())
              <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">

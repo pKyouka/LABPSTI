@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LabController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\VmBorrowController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingPageController::class, 'index'])->name('landing');
@@ -51,6 +52,14 @@ Route::middleware('auth')->group(function () {
     Route::post('borrow_records/{borrowRecord}/approve', [BorrowRecordController::class, 'approve'])->name('borrow_records.approve');
     Route::post('borrow_records/{borrowRecord}/reject', [BorrowRecordController::class, 'reject'])->name('borrow_records.reject');
     Route::post('borrow_records/{borrowRecord}/return', [BorrowRecordController::class, 'markReturned'])->name('borrow_records.return');
+
+    // VM Borrow
+    Route::get('vm_borrow', [VmBorrowController::class, 'index'])->name('vm_borrow.index');
+    Route::get('vm_borrow/create', [VmBorrowController::class, 'create'])->name('vm_borrow.create');
+    Route::post('vm_borrow', [VmBorrowController::class, 'store'])->name('vm_borrow.store');
+    Route::get('vm_borrow/{vmBorrow}', [VmBorrowController::class, 'show'])->name('vm_borrow.show');
+    Route::post('vm_borrow/{vmBorrow}/approve', [VmBorrowController::class, 'approve'])->name('vm_borrow.approve');
+    Route::post('vm_borrow/{vmBorrow}/reject', [VmBorrowController::class, 'reject'])->name('vm_borrow.reject');
 
     // Reports (Admin only)
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
