@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BorrowRecord;
 use App\Models\InventoryItem;
+use App\Traits\RequiresAdmin;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class BorrowRecordController extends Controller
 {
+    use RequiresAdmin;
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -146,9 +149,7 @@ class BorrowRecordController extends Controller
 
     public function approve(BorrowRecord $borrowRecord)
     {
-        $user = Auth::user();
-
-        abort_unless($user->isAdmin(), 403);
+        $this->ensureAdmin();
 
         $validated = request()->validate([
             'ready_at' => 'required|date',
@@ -197,9 +198,7 @@ class BorrowRecordController extends Controller
 
     public function reject(BorrowRecord $borrowRecord)
     {
-        $user = Auth::user();
-
-        abort_unless($user->isAdmin(), 403);
+        $this->ensureAdmin();
 
         if ($borrowRecord->approval_status !== 'pending') {
             return redirect()->route('borrow_records.index')->with('success', 'Status peminjaman sudah diproses sebelumnya.');

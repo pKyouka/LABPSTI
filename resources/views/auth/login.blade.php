@@ -4,7 +4,7 @@
 
     <div class="mb-5">
         <p class="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-600">TEKNOLOGI INFORMASI</p>
-        <h1 class="font-display text-2xl font-bold text-slate-900 mt-1">Masuk Ke Portal Lab</h1>
+        <h1 class="font-bold text-2xl font-bold text-slate-900 mt-1">Masuk Ke Portal Lab</h1>
         <p class="text-sm text-slate-500 mt-1">Akses dashboard sesuai role Anda: admin atau mahasiswa.</p>
     </div>
 

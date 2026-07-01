@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BorrowRecord;
 use App\Models\LabUsageRecord;
+use App\Traits\RequiresAdmin;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -11,13 +12,11 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
+    use RequiresAdmin;
+
     public function index()
     {
-        $user = Auth::user();
-
-        if (!$user || !$user->isAdmin()) {
-            abort(403);
-        }
+        $this->ensureAdmin();
 
         $today = Carbon::today();
         $weekStart = Carbon::today()->startOfWeek();
@@ -41,11 +40,7 @@ class ReportController extends Controller
 
     public function borrowDaily()
     {
-        $user = Auth::user();
-
-        if (!$user || !$user->isAdmin()) {
-            abort(403);
-        }
+        $this->ensureAdmin();
 
         $today = Carbon::today();
 
@@ -67,11 +62,7 @@ class ReportController extends Controller
 
     public function borrowWeekly()
     {
-        $user = Auth::user();
-
-        if (!$user || !$user->isAdmin()) {
-            abort(403);
-        }
+        $this->ensureAdmin();
 
         $weekStart = Carbon::today()->startOfWeek();
         $weekEnd = Carbon::today()->endOfWeek();
@@ -98,14 +89,13 @@ class ReportController extends Controller
 
     public function borrowMonthly()
     {
-        $user = Auth::user();
+        $this->ensureAdmin();
 
-        if (!$user || !$user->isAdmin()) {
-            abort(403);
-        }
+        $selectedMonth = (int) request('month', Carbon::now()->month);
+        $selectedYear = (int) request('year', Carbon::now()->year);
 
-        $selectedMonth = request('month', Carbon::now()->format('m'));
-        $selectedYear = request('year', Carbon::now()->format('Y'));
+        abort_if($selectedMonth < 1 || $selectedMonth > 12, 422, 'Bulan tidak valid.');
+        abort_if($selectedYear < 2020 || $selectedYear > Carbon::now()->year + 1, 422, 'Tahun tidak valid.');
 
         $monthStart = Carbon::createFromDate((int) $selectedYear, (int) $selectedMonth, 1)->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
@@ -154,14 +144,13 @@ class ReportController extends Controller
 
     public function borrowMonthlyPdf()
     {
-        $user = Auth::user();
+        $this->ensureAdmin();
 
-        if (!$user || !$user->isAdmin()) {
-            abort(403);
-        }
+        $selectedMonth = (int) request('month', Carbon::now()->month);
+        $selectedYear = (int) request('year', Carbon::now()->year);
 
-        $selectedMonth = request('month', Carbon::now()->format('m'));
-        $selectedYear = request('year', Carbon::now()->format('Y'));
+        abort_if($selectedMonth < 1 || $selectedMonth > 12, 422, 'Bulan tidak valid.');
+        abort_if($selectedYear < 2020 || $selectedYear > Carbon::now()->year + 1, 422, 'Tahun tidak valid.');
 
         $monthStart = Carbon::createFromDate((int) $selectedYear, (int) $selectedMonth, 1)->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();

@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-display font-bold text-2xl text-slate-900 leading-tight">
+        <h2 class="font-bold font-bold text-2xl text-slate-900 leading-tight">
             {{ __('Edit Buletin') }}
         </h2>
     </x-slot>
@@ -16,9 +16,13 @@
                         @csrf
                         @method('PUT')
 
-                        <div class="mb-4">
-                            <x-input-label for="title" :value="__('Judul')" />
-                            <x-text-input id="title" class="panel-input" type="text" name="title" :value="old('title', $bulletin->title)" required autofocus />
+                        <div class="mb-4" x-data="{ titleLength: {{ strlen(old('title', $bulletin->title ?? '')) }} }">
+                            <div class="flex justify-between items-center">
+                                <x-input-label for="title" :value="__('Judul')" />
+                                <span class="text-xs text-slate-500" x-text="titleLength + '/255'"></span>
+                            </div>
+                            <x-text-input id="title" class="panel-input" type="text" name="title" :value="old('title', $bulletin->title)" required autofocus maxlength="255"
+                                @input="titleLength = $event.target.value.length" />
                             <x-input-error :messages="$errors->get('title')" class="mt-2" />
                         </div>
 

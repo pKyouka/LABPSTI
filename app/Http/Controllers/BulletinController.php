@@ -165,7 +165,7 @@ class BulletinController extends Controller
             Storage::disk('public')->delete($bulletin->image);
         }
         $bulletin->delete();
-        return redirect()->route('bulletins.index')->with('success', 'Bulletin deleted successfully.');
+        return redirect()->route('bulletins.index')->with('success', 'Buletin berhasil dihapus.');
     }
 
     private function ensureCanManage(Bulletin $bulletin): void

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center gap-4">
-            <h2 class="font-display font-bold text-2xl text-slate-900 leading-tight">
+            <h2 class="font-bold font-bold text-2xl text-slate-900 leading-tight">
                 {{ __('Peminjaman Alat & Barang') }}
             </h2>
             <a href="{{ route('borrow_records.create') }}" class="inline-flex items-center px-6 py-2.5 bg-cyan-600 text-white font-black rounded-xl hover:bg-cyan-700 transition shadow-lg shadow-cyan-200 uppercase tracking-widest text-[10px]">

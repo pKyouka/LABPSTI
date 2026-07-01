@@ -29,6 +29,8 @@ class LabController extends Controller
             abort(404);
         }
 
+        abort_if($bulletin->approval_status !== 'approved', 404);
+
         $bulletin->setRelation('category', $category);
 
         $categories = Category::all()->unique('name');

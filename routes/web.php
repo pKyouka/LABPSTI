@@ -71,11 +71,11 @@ Route::middleware('auth')->group(function () {
     Route::get('reports/usage/weekly', [ReportController::class, 'usageWeekly'])->name('reports.usage.weekly');
     Route::get('reports/usage/monthly', [ReportController::class, 'usageMonthly'])->name('reports.usage.monthly');
     Route::get('reports/usage/monthly/pdf', [ReportController::class, 'usageMonthlyPdf'])->name('reports.usage.monthly.pdf');
-});
 
-require __DIR__.'/auth.php';
+        // VM Borrow Reset
+        Route::post("vm_borrow/{vmBorrow}/request-reset", [VmBorrowController::class, "requestReset"])->name("vm_borrow.request_reset");
+        Route::post("vm_borrow/{vmBorrow}/approve-reset", [VmBorrowController::class, "approveReset"])->name("vm_borrow.approve_reset");
+        Route::post("vm_borrow/{vmBorrow}/reject-reset", [VmBorrowController::class, "rejectReset"])->name("vm_borrow.reject_reset");
+	});
 
-    // VM Borrow Reset
-    Route::post("vm_borrow/{vmBorrow}/request-reset", [VmBorrowController::class, "requestReset"])->name("vm_borrow.request_reset");
-    Route::post("vm_borrow/{vmBorrow}/approve-reset", [VmBorrowController::class, "approveReset"])->name("vm_borrow.approve_reset");
-    Route::post("vm_borrow/{vmBorrow}/reject-reset", [VmBorrowController::class, "rejectReset"])->name("vm_borrow.reject_reset");
+	require __DIR__.'/auth.php';

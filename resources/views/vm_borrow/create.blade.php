@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-1">
-            <h2 class="font-display font-bold text-2xl text-slate-900 leading-tight">
+            <h2 class="font-bold font-bold text-2xl text-slate-900 leading-tight">
                 {{ __('Ajukan Peminjaman Virtual Machine') }}
             </h2>
             <p class="text-sm text-slate-500 max-w-2xl">

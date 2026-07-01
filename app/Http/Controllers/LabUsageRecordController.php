@@ -75,7 +75,7 @@ class LabUsageRecordController extends Controller
 
         LabUsageRecord::create($validated);
 
-        return redirect()->route('usage_records.index')->with('success', 'Lab usage record created successfully.');
+        return redirect()->route('usage_records.index')->with('success', 'Catatan penggunaan lab berhasil dibuat.');
     }
 
     public function destroy(LabUsageRecord $usage_record)
@@ -88,6 +88,6 @@ class LabUsageRecordController extends Controller
         }
 
         $usage_record->delete();
-        return redirect()->route('usage_records.index')->with('success', 'Lab usage record deleted successfully.');
+        return redirect()->route('usage_records.index')->with('success', 'Catatan penggunaan lab berhasil dihapus.');
     }
 }

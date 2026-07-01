@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-display font-bold text-2xl text-slate-900 leading-tight">
+        <h2 class="font-bold font-bold text-2xl text-slate-900 leading-tight">
             {{ __($dashboardTitle) }}
         </h2>
     </x-slot>
@@ -11,19 +11,19 @@
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
                 <div class="panel-card p-8 hover:-translate-y-0.5 transition-transform duration-300">
                     <div class="text-[11px] font-black text-slate-400 uppercase tracking-[0.18em] mb-4">Total Buletin</div>
-                    <div class="font-display text-4xl font-bold text-cyan-600">{{ $stats['bulletin_count'] }}</div>
+                    <div class="font-bold text-4xl font-bold text-cyan-600">{{ $stats['bulletin_count'] }}</div>
                 </div>
                 <div class="panel-card p-8 hover:-translate-y-0.5 transition-transform duration-300">
                     <div class="text-[11px] font-black text-slate-400 uppercase tracking-[0.18em] mb-4">Total Penggunaan Lab</div>
-                    <div class="font-display text-4xl font-bold text-blue-700">{{ $stats['usage_count'] }}</div>
+                    <div class="font-bold text-4xl font-bold text-blue-700">{{ $stats['usage_count'] }}</div>
                 </div>
                 <div class="panel-card p-8 hover:-translate-y-0.5 transition-transform duration-300">
                     <div class="text-[11px] font-black text-slate-400 uppercase tracking-[0.18em] mb-4">Total Peminjaman</div>
-                    <div class="font-display text-4xl font-bold text-emerald-600">{{ $stats['borrow_count'] }}</div>
+                    <div class="font-bold text-4xl font-bold text-emerald-600">{{ $stats['borrow_count'] }}</div>
                 </div>
                 <div class="panel-card p-8 hover:-translate-y-0.5 transition-transform duration-300">
                     <div class="text-[11px] font-black text-slate-400 uppercase tracking-[0.18em] mb-4">Total Barang</div>
-                    <div class="font-display text-4xl font-bold text-slate-900">{{ $stats['item_count'] }}</div>
+                    <div class="font-bold text-4xl font-bold text-slate-900">{{ $stats['item_count'] }}</div>
                 </div>
             </div>
 

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center gap-4">
-            <h2 class="font-display font-bold text-2xl text-slate-900 leading-tight">
+            <h2 class="font-bold font-bold text-2xl text-slate-900 leading-tight">
                 {{ __('Data Barang & Alat') }}
             </h2>
             @if(Auth::user()->isAdmin())
@@ -23,6 +23,35 @@
                     </div>
                 </div>
             @endif
+
+            <div class="panel-card overflow-hidden mb-6">
+                <div class="panel-card-body">
+                    <form action="{{ route('inventory_items.index') }}" method="GET" class="flex flex-wrap gap-4 items-end">
+                        <div>
+                            <x-input-label for="category" :value="__('Filter Kategori')" />
+                            <select name="category" id="category" class="panel-select text-sm min-w-48">
+                                <option value="">Semua Kategori</option>
+                                @foreach($items->pluck('category')->filter()->unique() as $category)
+                                    <option value="{{ $category }}" {{ request('category') == $category ? 'selected' : '' }}>{{ $category }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <x-input-label for="condition" :value="__('Filter Kondisi')" />
+                            <select name="condition" id="condition" class="panel-select text-sm min-w-40">
+                                <option value="">Semua Kondisi</option>
+                                <option value="baik" {{ request('condition') === 'baik' ? 'selected' : '' }}>Baik</option>
+                                <option value="rusak" {{ request('condition') === 'rusak' ? 'selected' : '' }}>Rusak</option>
+                                <option value="perbaikan" {{ request('condition') === 'perbaikan' ? 'selected' : '' }}>Perbaikan</option>
+                            </select>
+                        </div>
+                        <div>
+                            <x-primary-button type="submit">Filter</x-primary-button>
+                            <a href="{{ route('inventory_items.index') }}" class="ml-2 text-sm text-slate-500 hover:text-slate-800 font-bold">Reset</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
             <div class="panel-card overflow-hidden">
                 <div class="panel-card-body">

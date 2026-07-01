@@ -13,6 +13,10 @@ return new class extends Migration
             $table->text('reset_reason')->nullable()->after('reset_status');
             $table->timestamp('reset_requested_at')->nullable()->after('reset_reason');
             $table->foreignId('reset_approved_by')->nullable()->constrained('users')->nullOnDelete()->after('reset_requested_at');
+            $table->timestamp('reset_approved_at')->nullable()->after('reset_approved_by');
+            $table->foreignId('reset_rejected_by')->nullable()->constrained('users')->nullOnDelete()->after('reset_approved_at');
+            $table->timestamp('reset_rejected_at')->nullable()->after('reset_rejected_by');
+            $table->text('reset_rejection_reason')->nullable()->after('reset_rejected_at');
         });
     }
 

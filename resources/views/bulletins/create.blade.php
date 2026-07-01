@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-display font-bold text-2xl text-slate-900 leading-tight">
+        <h2 class="font-bold font-bold text-2xl text-slate-900 leading-tight">
             {{ __('Tambah Buletin Baru') }}
         </h2>
     </x-slot>
@@ -15,9 +15,13 @@
                     <form action="{{ route('bulletins.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
 
-                        <div class="mb-4">
-                            <x-input-label for="title" :value="__('Judul')" />
-                            <x-text-input id="title" class="panel-input" type="text" name="title" :value="old('title')" required autofocus />
+                        <div class="mb-4" x-data="{ titleLength: {{ strlen(old('title', '')) }} }">
+                            <div class="flex justify-between items-center">
+                                <x-input-label for="title" :value="__('Judul')" />
+                                <span class="text-xs text-slate-500" x-text="titleLength + '/255'"></span>
+                            </div>
+                            <x-text-input id="title" class="panel-input" type="text" name="title" :value="old('title')" required autofocus maxlength="255"
+                                @input="titleLength = $event.target.value.length" />
                             <x-input-error :messages="$errors->get('title')" class="mt-2" />
                         </div>
 
@@ -50,8 +54,15 @@
                         </div>
 
                         <div class="flex items-center justify-end mt-4">
-                            <x-primary-button class="ml-4">
-                                {{ __('Simpan Buletin') }}
+                            <x-primary-button class="ml-4" x-data="{ loading: false }" @click="loading = true" :disabled="loading">
+                                <span x-show="!loading">{{ __('Simpan Buletin') }}</span>
+                                <span x-show="loading" class="flex items-center">
+                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                    </svg>
+                                    Menyimpan...
+                                </span>
                             </x-primary-button>
                         </div>
                     </form>

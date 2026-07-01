@@ -10,12 +10,12 @@
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=manrope:400,500,600,700,800&family=space-grotesk:500,600,700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=roboto:400,500,700&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-[Manrope] text-slate-900 antialiased">
+    <body class="font-roboto text-slate-900 antialiased">
         <div class="relative min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-slate-100 overflow-hidden">
             <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-cyan-200/80 via-blue-100/60 to-transparent"></div>
             <div aria-hidden="true" class="pointer-events-none absolute -top-16 -right-16 h-64 w-64 rounded-full bg-cyan-300/40 blur-3xl"></div>
@@ -24,7 +24,7 @@
             <div class="relative z-10">
                 <a href="/">
                     <div class="h-20 w-20 rounded-3xl bg-gradient-to-br from-cyan-500 to-blue-700 text-white grid place-items-center shadow-lg shadow-cyan-300/50">
-                        <span class="font-display text-3xl font-black tracking-tight">TI</span>
+                        <span class="font-bold text-3xl font-black tracking-tight">TI</span>
                     </div>
                 </a>
             </div>

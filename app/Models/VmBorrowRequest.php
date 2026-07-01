@@ -21,12 +21,21 @@ class VmBorrowRequest extends Model
         'vm_password',
         'admin_notes',
         'approved_by',
+        'reset_status',
+        'reset_reason',
+        'reset_requested_at',
+        'reset_approved_by',
+        'reset_rejected_by',
+        'reset_rejection_reason',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date'   => 'date',
         'reset_requested_at' => 'datetime',
+        'reset_approved_at' => 'datetime',
+        'reset_rejected_at' => 'datetime',
+        'created_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -52,6 +61,21 @@ class VmBorrowRequest extends Model
     public function isRejected(): bool
     {
         return $this->status === 'rejected';
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeApproved($query)
+    {
+        return $query->where('status', 'approved');
+    }
+
+    public function scopeResetPending($query)
+    {
+        return $query->where('reset_status', 'pending');
     }
 
     public static function osVersions(): array

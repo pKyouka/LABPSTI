@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center gap-4">
-            <h2 class="font-display font-bold text-2xl text-slate-900 leading-tight">
+            <h2 class="font-bold font-bold text-2xl text-slate-900 leading-tight">
                 {{ __('Peminjaman Virtual Machine') }}
             </h2>
             @if(!Auth::user()->isAdmin())
@@ -55,10 +55,18 @@
                                         <td class="whitespace-nowrap">{{ $req->duration_days }} hari</td>
                                         <td class="whitespace-nowrap">{{ $req->end_date?->format('d/m/Y') ?? '-' }}</td>
                                         <td class="whitespace-nowrap">
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest
-                                                {{ $req->status === 'approved' ? 'bg-emerald-50 text-emerald-700' : ($req->status === 'rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700') }}">
-                                                {{ $req->status === 'approved' ? 'Disetujui' : ($req->status === 'rejected' ? 'Ditolak' : 'Menunggu') }}
-                                            </span>
+                                            <div class="flex flex-col gap-1">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest
+                                                    {{ $req->status === 'approved' ? 'bg-emerald-50 text-emerald-700' : ($req->status === 'rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700') }}">
+                                                    {{ $req->status === 'approved' ? 'Disetujui' : ($req->status === 'rejected' ? 'Ditolak' : 'Menunggu') }}
+                                                </span>
+                                                @if($req->status === 'approved' && $req->reset_status !== 'none')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest
+                                                        {{ $req->reset_status === 'pending' ? 'bg-amber-100 text-amber-700' : ($req->reset_status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700') }}">
+                                                        {{ $req->reset_status === 'pending' ? 'Reset Pending' : ($req->reset_status === 'approved' ? 'Reset OK' : 'Reset Ditolak') }}
+                                                    </span>
+                                                @endif
+                                            </div>
                                         </td>
                                         <td class="whitespace-nowrap text-right text-sm font-medium">
                                             <a href="{{ route('vm_borrow.show', $req) }}"

@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex justify-between items-start gap-4">
             <div>
-                <h2 class="font-display font-bold text-2xl text-slate-900 leading-tight">
+                <h2 class="font-bold font-bold text-2xl text-slate-900 leading-tight">
                     {{ __('Detail Barang / Alat') }}
                 </h2>
                 <p class="text-sm text-slate-500 mt-2">Informasi lengkap barang yang tersimpan di inventaris.</p>
@@ -38,7 +38,7 @@
                     <div class="flex flex-col gap-6">
                         <div>
                             <div class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Kode Barang</div>
-                            <div class="font-display text-3xl font-bold text-slate-900">{{ $item->code }}</div>
+                            <div class="font-bold text-3xl font-bold text-slate-900">{{ $item->code }}</div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -84,15 +84,15 @@
                     <div class="space-y-4">
                         <div>
                             <div class="text-sm text-slate-500 mb-1">Tersedia</div>
-                            <div class="font-display text-4xl font-bold text-cyan-700">{{ $item->available_stock }}</div>
+                            <div class="font-bold text-4xl font-bold text-cyan-700">{{ $item->available_stock }}</div>
                         </div>
                         <div>
                             <div class="text-sm text-slate-500 mb-1">Total</div>
-                            <div class="font-display text-4xl font-bold text-slate-900">{{ $item->total_stock }}</div>
+                            <div class="font-bold text-4xl font-bold text-slate-900">{{ $item->total_stock }}</div>
                         </div>
                         <div>
                             <div class="text-sm text-slate-500 mb-1">Riwayat Peminjaman</div>
-                            <div class="font-display text-4xl font-bold text-emerald-600">{{ $item->borrow_records_count }}</div>
+                            <div class="font-bold text-4xl font-bold text-emerald-600">{{ $item->borrow_records_count }}</div>
                         </div>
                     </div>
                 </div>

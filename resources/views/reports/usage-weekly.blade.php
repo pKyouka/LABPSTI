@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center gap-4">
-            <h2 class="font-display font-bold text-2xl text-slate-900 leading-tight">
+            <h2 class="font-bold font-bold text-2xl text-slate-900 leading-tight">
                 {{ __('Laporan Penggunaan Lab Mingguan') }}
             </h2>
             <a href="{{ route('reports.index') }}" class="inline-flex items-center px-6 py-2.5 bg-slate-600 text-white font-black rounded-xl hover:bg-slate-700 transition shadow-lg shadow-slate-200 uppercase tracking-widest text-[10px]">
@@ -35,7 +35,7 @@
                                 <div class="text-[11px] text-slate-600 mb-3">
                                     {{ $stat['date']->format('d/m') }}
                                 </div>
-                                <div class="font-display text-2xl font-bold text-pink-600 mb-1">
+                                <div class="font-bold text-2xl font-bold text-pink-600 mb-1">
                                     {{ $stat['count'] }}
                                 </div>
                                 <div class="text-xs text-slate-600 font-semibold">

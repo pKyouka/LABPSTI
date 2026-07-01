@@ -7,36 +7,14 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}" class="flex flex-col">
-                        <span class="font-display text-lg font-black text-slate-900 leading-tight tracking-tight uppercase">LAB<span class="text-cyan-600">PSTI</span></span>
+                        <span class="font-bold text-lg font-black text-slate-900 leading-tight tracking-tight uppercase">LAB<span class="text-cyan-600">PSTI</span></span>
                         <span class="text-[10px] font-black text-slate-500 tracking-[0.24em] uppercase">{{ Auth::user()->isAdmin() ? 'Admin Panel' : 'Portal Mahasiswa' }}</span>
                     </a>
                 </div>
 
                 <!-- Navigation Links -->
                 <div class="hidden sm:flex sm:items-center sm:ms-10 sm:space-x-2">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('bulletins.index')" :active="request()->routeIs('bulletins.*')">
-                        {{ __('Buletin') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('usage_records.index')" :active="request()->routeIs('usage_records.*')">
-                        {{ __('Record Penggunaan') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('inventory_items.index')" :active="request()->routeIs('inventory_items.*')">
-                        {{ __('Barang & Alat') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('borrow_records.index')" :active="request()->routeIs('borrow_records.*')">
-                        {{ __('Peminjaman') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('vm_borrow.index')" :active="request()->routeIs('vm_borrow.*')">
-                        {{ __('VM') }}
-                    </x-nav-link>
-                    @if(Auth::user()->isAdmin())
-                    <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
-                        {{ __('Laporan') }}
-                    </x-nav-link>
-                    @endif
+                    @include('partials._nav_links')
                 </div>
             </div>
 
@@ -95,29 +73,7 @@
         <div class="panel-shell mt-2">
         <div class="panel-card overflow-hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('bulletins.index')" :active="request()->routeIs('bulletins.*')">
-                {{ __('Buletin') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('usage_records.index')" :active="request()->routeIs('usage_records.*')">
-                {{ __('Record Penggunaan') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('inventory_items.index')" :active="request()->routeIs('inventory_items.*')">
-                {{ __('Barang & Alat') }}
-            </x-responsive-nav-link>
-             <x-responsive-nav-link :href="route('borrow_records.index')" :active="request()->routeIs('borrow_records.*')">
-                 {{ __('Peminjaman') }}
-             </x-responsive-nav-link>
-             <x-responsive-nav-link :href="route('vm_borrow.index')" :active="request()->routeIs('vm_borrow.*')">
-                 {{ __('VM') }}
-             </x-responsive-nav-link>
-             @if(Auth::user()->isAdmin())
-             <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
-                 {{ __('Laporan') }}
-             </x-responsive-nav-link>
-             @endif
+            @include('partials._mobile_nav_links')
          </div>
 
         <!-- Responsive Settings Options -->

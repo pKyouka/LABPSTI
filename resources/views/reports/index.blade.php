@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-display font-bold text-2xl text-slate-900 leading-tight">
+        <h2 class="font-bold font-bold text-2xl text-slate-900 leading-tight">
             {{ __('Laporan') }}
         </h2>
     </x-slot>
@@ -18,15 +18,15 @@
                     <div class="grid grid-cols-3 gap-4 mb-6">
                         <div class="bg-emerald-50 rounded-lg p-4">
                             <div class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Hari Ini</div>
-                            <div class="font-display text-3xl font-bold text-emerald-600">{{ $borrowToday }}</div>
+                            <div class="font-bold text-3xl font-bold text-emerald-600">{{ $borrowToday }}</div>
                         </div>
                         <div class="bg-blue-50 rounded-lg p-4">
                             <div class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Minggu Ini</div>
-                            <div class="font-display text-3xl font-bold text-blue-600">{{ $borrowWeek }}</div>
+                            <div class="font-bold text-3xl font-bold text-blue-600">{{ $borrowWeek }}</div>
                         </div>
                         <div class="bg-cyan-50 rounded-lg p-4">
                             <div class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Bulan Ini</div>
-                            <div class="font-display text-3xl font-bold text-cyan-600">{{ $borrowMonth }}</div>
+                            <div class="font-bold text-3xl font-bold text-cyan-600">{{ $borrowMonth }}</div>
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-3">
@@ -51,15 +51,15 @@
                     <div class="grid grid-cols-3 gap-4 mb-6">
                         <div class="bg-purple-50 rounded-lg p-4">
                             <div class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Hari Ini</div>
-                            <div class="font-display text-3xl font-bold text-purple-600">{{ $usageToday }}</div>
+                            <div class="font-bold text-3xl font-bold text-purple-600">{{ $usageToday }}</div>
                         </div>
                         <div class="bg-pink-50 rounded-lg p-4">
                             <div class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Minggu Ini</div>
-                            <div class="font-display text-3xl font-bold text-pink-600">{{ $usageWeek }}</div>
+                            <div class="font-bold text-3xl font-bold text-pink-600">{{ $usageWeek }}</div>
                         </div>
                         <div class="bg-rose-50 rounded-lg p-4">
                             <div class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Bulan Ini</div>
-                            <div class="font-display text-3xl font-bold text-rose-600">{{ $usageMonth }}</div>
+                            <div class="font-bold text-3xl font-bold text-rose-600">{{ $usageMonth }}</div>
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-3">

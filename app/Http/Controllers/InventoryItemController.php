@@ -3,14 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\InventoryItem;
+use App\Traits\RequiresAdmin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class InventoryItemController extends Controller
 {
-    public function index()
+    use RequiresAdmin;
+
+    public function index(Request $request)
     {
-        $items = InventoryItem::withCount('borrowRecords')->latest()->paginate(10);
+        $query = InventoryItem::withCount('borrowRecords');
+
+        if ($request->filled('category')) {
+            $query->where('category', $request->input('category'));
+        }
+
+        if ($request->filled('condition')) {
+            $query->where('condition', $request->input('condition'));
+        }
+
+        $items = $query->latest()->paginate(10);
 
         return view('inventory_items.index', compact('items'));
     }
@@ -26,18 +39,14 @@ class InventoryItemController extends Controller
 
     public function create()
     {
-        $user = Auth::user();
-
-        abort_unless($user->isAdmin(), 403);
+        $this->ensureAdmin();
 
         return view('inventory_items.create');
     }
 
     public function store(Request $request)
     {
-        $user = Auth::user();
-
-        abort_unless($user->isAdmin(), 403);
+        $this->ensureAdmin();
 
         $validated = $request->validate([
             'code' => 'nullable|string|max:100|unique:inventory_items,code',
@@ -87,9 +96,7 @@ class InventoryItemController extends Controller
 
     public function destroy(InventoryItem $inventoryItem)
     {
-        $user = Auth::user();
-
-        abort_unless($user->isAdmin(), 403);
+        $this->ensureAdmin();
 
         if ($inventoryItem->borrowRecords()->exists()) {
             return redirect()->route('inventory_items.show', $inventoryItem)

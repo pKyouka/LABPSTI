@@ -1,14 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-3">
-            <h2 class="font-display font-bold text-2xl text-slate-900 leading-tight">
+            <h2 class="font-bold font-bold text-2xl text-slate-900 leading-tight">
                 {{ __('Input Peminjaman Alat & Barang') }}
             </h2>
             <p class="text-sm text-slate-500 max-w-3xl">
                 Klik kartu barang untuk memilih item yang akan dipinjam. Daftar di bawah sudah dikelompokkan per kategori agar cepat dipindai.
             </p>
             <div class="mt-3">
-                <a href="{{ asset('documents/SURAT%20PENGAJUAN%20PEMINJAMAN%20PERALATAN%20LABORATORIUM%20RISET.docx') }}" download class="inline-flex items-center px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition shadow-lg shadow-emerald-200">
+                <a href="{{ asset('documents/SURAT PENGAJUAN PEMINJAMAN PERALATAN LABORATORIUM RISET.docx') }}" download class="inline-flex items-center px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition shadow-lg shadow-emerald-200">
                     Unduh Template Surat Peminjaman
                 </a>
             </div>
