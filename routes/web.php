@@ -74,3 +74,6 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+    Route::post("vm_borrow/{vmBorrow}/request-reset", [VmBorrowController::class, "requestReset"])->name("vm_borrow.request_reset");
+    Route::post("vm_borrow/{vmBorrow}/approve-reset", [VmBorrowController::class, "approveReset"])->name("vm_borrow.approve_reset");
+    Route::post("vm_borrow/{vmBorrow}/reject-reset", [VmBorrowController::class, "rejectReset"])->name("vm_borrow.reject_reset");
