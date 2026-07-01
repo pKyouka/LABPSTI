@@ -26,7 +26,7 @@ class VmBorrowRequest extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date'   => 'date',
-            'reset_requested_at' => 'datetime',
+        'reset_requested_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

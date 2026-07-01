@@ -125,4 +125,70 @@ class VmBorrowController extends Controller
         return redirect()->route('vm_borrow.show', $vmBorrow)
             ->with('success', 'Permintaan VM telah ditolak.');
     }
+
+    public function requestReset(Request $request, VmBorrowRequest $vmBorrow)
+    {
+        $user = Auth::user();
+
+        if (!$user->isAdmin() && $vmBorrow->user_id !== $user->id) {
+            abort(403);
+        }
+
+        if ($vmBorrow->status !== 'approved') {
+            return back()->with('error', 'Hanya VM yang disetujui yang dapat diminta reset.');
+        }
+
+        if ($vmBorrow->reset_status !== 'none' && $vmBorrow->reset_status !== 'rejected') {
+            return back()->with('error', 'Reset sudah diminta atau diproses.');
+        }
+
+        $vmBorrow->update([
+            'reset_status' => 'pending',
+            'reset_reason' => $request->reset_reason,
+            'reset_requested_at' => now(),
+        ]);
+
+        return back()->with('success', 'Permintaan reset telah dikirim ke admin.');
+    }
+
+    public function approveReset(Request $request, VmBorrowRequest $vmBorrow)
+    {
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        if ($vmBorrow->reset_status !== 'pending') {
+            return back()->with('error', 'Tidak ada permintaan reset pending untuk VM ini.');
+        }
+
+        $vmBorrow->update([
+            'reset_status' => 'approved',
+            'reset_approved_by' => Auth::id(),
+        ]);
+
+        return back()->with('success', 'Reset telah disetujui.');
+    }
+
+    public function rejectReset(Request $request, VmBorrowRequest $vmBorrow)
+    {
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        if ($vmBorrow->reset_status !== 'pending') {
+            return back()->with('error', 'Tidak ada permintaan reset pending untuk VM ini.');
+        }
+
+        $request->validate([
+            'reset_rejection_reason' => 'required|string|max:1000',
+        ]);
+
+        $vmBorrow->update([
+            'reset_status' => 'rejected',
+            'reset_rejected_by' => Auth::id(),
+            'reset_rejection_reason' => $request->reset_rejection_reason,
+        ]);
+
+        return back()->with('success', 'Reset telah ditolak.');
+    }
 }
