@@ -163,6 +163,23 @@ class LoginRequest extends FormRequest
     private function isExternalAuthAccepted(mixed $jsonBody, string $rawBody): bool
     {
         if (is_array($jsonBody)) {
+            // Explicit isallowed field takes priority.
+            $isAllowed = data_get($jsonBody, 'isallowed');
+
+            if (is_bool($isAllowed)) {
+                if ($isAllowed === false) {
+                    return false;
+                }
+            } elseif (is_string($isAllowed)) {
+                $normalized = Str::lower(trim($isAllowed));
+                if (in_array($normalized, ['false', 'no', '0', 'n'], true)) {
+                    return false;
+                }
+                if (in_array($normalized, ['true', 'yes', '1', 'y'], true)) {
+                    // Still fall through to check status hints below.
+                }
+            }
+
             $statusHints = [
                 data_get($jsonBody, 'status'),
                 data_get($jsonBody, 'success'),
