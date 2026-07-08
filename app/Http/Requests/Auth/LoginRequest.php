@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
-use App\Rules\AllowedDomain;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -64,9 +63,9 @@ class LoginRequest extends FormRequest
             return;
         }
 
-        // Anything else → reject
-        $this->validateWith($this->getValidator(), [
-            'n' => [new AllowedDomain()],
+        // Anything else → reject with clear message
+        throw ValidationException::withMessages([
+            'n' => 'Format email atau NIM tidak valid. Gunakan email @unisayogya.ac.id untuk mahasiswa, atau email @lab.com untuk admin.',
         ]);
     }
 
