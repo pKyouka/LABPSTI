@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
+use App\Rules\AllowedDomain;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -36,6 +37,37 @@ class LoginRequest extends FormRequest
             'n' => ['required', 'string'],
             'p' => ['required', 'string'],
         ];
+    }
+
+    /**
+     * Validate input before rules run — trim and check domain eligibility.
+     */
+    protected function prepareForValidation(): void
+    {
+        $value = trim((string) $this->input('n'));
+        $this->merge(['n' => $value]);
+
+        $isEmail = filter_var($value, FILTER_VALIDATE_EMAIL) !== false;
+        $lower = strtolower($value);
+
+        // Admin email: must be @lab.com
+        if ($isEmail && str_ends_with($lower, '@lab.com')) {
+            return;
+        }
+
+        // Student: numeric NIM or unisa domain email
+        if ($isEmail) {
+            if (str_ends_with($lower, '@unisa.ac.id') || str_ends_with($lower, '@unisayogya.ac.id')) {
+                return;
+            }
+        } elseif (preg_match('/^\d+$/', $value) === 1) {
+            return;
+        }
+
+        // Anything else → reject
+        $this->validateWith($this->getValidator(), [
+            'n' => [new AllowedDomain()],
+        ]);
     }
 
     /**
