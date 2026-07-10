@@ -1,0 +1,10 @@
+all:
+  hosts:
+    proxmox-host:
+      ansible_host: "{{ proxmox_host | default('localhost') }}"
+      ansible_user: root
+      ansible_ssh_private_key_file: "{{ ssh_key_path | default('/root/.ssh/id_rsa') }}"
+  vars:
+    proxmox_node: "{{ proxmox_node_name | default('pve') }}"
+    vm_storage: "{{ vm_storage_name | default('local-zfs') }}"
+    vm_template: "{{ vm_template_name | default('') }}"

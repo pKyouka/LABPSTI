@@ -1,0 +1,36 @@
+---
+- name: Destroy VM on Proxmox
+  hosts: proxmox-host
+  gather_facts: no
+  vars:
+    vm_id_to_destroy: "{{ vm_id }}"
+
+  tasks:
+    - name: Stop VM if running
+      command: >
+        qm stop {{ vm_id_to_destroy }}
+      register: vm_stop
+      failed_when: false
+      changed_when: "'stopped' in vm_stop.stdout"
+
+    - name: Wait a moment for VM to stop
+      pause:
+        seconds: 5
+      when: vm_stop.changed
+
+    - name: Destroy VM
+      command: >
+        qm destroy {{ vm_id_to_destroy }} --purge
+      register: vm_destroy
+      changed_when: vm_destroy.rc == 0
+      failed_when: vm_destroy.rc != 0
+
+    - name: Remove saved VM info file
+      file:
+        path: "/root/vm-borrow-{{ request_id }}.env"
+        state: absent
+      failed_when: false
+
+    - name: Confirm destruction
+      debug:
+        msg: "VM {{ vm_id_to_destroy }} (Request #{{ request_id }}) berhasil dihapus."

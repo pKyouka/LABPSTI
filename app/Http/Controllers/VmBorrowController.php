@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\VmBorrowRequest;
+use App\Services\AnsibleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class VmBorrowController extends Controller
 {
@@ -114,8 +116,34 @@ class VmBorrowController extends Controller
             'approved_by'   => Auth::id(),
         ]);
 
+        // Ansible auto-provision VM jika diaktifkan
+        $message = 'Permintaan VM telah disetujui.';
+        if (config('ansible.auto_provision', true)) {
+            try {
+                $ansible = app(AnsibleService::class);
+                $result = $ansible->createVm($vmBorrow);
+
+                if ($result['success']) {
+                    if ($result['ip_address']) {
+                        $vmBorrow->update(['host_ip' => $result['ip_address']]);
+                    }
+                    $message = 'Permintaan VM telah disetujui dan VM sedang diprovisi secara otomatis.';
+                } else {
+                    Log::warning('Ansible auto-provision gagal, admin harus membuat VM manual', [
+                        'request_id' => $vmBorrow->id,
+                    ]);
+                    $message = 'Permintaan VM telah disetujui. Namun, provisi otomatis gagal. Silakan buat VM secara manual.';
+                }
+            } catch (\Exception $e) {
+                Log::error('Exception saat Ansible provisioning: ' . $e->getMessage(), [
+                    'request_id' => $vmBorrow->id,
+                ]);
+                $message = 'Permintaan VM telah disetujui. Terjadi kesalahan saat provisi otomatis.';
+            }
+        }
+
         return redirect()->route('vm_borrow.show', $vmBorrow)
-            ->with('success', 'Permintaan VM telah disetujui.');
+            ->with('success', $message);
     }
 
     public function reject(Request $request, VmBorrowRequest $vmBorrow)

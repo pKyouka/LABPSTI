@@ -1,0 +1,83 @@
+---
+- name: Create VM on Proxmox using community-scripts
+  hosts: proxmox-host
+  gather_facts: no
+  vars:
+    vm_id: "{{ lookup('pipe', 'date +%s') | int }}"
+    vm_name: "borrow-{{ request_id }}-{{ os_type | lower }}"
+    vm_memory: "{{ vm_memory_mb | default(2048) }}"
+    vm_cores: "{{ vm_cores_count | default(2) }}"
+    vm_disk_size: "{{ vm_disk_size_gb | default(20) }}"
+    vm_bridge: "{{ vm_network_bridge | default('vmbr0') }}"
+
+  tasks:
+    - name: Download community-script for OS
+      get_url:
+        url: "https://community-scripts.org/script/{{ os_type | lower }}"
+        dest: "/tmp/create-vm-{{ request_id }}.sh"
+        mode: '0755'
+      register: script_download
+
+    - name: Ensure script downloaded successfully
+      fail:
+        msg: "Gagal mendownload community-script untuk {{ os_type }} {{ os_version }}"
+      when: script_download.status_code != 200
+
+    - name: Create VM using community-script
+      command: >
+        /tmp/create-vm-{{ request_id }}.sh
+        --id {{ vm_id }}
+        --name "{{ vm_name }}"
+        --memory {{ vm_memory }}
+        --cores {{ vm_cores }}
+        --disk {{ vm_disk_size }}
+        --bridge {{ vm_bridge }}
+        --version "{{ os_version }}"
+        --password "{{ vm_password }}"
+        --ssh-keys "{{ ssh_public_key }}"
+      register: vm_create_result
+      changed_when: "'VM created' in vm_create_result.stdout"
+      failed_when: vm_create_result.rc != 0
+
+    - name: Get VM IP address
+      command: >
+        qm guest exec {{ vm_id }} -- hostname -I
+      register: vm_ip_result
+      until: vm_ip_result.rc == 0
+      retries: 30
+      delay: 10
+
+    - name: Extract IP address
+      set_fact:
+        vm_ip_address: "{{ vm_ip_result.stdout_lines[0].split(' ')[0] }}"
+
+    - name: Set user password inside VM
+      command: >
+        qm guest exec {{ vm_id }} -- bash -c "echo '{{ vm_username }}:{{ vm_password }}' | chpasswd"
+      when: vm_create_result is success
+
+    - name: Save VM info to file
+      copy:
+        content: |
+          VM_ID={{ vm_id }}
+          VM_NAME={{ vm_name }}
+          VM_IP={{ vm_ip_address }}
+          VM_USER={{ vm_username }}
+          VM_PASS={{ vm_password }}
+          OS_TYPE={{ os_type }}
+          OS_VERSION={{ os_version }}
+          REQUEST_ID={{ request_id }}
+        dest: "/root/vm-borrow-{{ request_id }}.env"
+
+    - name: Cleanup temp script
+      file:
+        path: "/tmp/create-vm-{{ request_id }}.sh"
+        state: absent
+
+    - name: Return VM info
+      debug:
+        msg:
+          - "VM berhasil dibuat!"
+          - "VM ID: {{ vm_id }}"
+          - "Host: {{ vm_ip_address }}"
+          - "User: {{ vm_username }}"

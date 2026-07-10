@@ -55,7 +55,7 @@
 
                         <div class="flex items-center justify-end mt-4">
                             <x-primary-button class="ml-4" x-data="{ loading: false }" @click="loading = true" :disabled="loading">
-                                <span x-show="!loading">{{ __('Simpan Buletin') }}</span>
+                                <span x-show="loading == false">{{ __('Simpan Buletin') }}</span>
                                 <span x-show="loading" class="flex items-center">
                                     <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
