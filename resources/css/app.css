@@ -76,6 +76,22 @@
 	transition: none !important;
 }
 
+/* ---- Mobile Sidebar Enhancements ---- */
+
+/* Mobile sidebar open state — slides in smoothly */
+@media (max-width: 1023px) {
+    #sidebar {
+        /* Ensure full width overlay on mobile */
+        width: 18rem;
+        max-width: 85vw;
+    }
+
+    /* Smoother backdrop transition */
+    #sidebar-backdrop {
+        transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
 /* ---- Collapsed Mini Sidebar State ---- */
 
 /* Collapsed: sidebar narrows to icon-only width */

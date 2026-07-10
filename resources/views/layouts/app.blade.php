@@ -42,7 +42,7 @@
 
             <!-- Sidebar - Fluent Glass Design -->
             <aside id="sidebar"
-                   class="fixed top-0 left-0 z-40 h-screen w-72 -translate-x-full sb-transition bg-white/70 backdrop-blur-2xl border-r border-white/20 shadow-2xl shadow-slate-900/5 flex flex-col">
+                   class="fixed top-0 left-0 z-40 h-screen w-72 -translate-x-full sb-transition bg-white/70 backdrop-blur-2xl border-r border-white/20 shadow-2xl shadow-slate-900/5 flex flex-col lg:rounded-none rounded-r-3xl">
                 <!-- Sidebar Header with Gradient -->
                 <div class="relative flex-shrink-0 px-5 py-5 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-br from-cyan-500 via-blue-500 to-indigo-600 opacity-95"></div>
@@ -58,8 +58,8 @@
                                 <span class="text-[10px] font-semibold text-white/60 tracking-wider uppercase block">{{ Auth::user()->isAdmin() ? 'Admin Panel' : 'Portal' }}</span>
                             </div>
                         </a>
-                        <button onclick="toggleSidebar()" class="lg:hidden p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <button onclick="toggleSidebar()" class="lg:hidden p-2.5 -mr-1 rounded-xl text-white/80 hover:text-white hover:bg-white/15 active:bg-white/20 transition-all" aria-label="Tutup sidebar">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
                 </div>
@@ -159,57 +159,34 @@
         </div>
 
         <script>
-            /**
-             * Sidebar Toggle — Mini sidebar (icon-only) on desktop, overlay on mobile.
-             * Desktop: toggles between full (w-72) and mini (w-20) via sb-collapsed class.
-             * Mobile: slides in/out as overlay via translate-x.
-             * State persisted to localStorage.
-             */
             (function() {
                 const sidebar = document.getElementById('sidebar');
                 const backdrop = document.getElementById('sidebar-backdrop');
-                const mainContent = document.getElementById('main-content');
                 const toggleIcon = document.getElementById('toggle-icon');
                 const html = document.documentElement;
 
-                let isMobileOverlayOpen = false; // track mobile overlay state separately
+                let isMobileOverlayOpen = false;
 
-                /**
-                 * Check if desktop sidebar is in mini/collapsed mode.
-                 */
                 function isDesktopCollapsed() {
                     return html.classList.contains('sb-collapsed');
                 }
 
-                /**
-                 * Update toggle icon rotation.
-                 */
                 function updateToggleIcon(collapsed) {
                     if (!toggleIcon) return;
                     toggleIcon.style.transform = collapsed ? 'rotate(0deg)' : 'rotate(90deg)';
                 }
 
-                /**
-                 * Ensure sidebar is visible and not translated off-screen.
-                 * (Desktop mode — sidebar always visible, just changes width.)
-                 */
                 function ensureSidebarVisible() {
                     sidebar.classList.remove('-translate-x-full');
                     sidebar.setAttribute('aria-hidden', 'false');
                 }
 
-                /**
-                 * Ensure backdrop is hidden.
-                 */
                 function hideBackdrop() {
                     backdrop.classList.add('opacity-0', 'pointer-events-none');
                     backdrop.classList.remove('opacity-100');
                     backdrop.setAttribute('aria-hidden', 'true');
                 }
 
-                /**
-                 * Expand sidebar to full width (desktop).
-                 */
                 function expandDesktop() {
                     ensureSidebarVisible();
                     hideBackdrop();
@@ -218,9 +195,6 @@
                     updateToggleIcon(false);
                 }
 
-                /**
-                 * Collapse sidebar to icon-only mini mode (desktop).
-                 */
                 function collapseDesktop() {
                     ensureSidebarVisible();
                     hideBackdrop();
@@ -229,39 +203,31 @@
                     updateToggleIcon(true);
                 }
 
-                /**
-                 * Mobile: show sidebar overlay.
-                 */
                 function showMobileOverlay() {
                     sidebar.classList.remove('-translate-x-full');
                     sidebar.setAttribute('aria-hidden', 'false');
                     backdrop.classList.remove('opacity-0', 'pointer-events-none');
                     backdrop.classList.add('opacity-100');
                     backdrop.setAttribute('aria-hidden', 'false');
+                    document.body.classList.add('overflow-hidden');
                     isMobileOverlayOpen = true;
                     updateToggleIcon(false);
                 }
 
-                /**
-                 * Mobile: hide sidebar overlay.
-                 */
                 function hideMobileOverlay() {
                     sidebar.classList.add('-translate-x-full');
                     sidebar.setAttribute('aria-hidden', 'true');
                     hideBackdrop();
+                    document.body.classList.remove('overflow-hidden');
                     isMobileOverlayOpen = false;
                     updateToggleIcon(true);
                 }
 
-                /**
-                 * Initialize desktop state (sidebar always visible).
-                 */
                 function initDesktop() {
-                    // Remove translate-x, ensure sidebar is visible
                     sidebar.classList.remove('-translate-x-full');
                     sidebar.setAttribute('aria-hidden', 'false');
                     hideBackdrop();
-
+                    document.body.classList.remove('overflow-hidden');
                     const collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
                     if (collapsed) {
                         html.classList.add('sb-collapsed');
@@ -272,32 +238,24 @@
                     }
                 }
 
-                /**
-                 * Initialize mobile state (sidebar always hidden).
-                 */
                 function initMobile() {
-                    // Ensure html doesn't have sb-collapsed so mobile CSS reset works
                     html.classList.remove('sb-collapsed');
                     sidebar.classList.add('-translate-x-full');
                     sidebar.setAttribute('aria-hidden', 'true');
                     hideBackdrop();
+                    document.body.classList.remove('overflow-hidden');
                     isMobileOverlayOpen = false;
                     updateToggleIcon(true);
                 }
 
-                /**
-                 * Toggle sidebar (called from button clicks).
-                 */
                 window.toggleSidebar = function() {
                     if (window.innerWidth < 1024) {
-                        // Mobile: toggle overlay
                         if (isMobileOverlayOpen) {
                             hideMobileOverlay();
                         } else {
                             showMobileOverlay();
                         }
                     } else {
-                        // Desktop: toggle between full and mini
                         if (isDesktopCollapsed()) {
                             expandDesktop();
                         } else {
@@ -306,9 +264,6 @@
                     }
                 };
 
-                /**
-                 * Initialize sidebar state on page load.
-                 */
                 function initialize() {
                     if (window.innerWidth >= 1024) {
                         initDesktop();
@@ -317,24 +272,20 @@
                     }
                 }
 
-                /**
-                 * Handle window resize.
-                 */
                 let resizeTimeout;
                 window.addEventListener('resize', function() {
                     clearTimeout(resizeTimeout);
                     resizeTimeout = setTimeout(function() {
                         if (window.innerWidth >= 1024) {
-                            // Transitioned to desktop
                             initDesktop();
                         } else {
-                            // Transitioned to mobile
+                            isMobileOverlayOpen = false;
+                            document.body.classList.remove('overflow-hidden');
                             initMobile();
                         }
                     }, 150);
                 });
 
-                // Run on DOM ready
                 if (document.readyState === 'loading') {
                     document.addEventListener('DOMContentLoaded', initialize);
                 } else {
