@@ -18,6 +18,9 @@
     {{ __('VM') }}
 </x-responsive-nav-link>
 @if(Auth::check() && Auth::user()->isAdmin())
+<x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+    {{ __('User') }}
+</x-responsive-nav-link>
 <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
     {{ __('Laporan') }}
 </x-responsive-nav-link>
