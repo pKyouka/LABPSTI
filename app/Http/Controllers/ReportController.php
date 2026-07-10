@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\CustomExport;
+use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class ReportController extends Controller
 {
@@ -309,6 +314,193 @@ class ReportController extends Controller
         }
 
         return view('reports.usage-monthly', compact('records', 'dailyStats', 'weeklyStats', 'monthStart', 'monthEnd', 'selectedMonth', 'selectedYear'));
+    }
+
+    public function exportPage()
+    {
+        $this->ensureAdmin();
+
+        $defaultStart = Carbon::now()->startOfMonth()->format('Y-m-d');
+        $defaultEnd = Carbon::now()->format('Y-m-d');
+
+        return view('reports.export', compact('defaultStart', 'defaultEnd'));
+    }
+
+    public function usageExportExcel(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || !$user->isAdmin()) {
+            abort(403);
+        }
+
+        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end = Carbon::parse($endDate)->endOfDay();
+
+        $records = LabUsageRecord::whereBetween('start_time', [$start, $end])
+            ->with('category')
+            ->orderBy('start_time')
+            ->get();
+
+        $export = new CustomExport();
+        $spreadsheet = (new \ReflectionClass($export))->getProperty('spreadsheet')->getValue($export);
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Penggunaan Lab');
+
+        // Header
+        $sheet->mergeCells('A1:H1');
+        $sheet->setCellValue('A1', 'LAPORAN PENGGUNAAN LAB');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->mergeCells('A2:H2');
+        $sheet->setCellValue('A2', "Periode: {$start->format('d/m/Y')} - {$end->format('d/m/Y')}");
+        $sheet->getStyle('A2')->getFont()->setSize(11);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Table headers
+        $headers = ['No', 'Tanggal', 'Lab', 'Nama Pengguna', 'NIM/NIP', 'Waktu Mulai', 'Waktu Selesai', 'Keterangan'];
+        $headerRow = 4;
+        $col = 1;
+        foreach ($headers as $header) {
+            $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . $headerRow;
+            $sheet->setCellValue($cell, $header);
+            $sheet->getStyle($cell)->getFont()->setBold(true)->setSize(10);
+            $sheet->getStyle($cell)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFD9E2F3');
+            $sheet->getStyle($cell)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+            $sheet->getStyle($cell)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $col++;
+        }
+
+        // Data rows
+        $row = 5;
+        $no = 1;
+        foreach ($records as $record) {
+            $data = [
+                $no++,
+                $record->start_time?->format('d/m/Y') ?? '-',
+                $record->category?->name ?? '-',
+                $record->user_name ?? '-',
+                $record->user_id_number ?? '-',
+                $record->start_time?->format('H:i') ?? '-',
+                $record->end_time?->format('H:i') ?? '-',
+                $record->purpose ?? '-',
+            ];
+
+            $col = 1;
+            foreach ($data as $value) {
+                $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . $row;
+                $sheet->setCellValue($cell, $value);
+                $sheet->getStyle($cell)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                $col++;
+            }
+            $row++;
+        }
+
+        // Auto-size
+        foreach (range(1, 8) as $c) {
+            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+            $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $filename = "laporan-penggunaan-lab-{$startDate}-{$endDate}.xlsx";
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    public function borrowExportExcel(Request $request)
+    {
+        $this->ensureAdmin();
+
+        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end = Carbon::parse($endDate)->endOfDay();
+
+        $records = BorrowRecord::whereBetween('borrowed_at', [$start, $end])
+            ->with('inventoryItem')
+            ->orderBy('borrowed_at')
+            ->get();
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Peminjaman Alat');
+
+        // Header
+        $sheet->mergeCells('A1:J1');
+        $sheet->setCellValue('A1', 'LAPORAN PEMINJAMAN ALAT & BARANG');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->mergeCells('A2:J2');
+        $sheet->setCellValue('A2', "Periode: {$start->format('d/m/Y')} - {$end->format('d/m/Y')}");
+        $sheet->getStyle('A2')->getFont()->setSize(11);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Table headers
+        $headers = ['No', 'Tanggal Pinjam', 'Nama Peminjam', 'NIM/NIP', 'Alat/Barang', 'Jumlah', 'Tenggat Waktu', 'Tanggal Kembali', 'Status', 'Keterangan'];
+        $headerRow = 4;
+        $col = 1;
+        foreach ($headers as $header) {
+            $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . $headerRow;
+            $sheet->setCellValue($cell, $header);
+            $sheet->getStyle($cell)->getFont()->setBold(true)->setSize(10);
+            $sheet->getStyle($cell)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFD9E2F3');
+            $sheet->getStyle($cell)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+            $sheet->getStyle($cell)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $col++;
+        }
+
+        // Data rows
+        $row = 5;
+        $no = 1;
+        foreach ($records as $record) {
+            $status = $record->status ?? ($record->returned_at ? 'Dikembalikan' : 'Dipinjam');
+            $data = [
+                $no++,
+                $record->borrowed_at?->format('d/m/Y') ?? '-',
+                $record->user_name ?? '-',
+                $record->user_id_number ?? '-',
+                $record->inventoryItem?->name ?? '-',
+                $record->quantity ?? 0,
+                $record->due_at?->format('d/m/Y') ?? '-',
+                $record->returned_at?->format('d/m/Y') ?? '-',
+                $status,
+                $record->purpose ?? '-',
+            ];
+
+            $col = 1;
+            foreach ($data as $value) {
+                $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . $row;
+                $sheet->setCellValue($cell, $value);
+                $sheet->getStyle($cell)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                $col++;
+            }
+            $row++;
+        }
+
+        // Auto-size
+        foreach (range(1, 10) as $c) {
+            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+            $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $filename = "laporan-peminjaman-{$startDate}-{$endDate}.xlsx";
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
     }
 
     public function usageMonthlyPdf()

@@ -31,5 +31,5 @@ jobs:
             echo "🔨 Building assets..."
             npm run build
             echo "🗄️ Running migrations..."
-            php artisan migrate --force
+            php artisan migrate
             echo "✅ Deployment completed successfully!"

@@ -75,6 +75,9 @@ Route::middleware('auth')->group(function () {
     Route::get('reports/usage/weekly', [ReportController::class, 'usageWeekly'])->name('reports.usage.weekly');
     Route::get('reports/usage/monthly', [ReportController::class, 'usageMonthly'])->name('reports.usage.monthly');
     Route::get('reports/usage/monthly/pdf', [ReportController::class, 'usageMonthlyPdf'])->name('reports.usage.monthly.pdf');
+    Route::get('reports/export', [ReportController::class, 'exportPage'])->name('reports.export');
+    Route::get('reports/usage/export', [ReportController::class, 'usageExportExcel'])->name('reports.usage.export');
+    Route::get('reports/borrow/export', [ReportController::class, 'borrowExportExcel'])->name('reports.borrow.export');
 
         // VM Borrow Reset
         Route::post("vm_borrow/{vmBorrow}/request-reset", [VmBorrowController::class, "requestReset"])->name("vm_borrow.request_reset");
