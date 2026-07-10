@@ -53,3 +53,34 @@
 		@apply px-6 py-4 text-sm text-slate-600;
 	}
 }
+
+/* ============================================
+   Sidebar Animation Utilities
+   ============================================ */
+
+/* Core sidebar transition — elegant cubic-bezier easing */
+.sb-transition {
+	transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+	will-change: transform;
+}
+
+/* Main content margin transition — follows sidebar smoothly */
+.sb-margin-transition {
+	transition: margin-left 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+	will-change: margin-left;
+}
+
+/* Disable all transitions instantly (used during init/resize) */
+.sb-no-transition,
+.sb-no-transition * {
+	transition: none !important;
+}
+
+/* Collapsed state — ensures instant rendering via html class on page load */
+html.sb-collapsed #sidebar {
+	transform: translateX(-100%);
+}
+
+html.sb-collapsed #main-content {
+	margin-left: 0;
+}

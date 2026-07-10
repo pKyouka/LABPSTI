@@ -14,6 +14,16 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        <!-- Prevent FOUC on sidebar state restoration -->
+        <script>
+            (function() {
+                const collapsed = localStorage.getItem('sidebar-collapsed');
+                if (collapsed === 'true' && window.innerWidth >= 1024) {
+                    document.documentElement.classList.add('sb-collapsed');
+                }
+            })();
+        </script>
     </head>
     <body class="font-roboto antialiased text-slate-900 bg-slate-50">
         <div class="relative min-h-screen">
@@ -24,11 +34,15 @@
                 <div class="absolute bottom-0 right-1/4 h-[300px] w-[300px] rounded-full bg-gradient-to-t from-cyan-200/10 to-transparent blur-3xl"></div>
             </div>
 
-            <!-- Mobile Overlay with blur -->
-            <div id="sidebar-backdrop" class="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm hidden lg:hidden transition-opacity duration-300" onclick="toggleSidebar()"></div>
+            <!-- Backdrop Overlay (mobile only) -->
+            <div id="sidebar-backdrop"
+                 class="fixed inset-0 z-30 bg-slate-900/50 backdrop-blur-sm opacity-0 pointer-events-none lg:hidden transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                 onclick="toggleSidebar()"
+                 aria-hidden="true"></div>
 
             <!-- Sidebar - Fluent Glass Design -->
-            <aside id="sidebar" class="fixed top-0 left-0 z-40 h-screen w-72 -translate-x-full lg:translate-x-0 transition-all duration-300 ease-out bg-white/70 backdrop-blur-2xl border-r border-white/20 shadow-2xl shadow-slate-900/5 flex flex-col">
+            <aside id="sidebar"
+                   class="fixed top-0 left-0 z-40 h-screen w-72 -translate-x-full sb-transition bg-white/70 backdrop-blur-2xl border-r border-white/20 shadow-2xl shadow-slate-900/5 flex flex-col">
                 <!-- Sidebar Header with Gradient -->
                 <div class="relative flex-shrink-0 px-5 py-5 overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-br from-cyan-500 via-blue-500 to-indigo-600 opacity-95"></div>
@@ -99,15 +113,21 @@
             </aside>
 
             <!-- Main Content Area -->
-            <div id="main-content" class="transition-all duration-300 lg:ml-72 relative z-10 min-h-screen flex flex-col">
+            <div id="main-content" class="sb-margin-transition lg:ml-72 relative z-10 min-h-screen flex flex-col">
                 <!-- Top Bar - Fluent Style -->
                 <div class="sticky top-0 z-20 bg-white/70 backdrop-blur-2xl border-b border-slate-200/50 shadow-sm shadow-slate-900/5">
                     <div class="flex items-center justify-between h-16 px-4 lg:px-8">
                         <div class="flex items-center gap-4">
-                            <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-all">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                            {{-- Toggle Button -- visible on ALL screen sizes --}}
+                            <button id="sidebar-toggle-btn"
+                                    onclick="toggleSidebar()"
+                                    title="Toggle sidebar"
+                                    class="group p-2 -ml-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-cyan-400/30">
+                                <svg id="toggle-icon" class="w-5 h-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                                </svg>
                             </button>
-                            <div class="hidden lg:flex items-center gap-2 text-sm text-slate-400">
+                            <div class="hidden sm:flex items-center gap-2 text-sm text-slate-400">
                                 <span class="font-medium text-slate-800">{{ config('app.name', 'LabPSTI') }}</span>
                             </div>
                         </div>
@@ -139,20 +159,209 @@
         </div>
 
         <script>
-            function toggleSidebar() {
+            /**
+             * Sidebar Toggle — Elegant show/hide with smooth animation.
+             * Works on both desktop (content pushes) and mobile (overlay).
+             * State persisted to localStorage.
+             */
+            (function() {
                 const sidebar = document.getElementById('sidebar');
                 const backdrop = document.getElementById('sidebar-backdrop');
-                sidebar.classList.toggle('-translate-x-full');
-                backdrop.classList.toggle('hidden');
-            }
+                const mainContent = document.getElementById('main-content');
+                const toggleIcon = document.getElementById('toggle-icon');
 
-            // Close sidebar on resize to desktop
-            window.addEventListener('resize', function() {
-                if (window.innerWidth >= 1024) {
-                    document.getElementById('sidebar').classList.remove('-translate-x-full');
-                    document.getElementById('sidebar-backdrop').classList.add('hidden');
+                const TRANSITION_CLASSES = [
+                    'sb-transition',
+                    'sb-margin-transition'
+                ];
+
+                /**
+                 * Check if sidebar is currently collapsed (hidden).
+                 */
+                function isCollapsed() {
+                    return sidebar.classList.contains('-translate-x-full');
                 }
-            });
+
+                /**
+                 * Update toggle icon rotation based on sidebar state.
+                 */
+                function updateToggleIcon(collapsed) {
+                    if (!toggleIcon) return;
+                    // When collapsed, hamburger faces right (default).
+                    // When expanded, slight rotation for visual feedback.
+                    toggleIcon.style.transform = collapsed ? 'rotate(0deg)' : 'rotate(90deg)';
+                }
+
+                /**
+                 * Show sidebar.
+                 */
+                function showSidebar(animate = true) {
+                    if (!animate) {
+                        // Temporarily disable transitions for instant state restoration
+                        sidebar.classList.add('sb-no-transition');
+                        mainContent.classList.add('sb-no-transition');
+                    }
+
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.setAttribute('aria-hidden', 'false');
+
+                    // Desktop: push content
+                    if (window.innerWidth >= 1024) {
+                        mainContent.classList.add('lg:ml-72');
+                        mainContent.classList.remove('lg:ml-0');
+                    }
+
+                    // Hide backdrop
+                    backdrop.classList.add('opacity-0', 'pointer-events-none');
+                    backdrop.classList.remove('opacity-100');
+                    backdrop.setAttribute('aria-hidden', 'true');
+
+                    localStorage.setItem('sidebar-collapsed', 'false');
+                    document.documentElement.classList.remove('sb-collapsed');
+                    updateToggleIcon(false);
+
+                    if (!animate) {
+                        // Force reflow then re-enable transitions
+                        sidebar.offsetHeight;
+                        mainContent.offsetHeight;
+                        sidebar.classList.remove('sb-no-transition');
+                        mainContent.classList.remove('sb-no-transition');
+                    }
+                }
+
+                /**
+                 * Hide sidebar.
+                 */
+                function hideSidebar(animate = true) {
+                    if (!animate) {
+                        sidebar.classList.add('sb-no-transition');
+                        mainContent.classList.add('sb-no-transition');
+                    }
+
+                    sidebar.classList.add('-translate-x-full');
+                    sidebar.setAttribute('aria-hidden', 'true');
+
+                    // Desktop: collapse content to full width
+                    mainContent.classList.remove('lg:ml-72');
+                    mainContent.classList.add('lg:ml-0');
+
+                    // Hide backdrop
+                    backdrop.classList.add('opacity-0', 'pointer-events-none');
+                    backdrop.classList.remove('opacity-100');
+                    backdrop.setAttribute('aria-hidden', 'true');
+
+                    localStorage.setItem('sidebar-collapsed', 'true');
+                    document.documentElement.classList.add('sb-collapsed');
+                    updateToggleIcon(true);
+
+                    if (!animate) {
+                        sidebar.offsetHeight;
+                        mainContent.offsetHeight;
+                        sidebar.classList.remove('sb-no-transition');
+                        mainContent.classList.remove('sb-no-transition');
+                    }
+                }
+
+                /**
+                 * Toggle sidebar (called from button clicks).
+                 */
+                window.toggleSidebar = function() {
+                    if (window.innerWidth < 1024) {
+                        // Mobile: overlay behavior
+                        const collapsed = isCollapsed();
+                        if (collapsed) {
+                            // Show sidebar as overlay
+                            sidebar.classList.remove('-translate-x-full');
+                            sidebar.setAttribute('aria-hidden', 'false');
+                            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+                            backdrop.classList.add('opacity-100');
+                            backdrop.setAttribute('aria-hidden', 'false');
+                            updateToggleIcon(false);
+                        } else {
+                            // Hide overlay
+                            sidebar.classList.add('-translate-x-full');
+                            sidebar.setAttribute('aria-hidden', 'true');
+                            backdrop.classList.add('opacity-0', 'pointer-events-none');
+                            backdrop.classList.remove('opacity-100');
+                            backdrop.setAttribute('aria-hidden', 'true');
+                            updateToggleIcon(true);
+                        }
+                    } else {
+                        // Desktop: push content behavior
+                        if (isCollapsed()) {
+                            showSidebar();
+                        } else {
+                            hideSidebar();
+                        }
+                    }
+                };
+
+                /**
+                 * Initialize sidebar state on page load.
+                 */
+                function initialize() {
+                    const collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+
+                    if (window.innerWidth >= 1024) {
+                        // Desktop: respect stored preference, default to visible
+                        if (collapsed) {
+                            hideSidebar(false);
+                        } else {
+                            showSidebar(false);
+                        }
+                    } else {
+                        // Mobile: always start hidden
+                        sidebar.classList.add('-translate-x-full');
+                        sidebar.setAttribute('aria-hidden', 'true');
+                        backdrop.classList.add('opacity-0', 'pointer-events-none');
+                        backdrop.classList.remove('opacity-100');
+                        backdrop.setAttribute('aria-hidden', 'true');
+                        mainContent.classList.remove('lg:ml-72');
+                        mainContent.classList.add('lg:ml-0');
+                        updateToggleIcon(true);
+                    }
+                }
+
+                /**
+                 * Handle window resize.
+                 */
+                let resizeTimeout;
+                window.addEventListener('resize', function() {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(function() {
+                        if (window.innerWidth >= 1024) {
+                            // Transitioned to desktop
+                            const collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+                            if (collapsed) {
+                                hideSidebar(false);
+                            } else {
+                                showSidebar(false);
+                            }
+                            // Ensure backdrop is hidden
+                            backdrop.classList.add('opacity-0', 'pointer-events-none');
+                            backdrop.classList.remove('opacity-100');
+                            backdrop.setAttribute('aria-hidden', 'true');
+                        } else {
+                            // Transitioned to mobile — always hide sidebar overlay
+                            sidebar.classList.add('-translate-x-full');
+                            sidebar.setAttribute('aria-hidden', 'true');
+                            backdrop.classList.add('opacity-0', 'pointer-events-none');
+                            backdrop.classList.remove('opacity-100');
+                            backdrop.setAttribute('aria-hidden', 'true');
+                            mainContent.classList.remove('lg:ml-72');
+                            mainContent.classList.add('lg:ml-0');
+                            updateToggleIcon(true);
+                        }
+                    }, 150);
+                });
+
+                // Run on DOM ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initialize);
+                } else {
+                    initialize();
+                }
+            })();
         </script>
 
         @stack('scripts')
