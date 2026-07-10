@@ -9,7 +9,7 @@
         <div class="panel-shell">
             <div class="panel-card overflow-hidden">
                 <div class="panel-card-head">
-                    <p class="text-sm text-slate-500">Lengkapi informasi buletin untuk dipublikasikan pada halaman kategori lab.</p>
+                    <p class="text-sm text-slate-500">Lengkapi informasi buletin untuk dipublikasikan pada halaman kategori lab ya.</p>
                 </div>
                 <div class="panel-card-body">
                     <form action="{{ route('bulletins.store') }}" method="POST" enctype="multipart/form-data">
