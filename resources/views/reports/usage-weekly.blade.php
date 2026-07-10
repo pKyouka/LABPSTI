@@ -78,7 +78,14 @@
                                                     <td class="px-3 py-2 text-slate-700">{{ $record->user_name }}</td>
                                                     <td class="px-3 py-2 text-slate-700">{{ $record->user_id_number }}</td>
                                                     <td class="px-3 py-2 text-slate-700 text-xs">
-                                                        {{ $record->start_time->format('H:i') }} - {{ $record->end_time->format('H:i') }}
+                                                        @if($record->start_time)
+                                                            {{ $record->start_time->format('H:i') }}
+                                                            @if($record->end_time)
+                                                                - {{ $record->end_time->format('H:i') }}
+                                                            @endif
+                                                        @else
+                                                            -
+                                                        @endif
                                                     </td>
                                                 </tr>
                                             @endforeach
