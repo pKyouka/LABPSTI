@@ -10,27 +10,22 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware(function ($request, $next) {
-            abort_unless(Auth::check() && Auth::user()->isAdmin(), 403);
-            return $next($request);
-        });
-    }
-
     public function index()
     {
+        abort_unless(Auth::user()->isAdmin(), 403);
         $users = User::latest()->paginate(10);
         return view('users.index', compact('users'));
     }
 
     public function create()
     {
+        abort_unless(Auth::user()->isAdmin(), 403);
         return view('users.create');
     }
 
     public function store(Request $request)
     {
+        abort_unless(Auth::user()->isAdmin(), 403);
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|string|email|max:255|unique:users',
@@ -51,11 +46,13 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
+        abort_unless(Auth::user()->isAdmin(), 403);
         return view('users.edit', compact('user'));
     }
 
     public function update(Request $request, User $user)
     {
+        abort_unless(Auth::user()->isAdmin(), 403);
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
@@ -81,6 +78,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        abort_unless(Auth::user()->isAdmin(), 403);
         if ((int) $user->id === (int) Auth::id()) {
             return redirect()->route('users.index')
                 ->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
