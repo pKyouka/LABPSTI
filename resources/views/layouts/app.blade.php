@@ -15,55 +15,116 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-roboto antialiased text-slate-900">
-        <div class="relative min-h-screen overflow-x-clip bg-slate-100">
-            <div aria-hidden="true" class="pointer-events-none fixed inset-x-0 top-0 h-80 bg-gradient-to-b from-cyan-100 via-blue-50 to-transparent"></div>
-            <div aria-hidden="true" class="pointer-events-none fixed -top-20 -right-24 h-72 w-72 rounded-full bg-cyan-200/50 blur-3xl"></div>
-            <div aria-hidden="true" class="pointer-events-none fixed top-48 -left-24 h-64 w-64 rounded-full bg-blue-200/40 blur-3xl"></div>
+    <body class="font-roboto antialiased text-slate-900 bg-slate-50">
+        <div class="relative min-h-screen">
+            <!-- Fluent background blur effects -->
+            <div aria-hidden="true" class="pointer-events-none fixed inset-0 overflow-hidden">
+                <div class="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-cyan-300/20 via-blue-300/10 to-transparent blur-3xl"></div>
+                <div class="absolute top-1/3 -left-40 h-[400px] w-[400px] rounded-full bg-gradient-to-tr from-blue-300/15 to-cyan-200/10 blur-3xl"></div>
+                <div class="absolute bottom-0 right-1/4 h-[300px] w-[300px] rounded-full bg-gradient-to-t from-cyan-200/10 to-transparent blur-3xl"></div>
+            </div>
 
-            <!-- Mobile Overlay -->
-            <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-900/50 z-30 hidden lg:hidden" onclick="toggleSidebar()"></div>
+            <!-- Mobile Overlay with blur -->
+            <div id="sidebar-backdrop" class="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm hidden lg:hidden transition-opacity duration-300" onclick="toggleSidebar()"></div>
 
-            <!-- Sidebar -->
-            <aside id="sidebar" class="fixed top-0 left-0 z-40 h-screen w-72 -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out bg-white/95 backdrop-blur-xl border-r border-slate-200 shadow-2xl shadow-slate-900/10">
-                <!-- Sidebar Header -->
-                <div class="flex items-center justify-between h-16 px-6 border-b border-slate-200 bg-gradient-to-r from-cyan-600 to-blue-600">
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                        </div>
-                        <span class="text-lg font-black text-white tracking-tight">{{ config('app.name', 'LabPSTI') }}</span>
-                    </a>
-                    <!-- Close button (mobile) -->
-                    <button onclick="toggleSidebar()" class="lg:hidden text-white/80 hover:text-white">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
+            <!-- Sidebar - Fluent Glass Design -->
+            <aside id="sidebar" class="fixed top-0 left-0 z-40 h-screen w-72 -translate-x-full lg:translate-x-0 transition-all duration-300 ease-out bg-white/70 backdrop-blur-2xl border-r border-white/20 shadow-2xl shadow-slate-900/5 flex flex-col">
+                <!-- Sidebar Header with Gradient -->
+                <div class="relative flex-shrink-0 px-5 py-5 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-cyan-500 via-blue-500 to-indigo-600 opacity-95"></div>
+                    <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10 blur-xl"></div>
+                    <div class="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-white/5 blur-lg"></div>
+                    <div class="relative flex items-center justify-between">
+                        <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center ring-1 ring-white/25 shadow-lg">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                            </div>
+                            <div>
+                                <span class="text-lg font-black text-white tracking-tight block leading-tight">LAB<span class="text-cyan-200">PSTI</span></span>
+                                <span class="text-[10px] font-semibold text-white/60 tracking-wider uppercase block">{{ Auth::user()->isAdmin() ? 'Admin Panel' : 'Portal' }}</span>
+                            </div>
+                        </a>
+                        <button onclick="toggleSidebar()" class="lg:hidden p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Navigation -->
-                <div class="overflow-y-auto h-[calc(100vh-4rem)] py-4 px-3">
+                <!-- Search Bar -->
+                <div class="px-4 pt-3 pb-2 flex-shrink-0">
+                    <div class="relative">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" placeholder="Cari menu..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-100/80 border border-slate-200/60 text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/30 focus:border-cyan-400 transition-all" oninput="filterSidebar(this.value)">
+                    </div>
+                </div>
+
+                <!-- Navigation Items -->
+                <div id="sidebar-nav" class="flex-1 overflow-y-auto px-3 py-2 space-y-0.5 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                     @include('layouts.navigation')
+                </div>
+
+                <!-- Bottom User Card -->
+                <div class="flex-shrink-0 p-3 border-t border-slate-200/50 bg-slate-50/50 backdrop-blur-sm">
+                    <div class="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-white/70 backdrop-blur-sm border border-slate-200/50 shadow-sm">
+                        <div class="relative flex-shrink-0">
+                            <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 text-white grid place-items-center text-sm font-black shadow-md shadow-cyan-200/50">
+                                {{ strtoupper(substr(Auth::user()->display_name, 0, 1)) }}
+                            </div>
+                            <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full"></div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-bold text-slate-800 truncate">{{ Auth::user()->display_name }}</p>
+                            <p class="text-[10px] font-medium text-slate-400 truncate">{{ Auth::user()->email }}</p>
+                        </div>
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
+                            </button>
+                            <div x-show="open" @click.outside="open = false" class="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200/80 overflow-hidden backdrop-blur-xl" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
+                                <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                    Profile
+                                </a>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition border-t border-slate-100">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                                        Log Out
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </aside>
 
-            <!-- Main Content -->
-            <div id="main-content" class="transition-all duration-300 lg:ml-72 relative z-10">
-                <!-- Top Bar (mobile) -->
-                <div class="sticky top-0 z-20 lg:hidden bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm">
-                    <div class="flex items-center justify-between h-16 px-4">
-                        <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-slate-100 text-slate-700">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                        </button>
-                        <span class="text-sm font-black text-slate-700">{{ config('app.name', 'LabPSTI') }}</span>
-                        <div class="w-10"></div>
+            <!-- Main Content Area -->
+            <div id="main-content" class="transition-all duration-300 lg:ml-72 relative z-10 min-h-screen flex flex-col">
+                <!-- Top Bar - Fluent Style -->
+                <div class="sticky top-0 z-20 bg-white/70 backdrop-blur-2xl border-b border-slate-200/50 shadow-sm shadow-slate-900/5">
+                    <div class="flex items-center justify-between h-16 px-4 lg:px-8">
+                        <div class="flex items-center gap-4">
+                            <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-all">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                            </button>
+                            <div class="hidden lg:flex items-center gap-2 text-sm text-slate-400">
+                                <span class="font-medium text-slate-800">{{ config('app.name', 'LabPSTI') }}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100/80 rounded-xl text-xs text-slate-500">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                {{ now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Page Heading -->
                 @isset($header)
                     <header class="relative">
-                        <div class="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8">
-                            <div class="bg-white/80 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-lg shadow-slate-200/50 py-5 px-6 sm:px-8">
+                        <div class="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-7">
+                            <div class="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg shadow-slate-200/50 py-4 px-6 sm:px-8">
                                 {{ $header }}
                             </div>
                         </div>
@@ -71,7 +132,7 @@
                 @endisset
 
                 <!-- Page Content -->
-                <main class="pb-10">
+                <main class="flex-1 pb-10">
                     {{ $slot }}
                 </main>
             </div>
