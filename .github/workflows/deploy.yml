@@ -13,90 +13,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          extensions: mbstring, pdo_mysql, intl, zip, bcmath
-          tools: composer:v2
-
-      - name: Install PHP dependencies
-        run: |
-          composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-
-      - name: Install NPM dependencies
-        run: |
-          npm ci --no-audit --no-fund
-
-      - name: Build assets
-        run: |
-          npm run build
-
-      - name: Create deployment artifact
-        run: |
-          # Create deployment directory
-          mkdir -p deploy
-          # Copy necessary files (exclude development files)
-          rsync -av --delete \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='node_modules' \
-            --exclude='tests' \
-            --exclude='storage/framework/cache/data/*' \
-            --exclude='storage/framework/sessions/*' \
-            --exclude='storage/framework/views/*' \
-            --exclude='storage/logs/*' \
-            --exclude='.env' \
-            --exclude='.env.example' \
-            --exclude='.gitignore' \
-            --exclude='.gitattributes' \
-            --exclude='.editorconfig' \
-            --exclude='README.md' \
-            --exclude='phpunit.xml' \
-            --exclude='docker-compose.yml' \
-            ./ deploy/
-
-          # Copy .env.example for reference (we'll use server's .env)
-          if [ -f .env.example ]; then
-            cp .env.example deploy/.env.example
-          fi
-
-      - name: Deploy to server via SSH
-        uses: appleboy/scp-action@v1.1.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT || '22' }}
-          source: "deploy/*"
-          target: "${{ secrets.DEPLOY_PATH }}"
-          strip_components: 1
-          rm: false
-          overwrite: true
-
-      - name: Post-deployment commands via SSH
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
+          script_stop: true
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
 
-            # Set proper permissions
-            chmod -R 775 storage bootstrap/cache
-            chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+            echo "📥 Pulling latest changes..."
+            git pull origin main
 
-            # Run Laravel optimizations
-            php artisan optimize:clear
-            php artisan optimize
-            php artisan storage:link 2>/dev/null || true
-            php artisan migrate --force 2>/dev/null || true
+            echo "📦 Installing PHP dependencies..."
+            composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
+
+            echo "📦 Installing NPM dependencies..."
+            npm install --no-audit --no-fund
+
+            echo "🔨 Building assets..."
+            npm run build
+
+            echo "🗄️ Running migrations..."
+            php artisan migrate --force
 
             echo "✅ Deployment completed successfully!"
