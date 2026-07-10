@@ -53,7 +53,7 @@
                             <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center ring-1 ring-white/25 shadow-lg">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                             </div>
-                            <div>
+                            <div class="sb-brand-text">
                                 <span class="text-lg font-black text-white tracking-tight block leading-tight">LAB<span class="text-cyan-200">PSTI</span></span>
                                 <span class="text-[10px] font-semibold text-white/60 tracking-wider uppercase block">{{ Auth::user()->isAdmin() ? 'Admin Panel' : 'Portal' }}</span>
                             </div>
@@ -64,13 +64,13 @@
                     </div>
                 </div>
 
-                <!-- Search Bar -->
-                <div class="px-4 pt-3 pb-2 flex-shrink-0">
-                    <div class="relative">
-                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        <input type="text" placeholder="Cari menu..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-100/80 border border-slate-200/60 text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/30 focus:border-cyan-400 transition-all" oninput="filterSidebar(this.value)">
-                    </div>
-                </div>
+                 <!-- Search Bar -->
+                 <div class="px-4 pt-3 pb-2 flex-shrink-0 sb-search-wrapper">
+                     <div class="relative">
+                         <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                         <input type="text" placeholder="Cari menu..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-100/80 border border-slate-200/60 text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/30 focus:border-cyan-400 transition-all" oninput="filterSidebar(this.value)">
+                     </div>
+                 </div>
 
                 <!-- Navigation Items -->
                 <div id="sidebar-nav" class="flex-1 overflow-y-auto px-3 py-2 space-y-0.5 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
@@ -86,11 +86,11 @@
                             </div>
                             <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full"></div>
                         </div>
-                        <div class="flex-1 min-w-0">
+                        <div class="flex-1 min-w-0 sb-user-info">
                             <p class="text-sm font-bold text-slate-800 truncate">{{ Auth::user()->display_name }}</p>
                             <p class="text-[10px] font-medium text-slate-400 truncate">{{ Auth::user()->email }}</p>
                         </div>
-                        <div class="relative" x-data="{ open: false }">
+                        <div class="relative sb-user-menu-btn" x-data="{ open: false }">
                             <button @click="open = !open" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
                             </button>
@@ -160,8 +160,9 @@
 
         <script>
             /**
-             * Sidebar Toggle — Elegant show/hide with smooth animation.
-             * Works on both desktop (content pushes) and mobile (overlay).
+             * Sidebar Toggle — Mini sidebar (icon-only) on desktop, overlay on mobile.
+             * Desktop: toggles between full (w-72) and mini (w-20) via sb-collapsed class.
+             * Mobile: slides in/out as overlay via translate-x.
              * State persisted to localStorage.
              */
             (function() {
@@ -169,97 +170,119 @@
                 const backdrop = document.getElementById('sidebar-backdrop');
                 const mainContent = document.getElementById('main-content');
                 const toggleIcon = document.getElementById('toggle-icon');
+                const html = document.documentElement;
 
-                const TRANSITION_CLASSES = [
-                    'sb-transition',
-                    'sb-margin-transition'
-                ];
+                let isMobileOverlayOpen = false; // track mobile overlay state separately
 
                 /**
-                 * Check if sidebar is currently collapsed (hidden).
+                 * Check if desktop sidebar is in mini/collapsed mode.
                  */
-                function isCollapsed() {
-                    return sidebar.classList.contains('-translate-x-full');
+                function isDesktopCollapsed() {
+                    return html.classList.contains('sb-collapsed');
                 }
 
                 /**
-                 * Update toggle icon rotation based on sidebar state.
+                 * Update toggle icon rotation.
                  */
                 function updateToggleIcon(collapsed) {
                     if (!toggleIcon) return;
-                    // When collapsed, hamburger faces right (default).
-                    // When expanded, slight rotation for visual feedback.
                     toggleIcon.style.transform = collapsed ? 'rotate(0deg)' : 'rotate(90deg)';
                 }
 
                 /**
-                 * Show sidebar.
+                 * Ensure sidebar is visible and not translated off-screen.
+                 * (Desktop mode — sidebar always visible, just changes width.)
                  */
-                function showSidebar(animate = true) {
-                    if (!animate) {
-                        // Temporarily disable transitions for instant state restoration
-                        sidebar.classList.add('sb-no-transition');
-                        mainContent.classList.add('sb-no-transition');
-                    }
-
+                function ensureSidebarVisible() {
                     sidebar.classList.remove('-translate-x-full');
                     sidebar.setAttribute('aria-hidden', 'false');
+                }
 
-                    // Desktop: push content
-                    if (window.innerWidth >= 1024) {
-                        mainContent.classList.add('lg:ml-72');
-                        mainContent.classList.remove('lg:ml-0');
-                    }
-
-                    // Hide backdrop
+                /**
+                 * Ensure backdrop is hidden.
+                 */
+                function hideBackdrop() {
                     backdrop.classList.add('opacity-0', 'pointer-events-none');
                     backdrop.classList.remove('opacity-100');
                     backdrop.setAttribute('aria-hidden', 'true');
+                }
 
+                /**
+                 * Expand sidebar to full width (desktop).
+                 */
+                function expandDesktop() {
+                    ensureSidebarVisible();
+                    hideBackdrop();
+                    html.classList.remove('sb-collapsed');
                     localStorage.setItem('sidebar-collapsed', 'false');
-                    document.documentElement.classList.remove('sb-collapsed');
                     updateToggleIcon(false);
+                }
 
-                    if (!animate) {
-                        // Force reflow then re-enable transitions
-                        sidebar.offsetHeight;
-                        mainContent.offsetHeight;
-                        sidebar.classList.remove('sb-no-transition');
-                        mainContent.classList.remove('sb-no-transition');
+                /**
+                 * Collapse sidebar to icon-only mini mode (desktop).
+                 */
+                function collapseDesktop() {
+                    ensureSidebarVisible();
+                    hideBackdrop();
+                    html.classList.add('sb-collapsed');
+                    localStorage.setItem('sidebar-collapsed', 'true');
+                    updateToggleIcon(true);
+                }
+
+                /**
+                 * Mobile: show sidebar overlay.
+                 */
+                function showMobileOverlay() {
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.setAttribute('aria-hidden', 'false');
+                    backdrop.classList.remove('opacity-0', 'pointer-events-none');
+                    backdrop.classList.add('opacity-100');
+                    backdrop.setAttribute('aria-hidden', 'false');
+                    isMobileOverlayOpen = true;
+                    updateToggleIcon(false);
+                }
+
+                /**
+                 * Mobile: hide sidebar overlay.
+                 */
+                function hideMobileOverlay() {
+                    sidebar.classList.add('-translate-x-full');
+                    sidebar.setAttribute('aria-hidden', 'true');
+                    hideBackdrop();
+                    isMobileOverlayOpen = false;
+                    updateToggleIcon(true);
+                }
+
+                /**
+                 * Initialize desktop state (sidebar always visible).
+                 */
+                function initDesktop() {
+                    // Remove translate-x, ensure sidebar is visible
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.setAttribute('aria-hidden', 'false');
+                    hideBackdrop();
+
+                    const collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+                    if (collapsed) {
+                        html.classList.add('sb-collapsed');
+                        updateToggleIcon(true);
+                    } else {
+                        html.classList.remove('sb-collapsed');
+                        updateToggleIcon(false);
                     }
                 }
 
                 /**
-                 * Hide sidebar.
+                 * Initialize mobile state (sidebar always hidden).
                  */
-                function hideSidebar(animate = true) {
-                    if (!animate) {
-                        sidebar.classList.add('sb-no-transition');
-                        mainContent.classList.add('sb-no-transition');
-                    }
-
+                function initMobile() {
+                    // Ensure html doesn't have sb-collapsed so mobile CSS reset works
+                    html.classList.remove('sb-collapsed');
                     sidebar.classList.add('-translate-x-full');
                     sidebar.setAttribute('aria-hidden', 'true');
-
-                    // Desktop: collapse content to full width
-                    mainContent.classList.remove('lg:ml-72');
-                    mainContent.classList.add('lg:ml-0');
-
-                    // Hide backdrop
-                    backdrop.classList.add('opacity-0', 'pointer-events-none');
-                    backdrop.classList.remove('opacity-100');
-                    backdrop.setAttribute('aria-hidden', 'true');
-
-                    localStorage.setItem('sidebar-collapsed', 'true');
-                    document.documentElement.classList.add('sb-collapsed');
+                    hideBackdrop();
+                    isMobileOverlayOpen = false;
                     updateToggleIcon(true);
-
-                    if (!animate) {
-                        sidebar.offsetHeight;
-                        mainContent.offsetHeight;
-                        sidebar.classList.remove('sb-no-transition');
-                        mainContent.classList.remove('sb-no-transition');
-                    }
                 }
 
                 /**
@@ -267,31 +290,18 @@
                  */
                 window.toggleSidebar = function() {
                     if (window.innerWidth < 1024) {
-                        // Mobile: overlay behavior
-                        const collapsed = isCollapsed();
-                        if (collapsed) {
-                            // Show sidebar as overlay
-                            sidebar.classList.remove('-translate-x-full');
-                            sidebar.setAttribute('aria-hidden', 'false');
-                            backdrop.classList.remove('opacity-0', 'pointer-events-none');
-                            backdrop.classList.add('opacity-100');
-                            backdrop.setAttribute('aria-hidden', 'false');
-                            updateToggleIcon(false);
+                        // Mobile: toggle overlay
+                        if (isMobileOverlayOpen) {
+                            hideMobileOverlay();
                         } else {
-                            // Hide overlay
-                            sidebar.classList.add('-translate-x-full');
-                            sidebar.setAttribute('aria-hidden', 'true');
-                            backdrop.classList.add('opacity-0', 'pointer-events-none');
-                            backdrop.classList.remove('opacity-100');
-                            backdrop.setAttribute('aria-hidden', 'true');
-                            updateToggleIcon(true);
+                            showMobileOverlay();
                         }
                     } else {
-                        // Desktop: push content behavior
-                        if (isCollapsed()) {
-                            showSidebar();
+                        // Desktop: toggle between full and mini
+                        if (isDesktopCollapsed()) {
+                            expandDesktop();
                         } else {
-                            hideSidebar();
+                            collapseDesktop();
                         }
                     }
                 };
@@ -300,25 +310,10 @@
                  * Initialize sidebar state on page load.
                  */
                 function initialize() {
-                    const collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-
                     if (window.innerWidth >= 1024) {
-                        // Desktop: respect stored preference, default to visible
-                        if (collapsed) {
-                            hideSidebar(false);
-                        } else {
-                            showSidebar(false);
-                        }
+                        initDesktop();
                     } else {
-                        // Mobile: always start hidden
-                        sidebar.classList.add('-translate-x-full');
-                        sidebar.setAttribute('aria-hidden', 'true');
-                        backdrop.classList.add('opacity-0', 'pointer-events-none');
-                        backdrop.classList.remove('opacity-100');
-                        backdrop.setAttribute('aria-hidden', 'true');
-                        mainContent.classList.remove('lg:ml-72');
-                        mainContent.classList.add('lg:ml-0');
-                        updateToggleIcon(true);
+                        initMobile();
                     }
                 }
 
@@ -331,26 +326,10 @@
                     resizeTimeout = setTimeout(function() {
                         if (window.innerWidth >= 1024) {
                             // Transitioned to desktop
-                            const collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-                            if (collapsed) {
-                                hideSidebar(false);
-                            } else {
-                                showSidebar(false);
-                            }
-                            // Ensure backdrop is hidden
-                            backdrop.classList.add('opacity-0', 'pointer-events-none');
-                            backdrop.classList.remove('opacity-100');
-                            backdrop.setAttribute('aria-hidden', 'true');
+                            initDesktop();
                         } else {
-                            // Transitioned to mobile — always hide sidebar overlay
-                            sidebar.classList.add('-translate-x-full');
-                            sidebar.setAttribute('aria-hidden', 'true');
-                            backdrop.classList.add('opacity-0', 'pointer-events-none');
-                            backdrop.classList.remove('opacity-100');
-                            backdrop.setAttribute('aria-hidden', 'true');
-                            mainContent.classList.remove('lg:ml-72');
-                            mainContent.classList.add('lg:ml-0');
-                            updateToggleIcon(true);
+                            // Transitioned to mobile
+                            initMobile();
                         }
                     }, 150);
                 });

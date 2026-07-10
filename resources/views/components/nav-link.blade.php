@@ -6,6 +6,6 @@ $classes = ($active ?? false)
             : 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-white/80 hover:shadow-sm transition-all duration-200';
 @endphp
 
-<a {{ $attributes->merge(['class' => $classes]) }}>
+<a {{ $attributes->merge(['class' => $classes . ' sb-nav-link-inner']) }}>
     {{ $slot }}
 </a>

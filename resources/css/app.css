@@ -60,8 +60,8 @@
 
 /* Core sidebar transition — elegant cubic-bezier easing */
 .sb-transition {
-	transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-	will-change: transform;
+	transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+	will-change: transform, width;
 }
 
 /* Main content margin transition — follows sidebar smoothly */
@@ -76,11 +76,124 @@
 	transition: none !important;
 }
 
-/* Collapsed state — ensures instant rendering via html class on page load */
+/* ---- Collapsed Mini Sidebar State ---- */
+
+/* Collapsed: sidebar narrows to icon-only width */
 html.sb-collapsed #sidebar {
-	transform: translateX(-100%);
+	width: 5rem;
+	transform: translateX(0); /* tetap terlihat */
+	overflow-x: hidden;
 }
 
 html.sb-collapsed #main-content {
-	margin-left: 0;
+	margin-left: 5rem;
+}
+
+/* Keep sidebar header compact in collapsed mode */
+html.sb-collapsed #sidebar .flex-shrink-0:first-child {
+	padding-left: 0.75rem;
+	padding-right: 0.75rem;
+}
+
+/* Scrollbar hidden when collapsed to keep clean look */
+html.sb-collapsed #sidebar #sidebar-nav {
+	overflow-x: hidden;
+}
+
+/* User avatar stays centered when collapsed */
+html.sb-collapsed #sidebar .flex-shrink-0.p-3 {
+	padding: 0.5rem;
+}
+
+html.sb-collapsed #sidebar .flex-shrink-0.p-3 > .flex {
+	justify-content: center;
+	padding-left: 0.5rem;
+	padding-right: 0.5rem;
+}
+
+/* Hide text labels inside sidebar when collapsed */
+html.sb-collapsed .sb-nav-label {
+	opacity: 0;
+	max-width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	transition: opacity 0.3s ease, max-width 0.35s ease;
+	pointer-events: none;
+}
+
+html.sb-collapsed .sb-category-label {
+	opacity: 0;
+	max-height: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	transition: opacity 0.2s ease, max-height 0.3s ease;
+	pointer-events: none;
+}
+
+html.sb-collapsed .sb-search-wrapper {
+	opacity: 0;
+	max-height: 0;
+	overflow: hidden;
+	transition: opacity 0.2s ease, max-height 0.3s ease;
+	pointer-events: none;
+}
+
+html.sb-collapsed .sb-user-info {
+	opacity: 0;
+	max-width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	transition: opacity 0.2s ease, max-width 0.3s ease;
+	pointer-events: none;
+}
+
+html.sb-collapsed .sb-user-menu-btn {
+	opacity: 0;
+	width: 0;
+	overflow: hidden;
+	transition: opacity 0.2s ease, width 0.3s ease;
+	pointer-events: none;
+}
+
+html.sb-collapsed .sb-brand-text {
+	opacity: 0;
+	max-width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	transition: opacity 0.2s ease, max-width 0.3s ease;
+	pointer-events: none;
+}
+
+/* Center nav items when collapsed (icon-only mode) */
+html.sb-collapsed #sidebar .sb-nav-link-inner {
+	justify-content: center;
+	gap: 0;
+	padding-left: 0.5rem;
+	padding-right: 0.5rem;
+}
+
+/* Responsive: on mobile (< lg), the collapsed state uses full overlay pattern */
+@media (max-width: 1023px) {
+	html.sb-collapsed #sidebar {
+		width: 18rem;
+		transform: translateX(-100%);
+	}
+	html.sb-collapsed #main-content {
+		margin-left: 0;
+	}
+	html.sb-collapsed .sb-nav-label,
+	html.sb-collapsed .sb-category-label,
+	html.sb-collapsed .sb-search-wrapper,
+	html.sb-collapsed .sb-user-info,
+	html.sb-collapsed .sb-user-menu-btn,
+	html.sb-collapsed .sb-brand-text {
+		opacity: 1;
+		max-width: none;
+		max-height: none;
+		overflow: visible;
+		pointer-events: auto;
+	}
+	html.sb-collapsed #sidebar .sb-nav-link-inner {
+		justify-content: flex-start;
+	}
 }
