@@ -53,6 +53,11 @@ class VmBorrowRequest extends Model
         return $this->status === 'pending';
     }
 
+    public function isOnReview(): bool
+    {
+        return $this->status === 'on-review';
+    }
+
     public function isApproved(): bool
     {
         return $this->status === 'approved';
@@ -66,6 +71,11 @@ class VmBorrowRequest extends Model
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
+    }
+
+    public function scopeOnReview($query)
+    {
+        return $query->where('status', 'on-review');
     }
 
     public function scopeApproved($query)

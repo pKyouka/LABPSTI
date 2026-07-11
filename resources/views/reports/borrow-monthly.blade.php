@@ -38,11 +38,11 @@
             <h3 class="text-base font-semibold text-neutral-800 mb-4">Ringkasan per Minggu</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 @foreach($weeklyStats as $weekKey => $week)
-                    <div class="bg-cyan-50 rounded-xl p-4 text-center">
-                        <p class="text-xs font-semibold uppercase text-neutral-500">Minggu {{ $loop->iteration }}</p>
-                        <p class="text-xs text-neutral-500">{{ $week['start']->format('d/m') }} - {{ $week['end']->format('d/m') }}</p>
-                        <p class="text-2xl font-bold text-cyan-600 mt-1">{{ $week['count'] }}</p>
-                        <p class="text-xs text-neutral-500">peminjaman ({{ $week['quantity'] }} unit)</p>
+                    <div class="bg-cyan-500 rounded-xl p-4 text-center shadow-sm">
+                        <p class="text-xs font-bold uppercase text-cyan-100">Minggu {{ $loop->iteration }}</p>
+                        <p class="text-xs font-medium text-cyan-200">{{ $week['start']->format('d/m') }} - {{ $week['end']->format('d/m') }}</p>
+                        <p class="text-2xl font-bold text-white mt-1">{{ $week['count'] }}</p>
+                        <p class="text-xs font-medium text-cyan-100">peminjaman ({{ $week['quantity'] }} unit)</p>
                     </div>
                 @endforeach
             </div>

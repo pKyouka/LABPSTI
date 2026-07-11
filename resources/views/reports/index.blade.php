@@ -15,17 +15,17 @@
                     Laporan Peminjaman
                 </h3>
                 <div class="grid grid-cols-3 gap-3 mb-5">
-                    <div class="bg-emerald-50 rounded-xl p-4 text-center">
-                        <p class="text-xs font-medium text-neutral-400 uppercase mb-1">Hari Ini</p>
-                        <p class="text-2xl font-bold text-emerald-600">{{ $borrowToday }}</p>
+                    <div class="bg-emerald-500 rounded-xl p-4 text-center shadow-sm">
+                        <p class="text-xs font-bold text-emerald-100 uppercase tracking-wider mb-1">Hari Ini</p>
+                        <p class="text-3xl font-bold text-white">{{ $borrowToday }}</p>
                     </div>
-                    <div class="bg-blue-50 rounded-xl p-4 text-center">
-                        <p class="text-xs font-medium text-neutral-400 uppercase mb-1">Minggu</p>
-                        <p class="text-2xl font-bold text-blue-600">{{ $borrowWeek }}</p>
+                    <div class="bg-blue-500 rounded-xl p-4 text-center shadow-sm">
+                        <p class="text-xs font-bold text-blue-100 uppercase tracking-wider mb-1">Minggu</p>
+                        <p class="text-3xl font-bold text-white">{{ $borrowWeek }}</p>
                     </div>
-                    <div class="bg-cyan-50 rounded-xl p-4 text-center">
-                        <p class="text-xs font-medium text-neutral-400 uppercase mb-1">Bulan</p>
-                        <p class="text-2xl font-bold text-cyan-600">{{ $borrowMonth }}</p>
+                    <div class="bg-cyan-500 rounded-xl p-4 text-center shadow-sm">
+                        <p class="text-xs font-bold text-cyan-100 uppercase tracking-wider mb-1">Bulan</p>
+                        <p class="text-3xl font-bold text-white">{{ $borrowMonth }}</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
@@ -42,17 +42,17 @@
                     Laporan Penggunaan Lab
                 </h3>
                 <div class="grid grid-cols-3 gap-3 mb-5">
-                    <div class="bg-purple-50 rounded-xl p-4 text-center">
-                        <p class="text-xs font-medium text-neutral-400 uppercase mb-1">Hari Ini</p>
-                        <p class="text-2xl font-bold text-purple-600">{{ $usageToday }}</p>
+                    <div class="bg-purple-500 rounded-xl p-4 text-center shadow-sm">
+                        <p class="text-xs font-bold text-purple-100 uppercase tracking-wider mb-1">Hari Ini</p>
+                        <p class="text-3xl font-bold text-white">{{ $usageToday }}</p>
                     </div>
-                    <div class="bg-pink-50 rounded-xl p-4 text-center">
-                        <p class="text-xs font-medium text-neutral-400 uppercase mb-1">Minggu</p>
-                        <p class="text-2xl font-bold text-pink-600">{{ $usageWeek }}</p>
+                    <div class="bg-pink-500 rounded-xl p-4 text-center shadow-sm">
+                        <p class="text-xs font-bold text-pink-100 uppercase tracking-wider mb-1">Minggu</p>
+                        <p class="text-3xl font-bold text-white">{{ $usageWeek }}</p>
                     </div>
-                    <div class="bg-rose-50 rounded-xl p-4 text-center">
-                        <p class="text-xs font-medium text-neutral-400 uppercase mb-1">Bulan</p>
-                        <p class="text-2xl font-bold text-rose-600">{{ $usageMonth }}</p>
+                    <div class="bg-rose-500 rounded-xl p-4 text-center shadow-sm">
+                        <p class="text-xs font-bold text-rose-100 uppercase tracking-wider mb-1">Bulan</p>
+                        <p class="text-3xl font-bold text-white">{{ $usageMonth }}</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2">

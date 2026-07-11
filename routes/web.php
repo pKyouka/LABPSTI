@@ -59,6 +59,7 @@ Route::middleware('auth')->group(function () {
     Route::get('vm_borrow/create', [VmBorrowController::class, 'create'])->name('vm_borrow.create');
     Route::post('vm_borrow', [VmBorrowController::class, 'store'])->name('vm_borrow.store');
     Route::get('vm_borrow/{vmBorrow}', [VmBorrowController::class, 'show'])->name('vm_borrow.show');
+    Route::post('vm_borrow/{vmBorrow}/move-to-review', [VmBorrowController::class, 'moveToReview'])->name('vm_borrow.moveToReview');
     Route::post('vm_borrow/{vmBorrow}/approve', [VmBorrowController::class, 'approve'])->name('vm_borrow.approve');
     Route::post('vm_borrow/{vmBorrow}/reject', [VmBorrowController::class, 'reject'])->name('vm_borrow.reject');
 

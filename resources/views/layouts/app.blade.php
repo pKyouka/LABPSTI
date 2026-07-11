@@ -108,7 +108,7 @@
             </aside>
 
             <!-- Main Content Area -->
-            <div id="main-content" class="sb-margin-transition lg:ml-[260px] relative z-10 min-h-screen flex flex-col">
+            <div id="main-content" class="sb-margin-transition relative z-10 min-h-screen flex flex-col">
                 <!-- Top Bar — Fluent Acrylic -->
                 <div class="sticky top-0 z-20 fluent-topbar flex items-center justify-between px-5">
                     <div class="flex items-center gap-3">
@@ -154,10 +154,15 @@
                 const backdrop = document.getElementById('sidebar-backdrop');
                 const toggleIcon = document.getElementById('toggle-icon');
                 const html = document.documentElement;
+                const breakpoint = 1024;
 
                 let isMobileOverlayOpen = false;
 
-                function isDesktopCollapsed() {
+                function isDesktop() {
+                    return window.innerWidth >= breakpoint;
+                }
+
+                function isCollapsed() {
                     return html.classList.contains('sb-collapsed');
                 }
 
@@ -166,19 +171,16 @@
                     toggleIcon.style.transform = collapsed ? 'rotate(0deg)' : 'rotate(90deg)';
                 }
 
-                function ensureSidebarVisible() {
-                    sidebar.classList.remove('-translate-x-full');
-                    sidebar.setAttribute('aria-hidden', 'false');
-                }
-
                 function hideBackdrop() {
+                    if (!backdrop) return;
                     backdrop.classList.add('opacity-0', 'pointer-events-none');
                     backdrop.classList.remove('opacity-100');
                     backdrop.setAttribute('aria-hidden', 'true');
                 }
 
                 function expandDesktop() {
-                    ensureSidebarVisible();
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.setAttribute('aria-hidden', 'false');
                     hideBackdrop();
                     html.classList.remove('sb-collapsed');
                     localStorage.setItem('sidebar-collapsed', 'false');
@@ -186,7 +188,8 @@
                 }
 
                 function collapseDesktop() {
-                    ensureSidebarVisible();
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.setAttribute('aria-hidden', 'false');
                     hideBackdrop();
                     html.classList.add('sb-collapsed');
                     localStorage.setItem('sidebar-collapsed', 'true');
@@ -196,9 +199,11 @@
                 function showMobileOverlay() {
                     sidebar.classList.remove('-translate-x-full');
                     sidebar.setAttribute('aria-hidden', 'false');
-                    backdrop.classList.remove('opacity-0', 'pointer-events-none');
-                    backdrop.classList.add('opacity-100');
-                    backdrop.setAttribute('aria-hidden', 'false');
+                    if (backdrop) {
+                        backdrop.classList.remove('opacity-0', 'pointer-events-none');
+                        backdrop.classList.add('opacity-100');
+                        backdrop.setAttribute('aria-hidden', 'false');
+                    }
                     document.body.classList.add('overflow-hidden');
                     isMobileOverlayOpen = true;
                     updateToggleIcon(false);
@@ -214,12 +219,14 @@
                 }
 
                 function initDesktop() {
+                    isMobileOverlayOpen = false;
                     sidebar.classList.remove('-translate-x-full');
                     sidebar.setAttribute('aria-hidden', 'false');
                     hideBackdrop();
                     document.body.classList.remove('overflow-hidden');
-                    const collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-                    if (collapsed) {
+
+                    const savedCollapsed = localStorage.getItem('sidebar-collapsed');
+                    if (savedCollapsed === 'true') {
                         html.classList.add('sb-collapsed');
                         updateToggleIcon(true);
                     } else {
@@ -239,14 +246,14 @@
                 }
 
                 window.toggleSidebar = function() {
-                    if (window.innerWidth < 1024) {
+                    if (!isDesktop()) {
                         if (isMobileOverlayOpen) {
                             hideMobileOverlay();
                         } else {
                             showMobileOverlay();
                         }
                     } else {
-                        if (isDesktopCollapsed()) {
+                        if (isCollapsed()) {
                             expandDesktop();
                         } else {
                             collapseDesktop();
@@ -254,8 +261,63 @@
                     }
                 };
 
+                window.filterSidebar = function(query) {
+                    const nav = document.getElementById('sidebar-nav');
+                    if (!nav) return;
+                    const links = nav.querySelectorAll('.sb-nav-link-inner');
+                    const categories = nav.querySelectorAll('.sb-category-label');
+                    const q = (query || '').toLowerCase().trim();
+
+                    if (!q) {
+                        // Show all
+                        links.forEach(l => { l.style.display = ''; });
+                        categories.forEach(c => { c.style.display = ''; });
+                        return;
+                    }
+
+                    let visibleInSection = false;
+                    let currentSection = null;
+
+                    links.forEach(link => {
+                        const text = (link.textContent || '').toLowerCase();
+                        const matches = text.includes(q);
+
+                        if (matches) {
+                            link.style.display = '';
+                            visibleInSection = true;
+                            // Show the category label above this link
+                            let prev = link.previousElementSibling;
+                            while (prev) {
+                                if (prev.classList.contains('sb-category-label')) {
+                                    prev.style.display = '';
+                                    break;
+                                }
+                                if (prev.classList.contains('sb-nav-link-inner')) break;
+                                prev = prev.previousElementSibling;
+                            }
+                        } else {
+                            link.style.display = 'none';
+                        }
+                    });
+
+                    // Hide category labels with no visible links
+                    categories.forEach(cat => {
+                        let next = cat.nextElementSibling;
+                        let hasVisible = false;
+                        while (next && !next.classList.contains('sb-category-label')) {
+                            if (next.classList.contains('sb-nav-link-inner') && next.style.display !== 'none') {
+                                hasVisible = true;
+                                break;
+                            }
+                            next = next.nextElementSibling;
+                        }
+                        cat.style.display = hasVisible ? '' : 'none';
+                    });
+                };
+
+                // Initialize on load
                 function initialize() {
-                    if (window.innerWidth >= 1024) {
+                    if (isDesktop()) {
                         initDesktop();
                     } else {
                         initMobile();
@@ -266,7 +328,7 @@
                 window.addEventListener('resize', function() {
                     clearTimeout(resizeTimeout);
                     resizeTimeout = setTimeout(function() {
-                        if (window.innerWidth >= 1024) {
+                        if (isDesktop()) {
                             initDesktop();
                         } else {
                             isMobileOverlayOpen = false;
@@ -274,6 +336,13 @@
                             initMobile();
                         }
                     }, 150);
+                });
+
+                // Close mobile sidebar on Escape key
+                window.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && isMobileOverlayOpen) {
+                        hideMobileOverlay();
+                    }
                 });
 
                 if (document.readyState === 'loading') {

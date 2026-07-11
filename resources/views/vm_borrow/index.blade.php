@@ -52,6 +52,8 @@
                                 <div class="flex flex-col gap-1">
                                     @if($req->status === 'approved')
                                         <span class="fluent-badge fluent-badge-success">Disetujui</span>
+                                    @elseif($req->status === 'on-review')
+                                        <span class="fluent-badge fluent-badge-info">On-Review</span>
                                     @elseif($req->status === 'rejected')
                                         <span class="fluent-badge fluent-badge-danger">Ditolak</span>
                                     @else
@@ -66,7 +68,7 @@
                             </td>
                             <td class="text-right">
                                 <a href="{{ route('vm_borrow.show', $req) }}" class="fluent-btn fluent-btn-ghost fluent-btn-sm">
-                                    {{ Auth::user()->isAdmin() && $req->status === 'pending' ? 'Tinjau →' : 'Detail →' }}
+                                    {{ Auth::user()->isAdmin() && ($req->status === 'pending' || $req->status === 'on-review') ? 'Tinjau →' : 'Detail →' }}
                                 </a>
                             </td>
                         </tr>

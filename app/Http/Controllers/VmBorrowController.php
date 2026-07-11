@@ -82,19 +82,44 @@ class VmBorrowController extends Controller
 
     private function ensurePending(VmBorrowRequest $vmBorrow)
     {
-        if ($vmBorrow->status !== 'pending') {
+        if ($vmBorrow->status !== 'pending' && $vmBorrow->status !== 'on-review') {
             return redirect()->route('vm_borrow.show', $vmBorrow)
                 ->with('success', 'Permintaan ini sudah diproses sebelumnya.');
         }
         return null;
     }
 
+    /**
+     * ACC Tahap 1: Pindahkan status pending → on-review (pembuatan VM)
+     */
+    public function moveToReview(VmBorrowRequest $vmBorrow)
+    {
+        $this->ensureAdmin();
+
+        if ($vmBorrow->status !== 'pending') {
+            return redirect()->route('vm_borrow.show', $vmBorrow)
+                ->with('success', 'Permintaan ini sudah diproses sebelumnya.');
+        }
+
+        $vmBorrow->update([
+            'status'      => 'on-review',
+            'approved_by' => Auth::id(),
+        ]);
+
+        return redirect()->route('vm_borrow.show', $vmBorrow)
+            ->with('success', 'Permintaan VM telah disetujui. Status berubah menjadi On-Review — silakan buat VM dan berikan kredensial setelah selesai.');
+    }
+
+    /**
+     * ACC Tahap 2: on-review → approved (VM sudah jadi, berikan kredensial)
+     */
     public function approve(Request $request, VmBorrowRequest $vmBorrow)
     {
         $this->ensureAdmin();
 
-        if ($redirect = $this->ensurePending($vmBorrow)) {
-            return $redirect;
+        if ($vmBorrow->status !== 'on-review') {
+            return redirect()->route('vm_borrow.show', $vmBorrow)
+                ->with('success', 'Permintaan ini sudah diproses atau belum dalam status on-review.');
         }
 
         $data = $request->validate([
@@ -116,31 +141,7 @@ class VmBorrowController extends Controller
             'approved_by'   => Auth::id(),
         ]);
 
-        // Ansible auto-provision VM jika diaktifkan
-        $message = 'Permintaan VM telah disetujui.';
-        if (config('ansible.auto_provision', true)) {
-            try {
-                $ansible = app(AnsibleService::class);
-                $result = $ansible->createVm($vmBorrow);
-
-                if ($result['success']) {
-                    if ($result['ip_address']) {
-                        $vmBorrow->update(['host_ip' => $result['ip_address']]);
-                    }
-                    $message = 'Permintaan VM telah disetujui dan VM sedang diprovisi secara otomatis.';
-                } else {
-                    Log::warning('Ansible auto-provision gagal, admin harus membuat VM manual', [
-                        'request_id' => $vmBorrow->id,
-                    ]);
-                    $message = 'Permintaan VM telah disetujui. Namun, provisi otomatis gagal. Silakan buat VM secara manual.';
-                }
-            } catch (\Exception $e) {
-                Log::error('Exception saat Ansible provisioning: ' . $e->getMessage(), [
-                    'request_id' => $vmBorrow->id,
-                ]);
-                $message = 'Permintaan VM telah disetujui. Terjadi kesalahan saat provisi otomatis.';
-            }
-        }
+        $message = 'VM telah berhasil diaktifkan. Kredensial telah diberikan kepada peminjam.';
 
         return redirect()->route('vm_borrow.show', $vmBorrow)
             ->with('success', $message);

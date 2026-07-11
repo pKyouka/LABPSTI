@@ -111,6 +111,8 @@
                         <td>
                             @if($vm->status === 'approved')
                                 <span class="fluent-badge fluent-badge-success">Disetujui</span>
+                            @elseif($vm->status === 'on-review')
+                                <span class="fluent-badge fluent-badge-info">On-Review</span>
                             @elseif($vm->status === 'rejected')
                                 <span class="fluent-badge fluent-badge-danger">Ditolak</span>
                             @else

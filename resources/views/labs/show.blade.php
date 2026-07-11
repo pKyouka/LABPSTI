@@ -3,73 +3,71 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $category->name }} - PSTI UNISA Yogyakarta</title>
+    <title>{{ $category->name }} — {{ config('app.name', 'LABPSTI') }}</title>
     @include('partials.favicon')
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=roboto:400,500,600,700&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="antialiased bg-slate-50 text-slate-900">
-    <!-- Top Bar -->
-    <div class="bg-blue-900 text-white py-2 text-xs font-medium">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-            <div>
-                :: C O R E V A L U E :: Akhlak Mulia, Amanah, Profesional, Kolaboratif, Unggul
-            </div>
-            <div class="hidden md:block italic">
-                “Health Information Technology, Empowering Healthier Life.”
-            </div>
-        </div>
-    </div>
+<body class="antialiased bg-[#F3F3F3] text-[#1F1F1F]">
+    <div aria-hidden="true" class="fixed inset-0 -z-10 fluent-mica"></div>
+    <div aria-hidden="true" class="fixed top-0 inset-x-0 h-0.5 bg-accent z-50"></div>
 
     <!-- Navbar -->
-    <nav class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-blue-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex-shrink-0 flex items-center">
-                    <a href="{{ route('landing') }}" class="flex flex-col">
-                        <span class="text-xl font-black text-blue-900 leading-tight tracking-tighter">LAB<span class="text-blue-600">PSTI</span></span>
-                        <span class="text-[10px] font-bold text-slate-500 tracking-[0.2em] uppercase">UNISA YOGYAKARTA</span>
-                    </a>
+    <nav class="sticky top-0 z-40 fluent-topbar border-b border-black/[0.06]" x-data="{ labsOpen: false }">
+        <div class="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 flex justify-between h-[54px] items-center">
+            <a href="{{ route('landing') }}" class="flex items-center gap-2.5 flex-shrink-0 group">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent-800 text-white grid place-items-center flex-shrink-0 shadow-fluent-sm group-hover:shadow-fluent-md group-hover:scale-105 transition-all duration-200">
+                    <span class="text-xs font-bold tracking-tight">TI</span>
                 </div>
-                <div class="hidden md:flex md:space-x-8">
-                    <div class="relative group">
-                        <button class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-bold transition flex items-center">
-                            Laboratorium <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </button>
-                        <div class="absolute left-0 mt-2 w-56 bg-white border border-slate-100 shadow-xl rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                            @foreach($categories as $cat)
-                                <a href="{{ route('lab.show', $cat->id) }}" class="block px-4 py-3 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition first:rounded-t-xl last:rounded-b-xl {{ $cat->id == $category->id ? 'bg-blue-50 text-blue-700 font-bold' : '' }}">
-                                    {{ $cat->name }}
-                                </a>
-                            @endforeach
-                        </div>
+                <div class="hidden sm:block">
+                    <span class="text-sm font-semibold text-neutral-800 tracking-tight">LAB<span class="text-accent">PSTI</span></span>
+                    <span class="text-[9px] font-semibold text-neutral-400 tracking-[0.12em] uppercase block leading-none">UNISA YOGYAKARTA</span>
+                </div>
+            </a>
+            <div class="hidden md:flex items-center gap-0.5">
+                <div class="relative" @mouseenter="labsOpen = true" @mouseleave="labsOpen = false">
+                    <button class="fl-nav-link flex items-center gap-1 px-3 py-2 text-[13px] font-medium text-neutral-600 hover:text-neutral-900 rounded-lg transition">
+                        Laboratorium
+                        <svg class="w-3 h-3 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                    <div x-show="labsOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100" class="absolute top-full left-0 mt-1.5 w-56 fluent-glass rounded-xl overflow-hidden z-50" style="display:none">
+                        @foreach($categories as $cat)
+                            <a href="{{ route('lab.show', $cat->id) }}" class="block px-4 py-3 text-[13px] font-medium transition first:rounded-t-xl last:rounded-b-xl {{ $cat->id == $category->id ? 'bg-accent-light text-accent font-semibold' : 'text-neutral-600 hover:bg-accent-light hover:text-accent' }}">
+                                {{ $cat->name }}
+                            </a>
+                        @endforeach
                     </div>
-                    <a href="{{ route('landing') }}#bulletins" class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-bold transition">Kabar Berita</a>
-                    <a href="{{ route('landing') }}#stats" class="text-slate-700 hover:text-blue-600 px-3 py-2 text-sm font-bold transition">Statistik</a>
                 </div>
-                <div class="flex items-center space-x-4">
-                    @auth
-                        <a href="{{ url('/dashboard') }}" class="inline-flex items-center px-4 py-2 bg-blue-50 text-sm font-bold rounded-full text-blue-700 hover:bg-blue-100 transition">Dashboard</a>
-                    @else
-                        <a href="{{ route('login') }}" class="inline-flex items-center px-6 py-2 border-2 border-blue-600 text-sm font-bold rounded-full text-blue-600 hover:bg-blue-600 hover:text-white transition">LOGIN</a>
-                    @endauth
-                </div>
+                <a href="{{ route('landing') }}#bulletins" class="fl-nav-link px-3 py-2 text-[13px] font-medium text-neutral-600 hover:text-neutral-900 rounded-lg transition">Kabar Berita</a>
+                <a href="{{ route('landing') }}#stats" class="fl-nav-link px-3 py-2 text-[13px] font-medium text-neutral-600 hover:text-neutral-900 rounded-lg transition">Statistik</a>
+            </div>
+            <div class="flex items-center gap-2.5">
+                @auth
+                    <a href="{{ route('dashboard') }}" class="fluent-btn fluent-btn-primary fluent-btn-sm !px-4">Dashboard</a>
+                @else
+                    <a href="{{ route('login') }}" class="fluent-btn fluent-btn-sm !px-4 font-medium text-neutral-700 bg-black/[0.06] border border-neutral-200/70 hover:bg-black/[0.09] rounded-lg transition">Login</a>
+                @endauth
             </div>
         </div>
     </nav>
 
     <!-- Lab Hero -->
-    <header class="relative py-24 overflow-hidden {{ $category->name == 'Data Engineering' ? 'bg-blue-600 text-white' : 'bg-slate-900 text-white' }}">
-        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div class="mb-8 inline-flex p-4 rounded-3xl bg-white/10 backdrop-blur-md">
+    <section class="relative overflow-hidden bg-gradient-to-br from-accent-950 via-accent-900 to-accent-800 text-white py-20">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.04)_1px,transparent_0)] [background-size:10px_10px] opacity-25"></div>
+        <div class="fluent-glow fluent-glow-accent w-[500px] h-[500px] -top-32 -right-32" style="background:rgba(56,189,248,0.12)"></div>
+        <div class="fluent-glow fluent-glow-purple w-[350px] h-[350px] -bottom-24 -left-20" style="background:rgba(139,92,246,0.07)"></div>
+
+        <div class="relative max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 text-center">
+            <div class="mb-6 inline-flex p-4 rounded-2xl bg-white/10 backdrop-blur-md ring-1 ring-white/10">
                 @if($category->name == 'Data Engineering')
-                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                 @else
-                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                 @endif
             </div>
-            <h1 class="text-5xl font-black mb-6 tracking-tight">{{ $category->name }}</h1>
-            <p class="text-xl opacity-90 max-w-2xl mx-auto font-medium leading-relaxed">
+            <h1 class="text-4xl sm:text-5xl font-semibold mb-4 tracking-tight">{{ $category->name }}</h1>
+            <p class="text-base lg:text-lg text-accent-200/80 max-w-2xl mx-auto leading-relaxed">
                 @if($category->name == 'Data Engineering')
                     Membangun masa depan melalui pengolahan data cerdas dan arsitektur sistem informasi kesehatan digital yang inovatif.
                 @else
@@ -77,91 +75,93 @@
                 @endif
             </p>
         </div>
-    </header>
+    </section>
 
-    <!-- Lab Content -->
-    <main class="py-24">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-16">
-                <!-- Left: Info -->
-                <div class="lg:col-span-2">
-                    <section class="mb-16">
-                        <h2 class="text-3xl font-black text-slate-900 mb-8 flex items-center">
-                            <span class="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mr-4 text-lg">1</span>
+    <!-- Content -->
+    <main class="py-16">
+        <div class="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-14">
+                    <!-- Profile -->
+                    <section>
+                        <h2 class="text-[1.75rem] font-semibold text-neutral-800 mb-6 flex items-center gap-3">
+                            <span class="w-9 h-9 rounded-xl bg-accent-light text-accent grid place-items-center text-sm font-bold">1</span>
                             Profil Laboratorium
                         </h2>
-                        <div class="prose prose-blue max-w-none text-slate-600 leading-relaxed text-lg">
+                        <div class="prose prose-neutral max-w-none text-[15px] text-neutral-600 leading-relaxed space-y-4">
                             @if($category->name == 'Data Engineering')
-                                <p class="mb-6">Laboratorium Data Engineering PSTI UNISA Yogyakarta menyelenggarakan disiplin ilmu teknologi informasi yang berintegrasi pada bidang ilmu kesehatan melalui mata kuliah unggulan diantaranya Teknologi Informasi Rumah Sakit dan Inovasi Kesehatan Digital.</p>
+                                <p>Laboratorium Data Engineering PSTI UNISA Yogyakarta menyelenggarakan disiplin ilmu teknologi informasi yang berintegrasi pada bidang ilmu kesehatan melalui mata kuliah unggulan diantaranya Teknologi Informasi Rumah Sakit dan Inovasi Kesehatan Digital.</p>
                                 <p>Fokus utama kami adalah melakukan perencanaan ide terhadap inovasi teknologi yang bercirikan KESEHATAN dan basis NILAI-NILAI ISLAM BERKEMAJUAN.</p>
                             @else
-                                <p class="mb-6">Laboratorium Digital Forensik berfokus pada penerapan disiplin Ilmu Teknologi Informasi dan tren teknologi pada masa mendatang untuk investigasi dan keamanan data.</p>
+                                <p>Laboratorium Digital Forensik berfokus pada penerapan disiplin Ilmu Teknologi Informasi dan tren teknologi pada masa mendatang untuk investigasi dan keamanan data.</p>
                                 <p>Kami menerapkan prinsip Akhlak Mulia, Amanah, Profesional, Kolaboratif, dan Unggul dalam setiap proses investigasi bukti digital untuk mendukung ekosistem kesehatan digital yang aman.</p>
                             @endif
                         </div>
                     </section>
 
+                    <!-- Bulletins -->
                     <section>
-                        <h2 class="text-3xl font-black text-slate-900 mb-8 flex items-center">
-                            <span class="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mr-4 text-lg">2</span>
+                        <h2 class="text-[1.75rem] font-semibold text-neutral-800 mb-6 flex items-center gap-3">
+                            <span class="w-9 h-9 rounded-xl bg-accent-light text-accent grid place-items-center text-sm font-bold">2</span>
                             Berita Terbaru {{ $category->name }}
                         </h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             @forelse($bulletins as $bulletin)
-                                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300">
-                                    <div class="text-xs font-bold text-blue-500 mb-3 uppercase tracking-widest">{{ $bulletin->published_at?->format('d M Y') }}</div>
-                                    <h3 class="text-xl font-black text-slate-900 mb-4 line-clamp-2 hover:text-blue-600 transition-colors">
+                                <div class="fluent-card p-6 group">
+                                    <p class="text-[11px] font-semibold text-accent mb-3 uppercase tracking-wider">{{ $bulletin->published_at?->format('d M Y') }}</p>
+                                    <h3 class="text-lg font-semibold text-neutral-800 mb-3 line-clamp-2 group-hover:text-accent transition-colors leading-snug">
                                         <a href="{{ route('lab.bulletins.show', ['category' => $category, 'bulletin' => $bulletin]) }}">{{ $bulletin->title }}</a>
                                     </h3>
-                                    <div class="text-slate-500 text-sm mb-6 line-clamp-3 leading-relaxed">
-                                        {!! strip_tags($bulletin->content) !!}
-                                    </div>
-                                    <a href="{{ route('lab.bulletins.show', ['category' => $category, 'bulletin' => $bulletin]) }}" class="text-sm font-black text-blue-600 hover:text-blue-800 flex items-center">
-                                        BACA SELENGKAPNYA <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                    <p class="text-[13px] text-neutral-500 mb-5 line-clamp-3 leading-relaxed">{!! strip_tags($bulletin->content) !!}</p>
+                                    <a href="{{ route('lab.bulletins.show', ['category' => $category, 'bulletin' => $bulletin]) }}" class="inline-flex items-center gap-1.5 text-[13px] font-semibold text-accent hover:text-accent-hover transition group/btn">
+                                        Baca Selengkapnya
+                                        <svg class="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                                     </a>
                                 </div>
                             @empty
-                                <div class="col-span-2 py-12 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                                    <p class="text-slate-400 font-bold">Belum ada berita khusus untuk lab ini.</p>
+                                <div class="col-span-2 py-16 text-center bg-white rounded-2xl border-2 border-dashed border-neutral-200">
+                                    <p class="text-neutral-400 font-medium">Belum ada berita khusus untuk lab ini.</p>
                                 </div>
                             @endforelse
                         </div>
                     </section>
                 </div>
 
-                <!-- Right: Sidebar -->
-                <div class="space-y-12">
-                    <!-- Stats Card -->
-                    <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl">
-                        <h3 class="text-xl font-black text-slate-900 mb-8">Statistik Lab</h3>
-                        <div class="space-y-8">
-                            <div class="flex items-center">
-                                <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mr-4">
-                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <!-- Sidebar -->
+                <div class="space-y-6">
+                    <div class="fluent-card p-6">
+                        <h3 class="text-lg font-semibold text-neutral-800 mb-6 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            Statistik Lab
+                        </h3>
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-11 h-11 rounded-xl bg-accent-light flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 </div>
                                 <div>
-                                    <div class="text-2xl font-black text-slate-900">{{ $usageCount }}</div>
-                                    <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Penggunaan</div>
+                                    <p class="text-2xl font-bold text-neutral-800">{{ $usageCount }}</p>
+                                    <p class="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">Total Penggunaan</p>
                                 </div>
                             </div>
-                            <div class="flex items-center">
-                                <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mr-4">
-                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
+                            <div class="flex items-center gap-4">
+                                <div class="w-11 h-11 rounded-xl bg-accent-light flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
                                 </div>
                                 <div>
-                                    <div class="text-2xl font-black text-slate-900">{{ count($bulletins) }}</div>
-                                    <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Berita Terkait</div>
+                                    <p class="text-2xl font-bold text-neutral-800">{{ count($bulletins) }}</p>
+                                    <p class="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">Berita Terkait</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Actions -->
-                    <div class="bg-blue-600 p-8 rounded-[2.5rem] shadow-xl text-white">
-                        <h3 class="text-xl font-black mb-6">Aktivitas Lab</h3>
-                        <p class="text-blue-100 text-sm mb-8 leading-relaxed">Lakukan pencatatan aktivitas penggunaan laboratorium secara tertib.</p>
-                        <a href="{{ route('login') }}" class="block w-full py-4 bg-white text-blue-600 text-center font-black rounded-2xl hover:bg-blue-50 transition shadow-lg">
-                            CATAT PENGGUNAAN
+                    <div class="bg-gradient-to-br from-accent to-accent-700 rounded-2xl shadow-fluent-lg p-6 text-white overflow-hidden relative">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-6 -mt-6 blur-2xl"></div>
+                        <h3 class="text-lg font-semibold mb-3 relative">Aktivitas Lab</h3>
+                        <p class="text-[13px] text-accent-100 mb-6 leading-relaxed relative">Lakukan pencatatan aktivitas penggunaan laboratorium secara tertib.</p>
+                        <a href="{{ route('login') }}" class="relative fluent-btn w-full justify-center bg-white text-accent font-semibold rounded-xl hover:bg-accent-light transition shadow-lg">
+                            Catat Penggunaan
                         </a>
                     </div>
                 </div>
@@ -170,39 +170,39 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-slate-900 text-white py-24 mt-24">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-16">
-            <div class="md:col-span-2">
-                <span class="text-3xl font-black text-white tracking-tighter mb-8 block">LAB<span class="text-blue-500">PSTI</span></span>
-                <p class="text-slate-400 leading-relaxed text-lg max-w-md">
-                    Program Studi Teknologi Informasi (PSTI) Universitas ‘Aisyiyah (UNISA) Yogyakarta menerapkan disiplin Ilmu Teknologi Informasi yang berintegrasi pada bidang ilmu kesehatan.
-                </p>
+    <footer class="relative bg-neutral-950 text-white pt-16 pb-10 overflow-hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,120,212,0.06)_0%,transparent_60%)]"></div>
+        <div class="relative max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
+                <div class="md:col-span-2">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent-700 grid place-items-center shadow-lg shadow-accent/20">
+                            <span class="text-sm font-bold tracking-tight">TI</span>
+                        </div>
+                        <span class="text-xl font-semibold tracking-tight">LAB<span class="text-accent">PSTI</span></span>
+                    </div>
+                    <p class="text-sm text-neutral-400 leading-relaxed max-w-md">Program Studi Teknologi Informasi (PSTI) Universitas 'Aisyiyah (UNISA) Yogyakarta menerapkan disiplin Ilmu Teknologi Informasi yang berintegrasi pada bidang ilmu kesehatan.</p>
+                </div>
+                <div>
+                    <h3 class="text-[11px] font-semibold text-accent mb-5 uppercase tracking-[0.15em]">Navigasi</h3>
+                    <ul class="space-y-3 text-[13px] font-medium text-neutral-400">
+                        <li><a href="{{ route('landing') }}" class="hover:text-white transition-colors">Halaman Utama</a></li>
+                        <li><a href="{{ route('landing') }}#bulletins" class="hover:text-white transition-colors">Kabar Berita</a></li>
+                        <li><a href="{{ route('landing') }}#stats" class="hover:text-white transition-colors">Statistik</a></li>
+                        <li><a href="{{ route('login') }}" class="hover:text-white transition-colors">Admin Panel</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-[11px] font-semibold text-accent mb-5 uppercase tracking-[0.15em]">Hubungi Kami</h3>
+                    <ul class="space-y-4 text-[13px] font-medium text-neutral-400">
+                        <li class="flex items-start gap-3"><svg class="w-4 h-4 text-neutral-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg><span>Jl. Siliwangi (Ring Road Barat) No. 63, Sleman, Yogyakarta.</span></li>
+                        <li class="flex items-center gap-3"><svg class="w-4 h-4 text-neutral-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg><span>info@unisayogya.ac.id</span></li>
+                    </ul>
+                </div>
             </div>
-            <div>
-                <h3 class="text-xs font-black text-blue-500 mb-8 uppercase tracking-[0.2em]">Navigasi</h3>
-                <ul class="space-y-4 text-sm font-bold text-slate-300">
-                    <li><a href="{{ route('landing') }}" class="hover:text-blue-400 transition">Halaman Utama</a></li>
-                    <li><a href="{{ route('landing') }}#bulletins" class="hover:text-blue-400 transition">Kabar Berita</a></li>
-                    <li><a href="{{ route('landing') }}#stats" class="hover:text-blue-400 transition">Statistik</a></li>
-                    <li><a href="{{ route('login') }}" class="hover:text-blue-400 transition">Admin Panel</a></li>
-                </ul>
+            <div class="border-t border-neutral-800 mt-12 pt-7 text-center">
+                <p class="text-[11px] font-medium text-neutral-500 tracking-[0.12em] uppercase">&copy; {{ date('Y') }} PSTI UNISA Yogyakarta. "Health Information Technology, Empowering Healthier Life."</p>
             </div>
-            <div>
-                <h3 class="text-xs font-black text-blue-500 mb-8 uppercase tracking-[0.2em]">Hubungi Kami</h3>
-                <ul class="space-y-6 text-sm font-bold text-slate-300">
-                    <li class="flex items-start">
-                        <svg class="w-5 h-5 mr-4 text-blue-500 mt-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        <span>Jl. Siliwangi (Ring Road Barat) No. 63, Sleman, Yogyakarta.</span>
-                    </li>
-                    <li class="flex items-center">
-                        <svg class="w-5 h-5 mr-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                        <span>info@unisayogya.ac.id</span>
-                    </li>
-                </ul>
-            </div>
-        </div>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-800 mt-20 pt-10 text-center text-slate-500 text-[10px] font-black uppercase tracking-widest">
-            <p>&copy; {{ date('Y') }} PSTI UNISA Yogyakarta. “Health Information Technology, Empowering Healthier Life.”</p>
         </div>
     </footer>
 </body>

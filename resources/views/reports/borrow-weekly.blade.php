@@ -15,12 +15,12 @@
             <h3 class="text-base font-semibold text-neutral-800 mb-4">Statistik Harian</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 @foreach($dailyStats as $dateStr => $stat)
-                    <div class="bg-blue-50 rounded-xl p-3 text-center">
-                        <p class="text-[10px] font-semibold uppercase text-neutral-500">{{ $stat['date']->locale('id')->isoFormat('ddd') }}</p>
-                        <p class="text-xs text-neutral-500">{{ $stat['date']->format('d/m') }}</p>
-                        <p class="text-2xl font-bold text-blue-600 mt-1">{{ $stat['count'] }}</p>
-                        <p class="text-xs text-neutral-500">peminjaman</p>
-                        <p class="text-xs text-neutral-400">{{ $stat['quantity'] }} unit</p>
+                    <div class="bg-blue-500 rounded-xl p-3 text-center shadow-sm">
+                        <p class="text-[10px] font-bold uppercase text-blue-100">{{ $stat['date']->locale('id')->isoFormat('ddd') }}</p>
+                        <p class="text-xs font-medium text-blue-200">{{ $stat['date']->format('d/m') }}</p>
+                        <p class="text-2xl font-bold text-white mt-1">{{ $stat['count'] }}</p>
+                        <p class="text-xs font-medium text-blue-100">peminjaman</p>
+                        <p class="text-xs text-blue-200">{{ $stat['quantity'] }} unit</p>
                     </div>
                 @endforeach
             </div>
