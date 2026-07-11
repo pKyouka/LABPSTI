@@ -43,7 +43,7 @@
                     </div>
                     <div class="rounded-xl bg-accent-light border border-accent-200 px-4 py-3">
                         <p class="text-xs font-semibold uppercase tracking-wider text-accent mb-1">Cara Akses (SSH)</p>
-                        <code class="text-sm font-mono text-neutral-800">ssh {{ $vmBorrow->vm_username }}@{{ $vmBorrow->host_ip }}</code>
+                        <code class="text-sm font-mono text-neutral-800">ssh {{ $vmBorrow->vm_username }}&#64;{{ $vmBorrow->host_ip }}</code>
                     </div>
                     @if($vmBorrow->admin_notes)
                         <div>
