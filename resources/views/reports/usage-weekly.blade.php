@@ -1,102 +1,56 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center gap-4">
-            <h2 class="font-bold font-bold text-2xl text-slate-900 leading-tight">
-                {{ __('Laporan Penggunaan Lab Mingguan') }}
-            </h2>
-            <a href="{{ route('reports.index') }}" class="inline-flex items-center px-6 py-2.5 bg-slate-600 text-white font-black rounded-xl hover:bg-slate-700 transition shadow-lg shadow-slate-200 uppercase tracking-widest text-[10px]">
-                Kembali ke Laporan
-            </a>
+            <h2 class="text-lg font-semibold text-neutral-800">{{ __('Laporan Penggunaan Lab Mingguan') }}</h2>
+            <a href="{{ route('reports.index') }}" class="fluent-btn fluent-btn-secondary fluent-btn-sm">← Kembali</a>
         </div>
     </x-slot>
 
-    <div class="py-8 sm:py-10">
-        <div class="panel-shell">
-            <div class="panel-card overflow-hidden mb-6">
-                <div class="panel-card-body">
-                    <div class="bg-pink-50 border border-pink-200 rounded-lg p-4 mb-4">
-                        <p class="text-sm text-pink-700 font-semibold">
-                            Laporan Mingguan: {{ $weekStart->locale('id')->isoFormat('D MMMM') }} - {{ $weekEnd->locale('id')->isoFormat('D MMMM YYYY') }}
-                        </p>
-                    </div>
-                </div>
-            </div>
+    <div class="space-y-6">
+        <div class="bg-pink-50 border border-pink-200 rounded-xl px-5 py-3 text-sm font-medium text-pink-700">
+            Laporan Mingguan: {{ $weekStart->locale('id')->isoFormat('D MMMM') }} - {{ $weekEnd->locale('id')->isoFormat('D MMMM YYYY') }}
+        </div>
 
-            <!-- Daily Stats Chart -->
-            <div class="panel-card overflow-hidden mb-6">
-                <div class="panel-card-body">
-                    <h3 class="text-lg font-black text-slate-900 mb-4">Statistik Harian</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
-                        @foreach($dailyStats as $dateStr => $stat)
-                            <div class="bg-gradient-to-br from-pink-50 to-pink-100 rounded-lg p-4 text-center">
-                                <div class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">
-                                    {{ $stat['date']->locale('id')->isoFormat('dddd') }}
-                                </div>
-                                <div class="text-[11px] text-slate-600 mb-3">
-                                    {{ $stat['date']->format('d/m') }}
-                                </div>
-                                <div class="font-bold text-2xl font-bold text-pink-600 mb-1">
-                                    {{ $stat['count'] }}
-                                </div>
-                                <div class="text-xs text-slate-600 font-semibold">
-                                    penggunaan
-                                </div>
-                            </div>
-                        @endforeach
+        <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm p-6">
+            <h3 class="text-base font-semibold text-neutral-800 mb-4">Statistik Harian</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                @foreach($dailyStats as $dateStr => $stat)
+                    <div class="bg-pink-50 rounded-xl p-3 text-center">
+                        <p class="text-[10px] font-semibold uppercase text-neutral-500">{{ $stat['date']->locale('id')->isoFormat('ddd') }}</p>
+                        <p class="text-xs text-neutral-500">{{ $stat['date']->format('d/m') }}</p>
+                        <p class="text-2xl font-bold text-pink-600 mt-1">{{ $stat['count'] }}</p>
+                        <p class="text-xs text-neutral-500">penggunaan</p>
                     </div>
-                </div>
-            </div>
-
-            <!-- Detailed Records -->
-            <div class="panel-card overflow-hidden">
-                <div class="panel-card-body">
-                    @if($records->count() === 0)
-                        <div class="text-center py-8">
-                            <p class="text-slate-500 font-semibold">Tidak ada penggunaan lab pada minggu ini</p>
-                        </div>
-                    @else
-                        <h3 class="text-lg font-black text-slate-900 mb-4">Detail Penggunaan per Hari</h3>
-                        @foreach($records as $dateStr => $dayRecords)
-                            <div class="mb-6 pb-6 border-b border-slate-200 last:border-b-0">
-                                <h4 class="font-black text-slate-900 mb-3">
-                                    {{ \Carbon\Carbon::parse($dateStr)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
-                                </h4>
-                                <div class="overflow-x-auto">
-                                    <table class="min-w-full text-sm divide-y divide-slate-200">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">Lab</th>
-                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">Pengguna</th>
-                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">NIM</th>
-                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">Waktu</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-slate-200">
-                                            @foreach($dayRecords as $record)
-                                                <tr class="hover:bg-slate-50">
-                                                    <td class="px-3 py-2 font-semibold text-slate-900">{{ $record->category?->name }}</td>
-                                                    <td class="px-3 py-2 text-slate-700">{{ $record->user_name }}</td>
-                                                    <td class="px-3 py-2 text-slate-700">{{ $record->user_id_number }}</td>
-                                                    <td class="px-3 py-2 text-slate-700 text-xs">
-                                                        @if($record->start_time)
-                                                            {{ $record->start_time->format('H:i') }}
-                                                            @if($record->end_time)
-                                                                - {{ $record->end_time->format('H:i') }}
-                                                            @endif
-                                                        @else
-                                                            -
-                                                        @endif
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        @endforeach
-                    @endif
-                </div>
+                @endforeach
             </div>
         </div>
+
+        @if($records->count() === 0)
+            <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm p-8 text-center text-neutral-500 text-sm font-medium">Tidak ada penggunaan lab pada minggu ini.</div>
+        @else
+            <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm overflow-hidden">
+                <div class="px-5 py-4 border-b border-neutral-100"><h3 class="text-base font-semibold text-neutral-800">Detail per Hari</h3></div>
+                <div class="p-5 space-y-6">
+                    @foreach($records as $dateStr => $dayRecords)
+                        <div>
+                            <h4 class="text-sm font-semibold text-neutral-800 mb-2">{{ \Carbon\Carbon::parse($dateStr)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</h4>
+                            <table class="fluent-table text-sm">
+                                <thead><tr><th>Lab</th><th>Pengguna</th><th>NIM</th><th>Waktu</th></tr></thead>
+                                <tbody>
+                                    @foreach($dayRecords as $record)
+                                        <tr>
+                                            <td class="font-medium">{{ $record->category?->name }}</td>
+                                            <td>{{ $record->user_name }}</td>
+                                            <td>{{ $record->user_id_number }}</td>
+                                            <td>{{ $record->start_time?->format('H:i') ?? '-' }} {{ $record->end_time ? '- '.$record->end_time->format('H:i') : '' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
 </x-app-layout>

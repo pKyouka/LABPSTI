@@ -1,196 +1,95 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center gap-4">
-            <h2 class="font-bold font-bold text-2xl text-slate-900 leading-tight">
-                {{ __('Laporan Peminjaman Bulanan') }}
-            </h2>
-            <a href="{{ route('reports.index') }}" class="inline-flex items-center px-6 py-2.5 bg-slate-600 text-white font-black rounded-xl hover:bg-slate-700 transition shadow-lg shadow-slate-200 uppercase tracking-widest text-[10px]">
-                Kembali ke Laporan
-            </a>
+            <h2 class="text-lg font-semibold text-neutral-800">{{ __('Laporan Peminjaman Bulanan') }}</h2>
+            <a href="{{ route('reports.index') }}" class="fluent-btn fluent-btn-secondary fluent-btn-sm">← Kembali</a>
         </div>
     </x-slot>
 
-    <div class="py-8 sm:py-10">
-        <div class="panel-shell">
-            <!-- Month Selector -->
-            <div class="panel-card overflow-hidden mb-6">
-                <div class="panel-card-body">
-                    <form method="GET" action="{{ route('reports.borrow.monthly') }}" id="monthFilterForm" class="flex flex-wrap items-end gap-4">
-                        <div>
-                            <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Bulan</label>
-                            <select name="month" id="monthSelect" class="rounded-lg border-slate-300 text-sm focus:border-cyan-500 focus:ring-cyan-500">
-                                @for($m = 1; $m <= 12; $m++)
-                                    <option value="{{ str_pad($m, 2, '0', STR_PAD_LEFT) }}" {{ $selectedMonth == str_pad($m, 2, '0', STR_PAD_LEFT) ? 'selected' : '' }}>
-                                        {{ Carbon\Carbon::create()->month($m)->locale('id')->isoFormat('MMMM') }}
-                                    </option>
-                                @endfor
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Tahun</label>
-                            <select name="year" id="yearSelect" class="rounded-lg border-slate-300 text-sm focus:border-cyan-500 focus:ring-cyan-500">
-                                @for($y = date('Y') - 5; $y <= date('Y') + 1; $y++)
-                                    <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                        <div class="flex gap-2">
-                            <a href="{{ route('reports.borrow.monthly.pdf', ['month' => $selectedMonth, 'year' => $selectedYear]) }}" class="inline-flex items-center px-6 py-2.5 bg-red-600 text-white font-black rounded-lg hover:bg-red-700 transition text-xs uppercase tracking-widest">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                Export PDF
-                            </a>
-                            <a href="{{ route('reports.borrow.export', ['start_date' => $monthStart->format('Y-m-d'), 'end_date' => $monthEnd->format('Y-m-d')]) }}" class="inline-flex items-center px-6 py-2.5 bg-emerald-600 text-white font-black rounded-lg hover:bg-emerald-700 transition text-xs uppercase tracking-widest">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                Export Excel
-                            </a>
-                        </div>
-                    </form>
+    <div class="space-y-6">
+        <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm p-5">
+            <form method="GET" action="{{ route('reports.borrow.monthly') }}" id="monthFilterForm" class="flex flex-wrap items-end gap-3">
+                <div>
+                    <x-input-label for="ms" value="Bulan" />
+                    <select name="month" id="monthSelect" class="fluent-select text-sm" onchange="document.getElementById('monthFilterForm').submit()">
+                        @for($m = 1; $m <= 12; $m++)
+                            <option value="{{ str_pad($m, 2, '0', STR_PAD_LEFT) }}" {{ $selectedMonth == str_pad($m, 2, '0', STR_PAD_LEFT) ? 'selected' : '' }}>{{ Carbon\Carbon::create()->month($m)->locale('id')->isoFormat('MMMM') }}</option>
+                        @endfor
+                    </select>
                 </div>
-            </div>
+                <div>
+                    <x-input-label for="ys" value="Tahun" />
+                    <select name="year" id="yearSelect" class="fluent-select text-sm" onchange="document.getElementById('monthFilterForm').submit()">
+                        @for($y = date('Y') - 5; $y <= date('Y') + 1; $y++)
+                            <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
+                        @endfor
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <a href="{{ route('reports.borrow.monthly.pdf', ['month' => $selectedMonth, 'year' => $selectedYear]) }}" class="fluent-btn fluent-btn-danger fluent-btn-sm">Export PDF</a>
+                    <a href="{{ route('reports.borrow.export', ['start_date' => $monthStart->format('Y-m-d'), 'end_date' => $monthEnd->format('Y-m-d')]) }}" class="fluent-btn fluent-btn-primary fluent-btn-sm">Export Excel</a>
+                </div>
+            </form>
+        </div>
 
-            <div class="panel-card overflow-hidden mb-6">
-                <div class="panel-card-body">
-                    <div class="bg-cyan-50 border border-cyan-200 rounded-lg p-4 mb-4">
-                        <p class="text-sm text-cyan-700 font-semibold">
-                            Laporan Bulanan: {{ $monthStart->locale('id')->isoFormat('MMMM YYYY') }}
-                        </p>
+        <div class="bg-cyan-50 border border-cyan-200 rounded-xl px-5 py-3 text-sm font-medium text-cyan-700">Laporan Bulanan: {{ $monthStart->locale('id')->isoFormat('MMMM YYYY') }}</div>
+
+        <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm p-6">
+            <h3 class="text-base font-semibold text-neutral-800 mb-4">Ringkasan per Minggu</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                @foreach($weeklyStats as $weekKey => $week)
+                    <div class="bg-cyan-50 rounded-xl p-4 text-center">
+                        <p class="text-xs font-semibold uppercase text-neutral-500">Minggu {{ $loop->iteration }}</p>
+                        <p class="text-xs text-neutral-500">{{ $week['start']->format('d/m') }} - {{ $week['end']->format('d/m') }}</p>
+                        <p class="text-2xl font-bold text-cyan-600 mt-1">{{ $week['count'] }}</p>
+                        <p class="text-xs text-neutral-500">peminjaman ({{ $week['quantity'] }} unit)</p>
                     </div>
-                </div>
+                @endforeach
             </div>
+        </div>
 
-            <!-- Weekly Summary -->
-            <div class="panel-card overflow-hidden mb-6">
-                <div class="panel-card-body">
-                    <h3 class="text-lg font-black text-slate-900 mb-4">Ringkasan per Minggu</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        @foreach($weeklyStats as $weekKey => $week)
-                            <div class="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg p-4">
-                                <div class="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-2">
-                                    Minggu {{ $loop->iteration }}
-                                </div>
-                                <div class="text-xs text-slate-600 mb-3">
-                                    {{ $week['start']->format('d/m') }} - {{ $week['end']->format('d/m/Y') }}
-                                </div>
-                                <div class="font-bold text-2xl font-bold text-cyan-600 mb-1">
-                                    {{ $week['count'] }}
-                                </div>
-                                <div class="text-xs text-slate-600 font-semibold">
-                                    peminjaman
-                                </div>
-                                <div class="text-xs text-slate-500 mt-1">
-                                    {{ $week['quantity'] }} unit
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
+        <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm p-6">
+            <h3 class="text-base font-semibold text-neutral-800 mb-4">Statistik Harian</h3>
+            <table class="fluent-table">
+                <thead><tr><th>Tanggal</th><th>Hari</th><th class="text-center">Peminjaman</th><th class="text-center">Unit</th></tr></thead>
+                <tbody>
+                    @foreach($dailyStats as $dateStr => $stat)
+                        <tr>
+                            <td class="font-medium">{{ $stat['date']->format('d') }}</td>
+                            <td>{{ $stat['date']->locale('id')->isoFormat('dddd') }}</td>
+                            <td class="text-center"><span class="fluent-badge fluent-badge-info">{{ $stat['count'] }}</span></td>
+                            <td class="text-center"><span class="fluent-badge fluent-badge-success">{{ $stat['quantity'] }}</span></td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
 
-            <!-- Daily Stats -->
-            <div class="panel-card overflow-hidden mb-6">
-                <div class="panel-card-body">
-                    <h3 class="text-lg font-black text-slate-900 mb-4">Statistik Harian</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm divide-y divide-slate-200">
-                            <thead>
-                                <tr class="bg-slate-50">
-                                    <th class="text-left px-4 py-3 font-black text-slate-700 text-xs uppercase">Tanggal</th>
-                                    <th class="text-left px-4 py-3 font-black text-slate-700 text-xs uppercase">Hari</th>
-                                    <th class="text-center px-4 py-3 font-black text-slate-700 text-xs uppercase">Jumlah Peminjaman</th>
-                                    <th class="text-center px-4 py-3 font-black text-slate-700 text-xs uppercase">Total Unit</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-200">
-                                @foreach($dailyStats as $dateStr => $stat)
-                                    <tr class="hover:bg-slate-50">
-                                        <td class="px-4 py-3 font-semibold text-slate-900">{{ $stat['date']->format('d') }}</td>
-                                        <td class="px-4 py-3 text-slate-700">{{ $stat['date']->locale('id')->isoFormat('dddd') }}</td>
-                                        <td class="px-4 py-3 text-center">
-                                            <span class="inline-flex px-3 py-1 text-xs font-black text-white bg-blue-600 rounded-full">
-                                                {{ $stat['count'] }}
-                                            </span>
-                                        </td>
-                                        <td class="px-4 py-3 text-center">
-                                            <span class="inline-flex px-3 py-1 text-xs font-black text-white bg-emerald-600 rounded-full">
-                                                {{ $stat['quantity'] }}
-                                            </span>
-                                        </td>
+        @if($records->count() === 0)
+            <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm p-8 text-center text-neutral-500 text-sm font-medium">Tidak ada peminjaman pada bulan ini.</div>
+        @else
+            <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm p-5 space-y-6">
+                <h3 class="text-base font-semibold text-neutral-800">Detail per Hari</h3>
+                @foreach($records as $dateStr => $dayRecords)
+                    <div>
+                        <h4 class="text-sm font-semibold text-neutral-800 mb-2">{{ \Carbon\Carbon::parse($dateStr)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</h4>
+                        <table class="fluent-table text-sm">
+                            <thead><tr><th>Barang</th><th>Peminjam</th><th>NIM</th><th>Qty</th><th>Status</th></tr></thead>
+                            <tbody>
+                                @foreach($dayRecords as $record)
+                                    <tr>
+                                        <td class="font-medium">{{ $record->inventoryItem?->name }}</td>
+                                        <td>{{ $record->user_name }}</td>
+                                        <td>{{ $record->user_id_number }}</td>
+                                        <td>{{ $record->quantity }}</td>
+                                        <td><span class="fluent-badge {{ $record->status==='dipinjam'?'fluent-badge-info':($record->status==='dikembalikan'?'fluent-badge-success':($record->status==='menunggu'?'fluent-badge-warning':'fluent-badge-danger')) }}">{{ ucfirst($record->status) }}</span></td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
-                </div>
+                @endforeach
             </div>
-
-            <!-- Detailed Records -->
-            <div class="panel-card overflow-hidden">
-                <div class="panel-card-body">
-                    @if($records->count() === 0)
-                        <div class="text-center py-8">
-                            <p class="text-slate-500 font-semibold">Tidak ada peminjaman pada bulan ini</p>
-                        </div>
-                    @else
-                        <h3 class="text-lg font-black text-slate-900 mb-4">Detail Peminjaman per Hari</h3>
-                        @foreach($records as $dateStr => $dayRecords)
-                            <div class="mb-4 pb-4 border-b border-slate-200 last:border-b-0">
-                                <h4 class="font-black text-slate-900 mb-2">
-                                    {{ \Carbon\Carbon::parse($dateStr)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
-                                </h4>
-                                <div class="overflow-x-auto">
-                                    <table class="min-w-full text-sm divide-y divide-slate-200">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">Barang</th>
-                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">Peminjam</th>
-                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">NIM</th>
-                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">Qty</th>
-                                                <th class="text-left px-3 py-2 font-black text-slate-700 text-xs uppercase">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-slate-200">
-                                            @foreach($dayRecords as $record)
-                                                <tr class="hover:bg-slate-50">
-                                                    <td class="px-3 py-2 font-semibold text-slate-900">{{ $record->inventoryItem?->name }}</td>
-                                                    <td class="px-3 py-2 text-slate-700">{{ $record->user_name }}</td>
-                                                    <td class="px-3 py-2 text-slate-700">{{ $record->user_id_number }}</td>
-                                                    <td class="px-3 py-2 font-semibold text-slate-900">{{ $record->quantity }}</td>
-                                                    <td class="px-3 py-2">
-                                                        <span class="inline-flex px-2 py-1 text-xs font-black rounded
-                                                            @if($record->status === 'dipinjam')
-                                                                bg-blue-100 text-blue-800
-                                                            @elseif($record->status === 'dikembalikan')
-                                                                bg-emerald-100 text-emerald-800
-                                                            @elseif($record->status === 'menunggu')
-                                                                bg-yellow-100 text-yellow-800
-                                                            @else
-                                                                bg-red-100 text-red-800
-                                                            @endif
-                                                        ">
-                                                            {{ ucfirst($record->status) }}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        @endforeach
-                    @endif
-                </div>
-            </div>
-        </div>
+        @endif
     </div>
-
-    @push('scripts')
-    <script>
-        document.getElementById('monthSelect').addEventListener('change', function() {
-            document.getElementById('monthFilterForm').submit();
-        });
-        document.getElementById('yearSelect').addEventListener('change', function() {
-            document.getElementById('monthFilterForm').submit();
-        });
-    </script>
-    @endpush
 </x-app-layout>

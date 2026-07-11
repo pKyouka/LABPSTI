@@ -2,214 +2,560 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-	body {
-		@apply bg-slate-100 text-slate-800;
-	}
+/* ============================================
+   Fluent Design System — Microsoft Windows 11
+   ============================================ */
 
-	.font-display {
-		font-family: 'Space Grotesk', sans-serif;
-	}
+/* ---- 1. Design Tokens ---- */
+:root {
+    --fluent-accent: #0078D4;
+    --fluent-accent-hover: #106EBE;
+    --fluent-accent-pressed: #005A9E;
+    --fluent-accent-light: #E8F0FE;
+    --fluent-bg: #F3F3F3;
+    --fluent-surface: #F9F9F9;
+    --fluent-card: #FFFFFF;
+    --fluent-card-hover: #F5F5F5;
+    --fluent-border: #E0E0E0;
+    --fluent-text-primary: #1F1F1F;
+    --fluent-text-secondary: #616161;
+    --fluent-text-tertiary: #808080;
+    --fluent-divider: #E8E8E8;
+    --fluent-radius: 8px;
+    --fluent-radius-lg: 12px;
+    --fluent-radius-xl: 16px;
 }
 
+@layer base {
+    body {
+        @apply bg-[#F3F3F3] text-[#1F1F1F] antialiased;
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+
+    /* Segoe UI Variable with WinUI styling */
+    .font-sans, body {
+        font-family: "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    }
+
+    /* Scrollbar Fluent */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.15);
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(0,0,0,0.25);
+    }
+}
+
+/* ---- 2. Fluent Acrylic & Mica Backgrounds ---- */
 @layer components {
-	.panel-shell {
-		@apply max-w-7xl mx-auto sm:px-6 lg:px-8;
-	}
+    /* Mica — subtle tinted background (base layer) */
+    .fluent-mica {
+        background:
+            radial-gradient(ellipse at 50% 0%, rgba(0,120,212,0.03) 0%, transparent 70%),
+            linear-gradient(180deg, #F9F9F9 0%, #F3F3F3 100%);
+        background-attachment: fixed;
+    }
 
-	.panel-card {
-		@apply bg-white/85 backdrop-blur border border-white/70 rounded-3xl shadow-xl shadow-slate-200/70;
-	}
+    /* Acrylic — blurred transparency (overlay / sidebar) */
+    .fluent-acrylic {
+        background: rgba(249,249,249,0.85);
+        backdrop-filter: blur(40px) saturate(1.5);
+        -webkit-backdrop-filter: blur(40px) saturate(1.5);
+    }
 
-	.panel-card-head {
-		@apply px-6 sm:px-8 pt-6 pb-4 border-b border-slate-100;
-	}
+    .fluent-acrylic-heavy {
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(60px) saturate(2);
+        -webkit-backdrop-filter: blur(60px) saturate(2);
+    }
 
-	.panel-card-body {
-		@apply px-6 sm:px-8 py-6;
-	}
+    /* ---- 3. Fluent Cards ---- */
+    .fluent-card {
+        @apply bg-white rounded-fluent-xl;
+        border: 1px solid var(--fluent-border);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02), 0 2px 4px rgba(0,0,0,0.04);
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    .fluent-card:hover {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.08);
+        transform: translateY(-1px);
+    }
+    .fluent-card-interactive:active {
+        transform: scale(0.995);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
 
-	.panel-input {
-		@apply mt-1 block w-full rounded-xl border-slate-200 bg-white/90 shadow-sm focus:border-cyan-500 focus:ring-cyan-500;
-	}
+    /* ---- 4. Fluent Buttons ---- */
+    .fluent-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 8px 20px;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 20px;
+        border-radius: var(--fluent-radius);
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.1s ease;
+        user-select: none;
+        outline: none;
+    }
+    .fluent-btn:focus-visible {
+        box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--fluent-accent);
+    }
 
-	.panel-select {
-		@apply mt-1 block w-full rounded-xl border-slate-200 bg-white/90 shadow-sm focus:border-cyan-500 focus:ring-cyan-500;
-	}
+    .fluent-btn-primary {
+        background: var(--fluent-accent);
+        color: #fff;
+        border-color: var(--fluent-accent);
+    }
+    .fluent-btn-primary:hover {
+        background: var(--fluent-accent-hover);
+    }
+    .fluent-btn-primary:active {
+        background: var(--fluent-accent-pressed);
+    }
 
-	.panel-textarea {
-		@apply mt-1 block w-full rounded-2xl border-slate-200 bg-white/90 shadow-sm focus:border-cyan-500 focus:ring-cyan-500;
-	}
+    .fluent-btn-secondary {
+        background: rgba(0,0,0,0.06);
+        color: var(--fluent-text-primary);
+        border-color: var(--fluent-border);
+    }
+    .fluent-btn-secondary:hover {
+        background: rgba(0,0,0,0.08);
+    }
+    .fluent-btn-secondary:active {
+        background: rgba(0,0,0,0.12);
+    }
 
-	.table-head {
-		@apply bg-slate-50/80;
-	}
+    .fluent-btn-danger {
+        background: #E81123;
+        color: #fff;
+        border-color: #E81123;
+    }
+    .fluent-btn-danger:hover {
+        background: #C50F1F;
+    }
+    .fluent-btn-danger:active {
+        background: #A50F19;
+    }
 
-	.table-head th {
-		@apply px-6 py-4 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider;
-	}
+    .fluent-btn-ghost {
+        background: transparent;
+        color: var(--fluent-text-secondary);
+        border-color: transparent;
+    }
+    .fluent-btn-ghost:hover {
+        background: rgba(0,0,0,0.04);
+        color: var(--fluent-text-primary);
+    }
+    .fluent-btn-ghost:active {
+        background: rgba(0,0,0,0.08);
+    }
 
-	.table-row td {
-		@apply px-6 py-4 text-sm text-slate-600;
-	}
+    .fluent-btn-sm {
+        padding: 4px 12px;
+        font-size: 12px;
+        line-height: 18px;
+        border-radius: 6px;
+    }
+    .fluent-btn-lg {
+        padding: 10px 24px;
+        font-size: 16px;
+        line-height: 22px;
+    }
+
+    /* ---- 5. Fluent Inputs ---- */
+    .fluent-input {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--fluent-text-primary);
+        background: #fff;
+        border: 1px solid var(--fluent-border);
+        border-radius: var(--fluent-radius);
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .fluent-input::placeholder {
+        color: var(--fluent-text-tertiary);
+    }
+    .fluent-input:hover {
+        border-color: var(--fluent-text-tertiary);
+    }
+    .fluent-input:focus {
+        border-color: var(--fluent-accent);
+        box-shadow: 0 0 0 3px rgba(0,120,212,0.15);
+    }
+    .fluent-input:disabled {
+        background: rgba(0,0,0,0.03);
+        color: var(--fluent-text-tertiary);
+        cursor: not-allowed;
+    }
+
+    .fluent-select {
+        width: 100%;
+        padding: 8px 32px 8px 12px;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--fluent-text-primary);
+        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23616161' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+        border: 1px solid var(--fluent-border);
+        border-radius: var(--fluent-radius);
+        outline: none;
+        appearance: none;
+        cursor: pointer;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .fluent-select:hover {
+        border-color: var(--fluent-text-tertiary);
+    }
+    .fluent-select:focus {
+        border-color: var(--fluent-accent);
+        box-shadow: 0 0 0 3px rgba(0,120,212,0.15);
+    }
+
+    .fluent-textarea {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--fluent-text-primary);
+        background: #fff;
+        border: 1px solid var(--fluent-border);
+        border-radius: var(--fluent-radius);
+        outline: none;
+        resize: vertical;
+        min-height: 80px;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .fluent-textarea:focus {
+        border-color: var(--fluent-accent);
+        box-shadow: 0 0 0 3px rgba(0,120,212,0.15);
+    }
+
+    .fluent-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--fluent-text-secondary);
+        margin-bottom: 6px;
+        letter-spacing: 0.02em;
+    }
+
+    /* ---- 6. Fluent Tables ---- */
+    .fluent-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .fluent-table th {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--fluent-text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        text-align: left;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--fluent-divider);
+        background: rgba(0,0,0,0.02);
+    }
+    .fluent-table td {
+        padding: 14px 16px;
+        font-size: 14px;
+        color: var(--fluent-text-primary);
+        border-bottom: 1px solid var(--fluent-divider);
+    }
+    .fluent-table tr:hover td {
+        background: rgba(0,120,212,0.03);
+    }
+    .fluent-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* ---- 7. Fluent Badge ---- */
+    .fluent-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 999px;
+        letter-spacing: 0.02em;
+    }
+    .fluent-badge-success {
+        background: #DFF6DD;
+        color: #107C10;
+    }
+    .fluent-badge-warning {
+        background: #FFF4CE;
+        color: #8A6D00;
+    }
+    .fluent-badge-danger {
+        background: #FDE7E9;
+        color: #C50F1F;
+    }
+    .fluent-badge-info {
+        background: var(--fluent-accent-light);
+        color: var(--fluent-accent);
+    }
+    .fluent-badge-neutral {
+        background: rgba(0,0,0,0.06);
+        color: var(--fluent-text-secondary);
+    }
+
+    /* ---- 8. Fluent Checkbox / Radio ---- */
+    .fluent-checkbox {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--fluent-accent);
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .fluent-radio {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--fluent-accent);
+        cursor: pointer;
+    }
+
+    /* ---- 9. Layout Helper ---- */
+    .fluent-page {
+        @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    }
 }
 
 /* ============================================
-   Sidebar Animation Utilities
+   Sidebar — Fluent Acrylic
    ============================================ */
 
-/* Core sidebar transition — elegant cubic-bezier easing */
 .sb-transition {
-	transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-	will-change: transform, width;
+    transition: transform 0.3s cubic-bezier(0.33, 0, 0.67, 1), width 0.3s cubic-bezier(0.33, 0, 0.67, 1);
+    will-change: transform, width;
 }
 
-/* Main content margin transition — follows sidebar smoothly */
 .sb-margin-transition {
-	transition: margin-left 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-	will-change: margin-left;
+    transition: margin-left 0.3s cubic-bezier(0.33, 0, 0.67, 1);
+    will-change: margin-left;
 }
 
-/* Disable all transitions instantly (used during init/resize) */
 .sb-no-transition,
 .sb-no-transition * {
-	transition: none !important;
+    transition: none !important;
 }
 
-/* ---- Mobile Sidebar Enhancements ---- */
-
-/* Mobile sidebar open state — slides in smoothly */
-@media (max-width: 1023px) {
-    #sidebar {
-        /* Ensure full width overlay on mobile */
-        width: 18rem;
-        max-width: 85vw;
-    }
-
-    /* Smoother backdrop transition */
-    #sidebar-backdrop {
-        transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+/* ---- Sidebar Layout ---- */
+#sidebar {
+    width: 260px;
+    background: rgba(251,251,251,0.92);
+    backdrop-filter: blur(60px) saturate(1.8);
+    -webkit-backdrop-filter: blur(60px) saturate(1.8);
+    border-right: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-/* ---- Collapsed Mini Sidebar State ---- */
+#sidebar-header-gradient {
+    background: linear-gradient(135deg, #0078D4 0%, #005A9E 50%, #003360 100%);
+}
 
-/* Collapsed: sidebar narrows to icon-only width */
+/* ---- Collapsed Mini Sidebar ---- */
 html.sb-collapsed #sidebar {
-	width: 5rem;
-	transform: translateX(0); /* tetap terlihat */
-	overflow-x: hidden;
+    width: 60px;
+    overflow-x: hidden;
 }
 
 html.sb-collapsed #main-content {
-	margin-left: 5rem;
+    margin-left: 60px;
 }
 
-/* Keep sidebar header compact in collapsed mode */
-html.sb-collapsed #sidebar .flex-shrink-0:first-child {
-	padding-left: 0.75rem;
-	padding-right: 0.75rem;
-}
-
-/* Scrollbar hidden when collapsed to keep clean look */
-html.sb-collapsed #sidebar #sidebar-nav {
-	overflow-x: hidden;
-}
-
-/* User avatar stays centered when collapsed */
-html.sb-collapsed #sidebar .flex-shrink-0.p-3 {
-	padding: 0.5rem;
-}
-
-html.sb-collapsed #sidebar .flex-shrink-0.p-3 > .flex {
-	justify-content: center;
-	padding-left: 0.5rem;
-	padding-right: 0.5rem;
-}
-
-/* Hide text labels inside sidebar when collapsed */
-html.sb-collapsed .sb-nav-label {
-	opacity: 0;
-	max-width: 0;
-	overflow: hidden;
-	white-space: nowrap;
-	transition: opacity 0.3s ease, max-width 0.35s ease;
-	pointer-events: none;
-}
-
-html.sb-collapsed .sb-category-label {
-	opacity: 0;
-	max-height: 0;
-	overflow: hidden;
-	white-space: nowrap;
-	transition: opacity 0.2s ease, max-height 0.3s ease;
-	pointer-events: none;
-}
-
-html.sb-collapsed .sb-search-wrapper {
-	opacity: 0;
-	max-height: 0;
-	overflow: hidden;
-	transition: opacity 0.2s ease, max-height 0.3s ease;
-	pointer-events: none;
-}
-
-html.sb-collapsed .sb-user-info {
-	opacity: 0;
-	max-width: 0;
-	overflow: hidden;
-	white-space: nowrap;
-	transition: opacity 0.2s ease, max-width 0.3s ease;
-	pointer-events: none;
-}
-
-html.sb-collapsed .sb-user-menu-btn {
-	opacity: 0;
-	width: 0;
-	overflow: hidden;
-	transition: opacity 0.2s ease, width 0.3s ease;
-	pointer-events: none;
-}
-
+html.sb-collapsed .sb-nav-label,
+html.sb-collapsed .sb-category-label,
+html.sb-collapsed .sb-search-wrapper,
+html.sb-collapsed .sb-user-info,
+html.sb-collapsed .sb-user-menu-btn,
 html.sb-collapsed .sb-brand-text {
-	opacity: 0;
-	max-width: 0;
-	overflow: hidden;
-	white-space: nowrap;
-	transition: opacity 0.2s ease, max-width 0.3s ease;
-	pointer-events: none;
+    opacity: 0;
+    max-width: 0;
+    max-height: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    pointer-events: none;
+    transition: opacity 0.15s ease, max-width 0.2s ease, max-height 0.2s ease;
 }
 
-/* Center nav items when collapsed (icon-only mode) */
 html.sb-collapsed #sidebar .sb-nav-link-inner {
-	justify-content: center;
-	gap: 0;
-	padding-left: 0.5rem;
-	padding-right: 0.5rem;
+    justify-content: center;
+    gap: 0;
+    padding-left: 8px;
+    padding-right: 8px;
 }
 
-/* Responsive: on mobile (< lg), the collapsed state uses full overlay pattern */
+html.sb-collapsed #sidebar .flex-shrink-0:first-child {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+html.sb-collapsed #sidebar #sidebar-nav {
+    overflow-x: hidden;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+/* ---- Nav Item Fluent ---- */
+.sb-nav-link-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #424242;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.1s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.sb-nav-link-inner:hover {
+    background: rgba(0,0,0,0.04);
+    color: #1F1F1F;
+}
+
+.sb-nav-link-inner:active {
+    background: rgba(0,0,0,0.08);
+}
+
+/* Active nav item — accent left border + subtle bg */
+.sb-nav-link-inner-active {
+    background: var(--fluent-accent-light) !important;
+    color: var(--fluent-accent) !important;
+    font-weight: 600 !important;
+    box-shadow: inset 3px 0 0 var(--fluent-accent);
+}
+
+.sb-nav-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sb-nav-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.sb-category-label {
+    padding: 16px 14px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #808080;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    transition: opacity 0.15s ease, max-height 0.2s ease;
+}
+
+/* ---- Search Bar ---- */
+.sb-search-wrapper {
+    padding: 8px 12px 4px;
+}
+
+.sb-search-wrapper input {
+    width: 100%;
+    padding: 7px 10px 7px 32px;
+    font-size: 12px;
+    background: rgba(0,0,0,0.04);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    outline: none;
+    color: #424242;
+    transition: all 0.15s ease;
+}
+.sb-search-wrapper input::placeholder {
+    color: #ADADAD;
+}
+.sb-search-wrapper input:hover {
+    background: rgba(0,0,0,0.06);
+}
+.sb-search-wrapper input:focus {
+    background: #fff;
+    border-color: var(--fluent-accent);
+    box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+}
+
+/* ---- User Card Bottom ---- */
+.sb-user-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(0,0,0,0.02);
+    border-radius: 10px;
+    margin: 8px;
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+/* ---- Top Bar ---- */
+.fluent-topbar {
+    background: rgba(249,249,249,0.85);
+    backdrop-filter: blur(40px) saturate(1.5);
+    -webkit-backdrop-filter: blur(40px) saturate(1.5);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    height: 52px;
+}
+
+/* ---- Mobile Responsive ---- */
 @media (max-width: 1023px) {
-	html.sb-collapsed #sidebar {
-		width: 18rem;
-		transform: translateX(-100%);
-	}
-	html.sb-collapsed #main-content {
-		margin-left: 0;
-	}
-	html.sb-collapsed .sb-nav-label,
-	html.sb-collapsed .sb-category-label,
-	html.sb-collapsed .sb-search-wrapper,
-	html.sb-collapsed .sb-user-info,
-	html.sb-collapsed .sb-user-menu-btn,
-	html.sb-collapsed .sb-brand-text {
-		opacity: 1;
-		max-width: none;
-		max-height: none;
-		overflow: visible;
-		pointer-events: auto;
-	}
-	html.sb-collapsed #sidebar .sb-nav-link-inner {
-		justify-content: flex-start;
-	}
+    #sidebar {
+        width: 280px;
+        max-width: 85vw;
+        border-radius: 0 16px 16px 0;
+    }
+
+    html.sb-collapsed #sidebar {
+        width: 280px;
+        transform: translateX(-100%);
+    }
+    html.sb-collapsed #main-content {
+        margin-left: 0;
+    }
+    html.sb-collapsed .sb-nav-label,
+    html.sb-collapsed .sb-category-label,
+    html.sb-collapsed .sb-search-wrapper,
+    html.sb-collapsed .sb-user-info,
+    html.sb-collapsed .sb-user-menu-btn,
+    html.sb-collapsed .sb-brand-text {
+        opacity: 1;
+        max-width: none;
+        max-height: none;
+        overflow: visible;
+        pointer-events: auto;
+    }
+    html.sb-collapsed #sidebar .sb-nav-link-inner {
+        justify-content: flex-start;
+        gap: 10px;
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+}
+
+/* ---- Backdrop Overlay ---- */
+#sidebar-backdrop {
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }

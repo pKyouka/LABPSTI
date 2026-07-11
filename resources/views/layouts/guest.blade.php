@@ -10,28 +10,41 @@
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=roboto:400,500,700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=roboto:400,500,600,700&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-roboto text-slate-900 antialiased">
-        <div class="relative min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-slate-100 overflow-hidden">
-            <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-cyan-200/80 via-blue-100/60 to-transparent"></div>
-            <div aria-hidden="true" class="pointer-events-none absolute -top-16 -right-16 h-64 w-64 rounded-full bg-cyan-300/40 blur-3xl"></div>
-            <div aria-hidden="true" class="pointer-events-none absolute -bottom-24 -left-16 h-72 w-72 rounded-full bg-blue-300/30 blur-3xl"></div>
+    <body class="text-[#1F1F1F] antialiased bg-[#F3F3F3]">
+        <div class="relative min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0">
+            <!-- Mica background -->
+            <div aria-hidden="true" class="fixed inset-0 -z-10 fluent-mica"></div>
 
-            <div class="relative z-10">
+            <!-- Accent top bar -->
+            <div aria-hidden="true" class="fixed top-0 inset-x-0 h-1 bg-accent z-10"></div>
+
+            <!-- Logo -->
+            <div class="relative z-10 mb-6">
                 <a href="/">
-                    <div class="h-20 w-20 rounded-3xl bg-gradient-to-br from-cyan-500 to-blue-700 text-white grid place-items-center shadow-lg shadow-cyan-300/50">
-                        <span class="font-bold text-3xl font-black tracking-tight">TI</span>
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-accent-800 text-white grid place-items-center shadow-fluent-md">
+                        <span class="text-2xl font-bold tracking-tight">TI</span>
                     </div>
                 </a>
             </div>
 
-            <div class="relative z-10 w-full sm:max-w-md mt-6 px-6 py-6 bg-white/90 border border-white/70 shadow-xl shadow-slate-300/60 overflow-hidden sm:rounded-3xl backdrop-blur">
+            <!-- Auth Card -->
+            <div class="relative z-10 w-full sm:max-w-md px-8 py-8 bg-white rounded-2xl border border-neutral-200 shadow-fluent-lg">
+                <div class="mb-6 text-center">
+                    <h1 class="text-xl font-semibold text-neutral-800">{{ config('app.name', 'LabPSTI') }}</h1>
+                    <p class="text-sm text-neutral-500 mt-1">Sistem Informasi Laboratorium</p>
+                </div>
                 {{ $slot }}
             </div>
+
+            <!-- Footer -->
+            <p class="relative z-10 mt-8 text-xs text-neutral-400">
+                &copy; {{ date('Y') }} {{ config('app.name', 'LabPSTI') }}
+            </p>
         </div>
     </body>
 </html>
