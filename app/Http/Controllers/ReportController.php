@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BorrowRecord;
 use App\Models\LabUsageRecord;
+use App\Models\VmBorrowRequest;
 use App\Traits\RequiresAdmin;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
@@ -37,9 +38,35 @@ class ReportController extends Controller
         $usageWeek = LabUsageRecord::whereBetween('start_time', [$weekStart, Carbon::today()->endOfDay()])->count();
         $usageMonth = LabUsageRecord::whereBetween('start_time', [$monthStart, Carbon::today()->endOfMonth()])->count();
 
+        // VM usage stats
+        $vmToday = VmBorrowRequest::whereDate('created_at', $today)->where('status', 'approved')->count();
+        $vmWeek = VmBorrowRequest::whereBetween('created_at', [$weekStart, Carbon::today()->endOfDay()])->where('status', 'approved')->count();
+        $vmMonth = VmBorrowRequest::whereBetween('created_at', [$monthStart, Carbon::today()->endOfMonth()])->where('status', 'approved')->count();
+
+        // Active VM count (approved & not expired)
+        $vmActive = VmBorrowRequest::where('status', 'approved')
+            ->where(function ($q) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', Carbon::today());
+            })
+            ->count();
+
+        // VM expiring soon (within 7 days)
+        $vmExpiringSoon = VmBorrowRequest::where('status', 'approved')
+            ->whereNotNull('end_date')
+            ->whereBetween('end_date', [Carbon::today(), Carbon::today()->addDays(7)])
+            ->count();
+
+        // VM already expired
+        $vmExpired = VmBorrowRequest::where('status', 'approved')
+            ->whereNotNull('end_date')
+            ->where('end_date', '<', Carbon::today())
+            ->count();
+
         return view('reports.index', compact(
             'borrowToday', 'borrowWeek', 'borrowMonth',
-            'usageToday', 'usageWeek', 'usageMonth'
+            'usageToday', 'usageWeek', 'usageMonth',
+            'vmToday', 'vmWeek', 'vmMonth',
+            'vmActive', 'vmExpiringSoon', 'vmExpired'
         ));
     }
 
@@ -324,6 +351,327 @@ class ReportController extends Controller
         $defaultEnd = Carbon::now()->format('Y-m-d');
 
         return view('reports.export', compact('defaultStart', 'defaultEnd'));
+    }
+
+    // =========== VM Report Methods ===========
+
+    public function vmAll()
+    {
+        $this->ensureAdmin();
+
+        $query = VmBorrowRequest::with('user');
+
+        // Filter by status
+        if ($status = request('status')) {
+            $query->where('status', $status);
+        }
+
+        // Filter by OS
+        if ($os = request('os')) {
+            $query->where('os_type', $os);
+        }
+
+        // Filter by expiry
+        if ($expiry = request('expiry')) {
+            if ($expiry === 'active') {
+                $query->where('status', 'approved')
+                    ->where(function ($q) {
+                        $q->whereNull('end_date')->orWhere('end_date', '>=', Carbon::today());
+                    });
+            } elseif ($expiry === 'expiring_soon') {
+                $query->where('status', 'approved')
+                    ->whereNotNull('end_date')
+                    ->whereBetween('end_date', [Carbon::today(), Carbon::today()->addDays(7)]);
+            } elseif ($expiry === 'expired') {
+                $query->where('status', 'approved')
+                    ->whereNotNull('end_date')
+                    ->where('end_date', '<', Carbon::today());
+            }
+        }
+
+        // Search by user name
+        if ($search = request('search')) {
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('id_number', 'like', "%{$search}%");
+            });
+        }
+
+        $vms = $query->latest()->paginate(20);
+
+        // Summary stats
+        $total = VmBorrowRequest::count();
+        $active = VmBorrowRequest::where('status', 'approved')
+            ->where(function ($q) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', Carbon::today());
+            })->count();
+        $expiringSoon = VmBorrowRequest::where('status', 'approved')
+            ->whereNotNull('end_date')
+            ->whereBetween('end_date', [Carbon::today(), Carbon::today()->addDays(7)])
+            ->count();
+        $expired = VmBorrowRequest::where('status', 'approved')
+            ->whereNotNull('end_date')
+            ->where('end_date', '<', Carbon::today())
+            ->count();
+        $pending = VmBorrowRequest::whereIn('status', ['pending', 'on-review'])->count();
+
+        $summary = compact('total', 'active', 'expiringSoon', 'expired', 'pending');
+
+        // OS stats
+        $allVms = VmBorrowRequest::all();
+        $osStats = [];
+        foreach (['debian', 'ubuntu'] as $os) {
+            $totalByOs = $allVms->where('os_type', $os);
+            $osStats[$os] = [
+                'total' => $totalByOs->count(),
+                'active' => $totalByOs->where('status', 'approved')
+                    ->filter(function ($vm) {
+                        return $vm->end_date === null || $vm->end_date >= Carbon::today();
+                    })->count(),
+                'expired' => $totalByOs->where('status', 'approved')
+                    ->filter(function ($vm) {
+                        return $vm->end_date !== null && $vm->end_date < Carbon::today();
+                    })->count(),
+            ];
+        }
+
+        // Expiring soon list for side panel
+        $expiringSoonList = VmBorrowRequest::where('status', 'approved')
+            ->whereNotNull('end_date')
+            ->whereBetween('end_date', [Carbon::today(), Carbon::today()->addDays(7)])
+            ->with('user')
+            ->orderBy('end_date')
+            ->get();
+
+        return view('reports.vm-all', compact(
+            'vms', 'summary', 'osStats', 'expiringSoonList'
+        ));
+    }
+
+    public function vmDaily()
+    {
+        $this->ensureAdmin();
+
+        $today = Carbon::today();
+
+        $records = VmBorrowRequest::whereDate('created_at', $today)
+            ->with('user')
+            ->get()
+            ->groupBy('status')
+            ->map(function ($items) {
+                return [
+                    'count' => $items->count(),
+                    'records' => $items,
+                ];
+            });
+
+        // Also show currently active VMs (approved & not expired)
+        $activeVms = VmBorrowRequest::where('status', 'approved')
+            ->where(function ($q) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', Carbon::today());
+            })
+            ->with('user')
+            ->get();
+
+        return view('reports.vm-daily', compact('records', 'activeVms'));
+    }
+
+    public function vmWeekly()
+    {
+        $this->ensureAdmin();
+
+        $weekStart = Carbon::today()->startOfWeek();
+        $weekEnd = Carbon::today()->endOfWeek();
+
+        $records = VmBorrowRequest::whereBetween('created_at', [$weekStart, $weekEnd])
+            ->with('user')
+            ->get()
+            ->groupBy(function ($item) {
+                return $item->created_at->format('Y-m-d');
+            });
+
+        $dailyStats = [];
+        for ($date = clone $weekStart; $date <= $weekEnd; $date->addDay()) {
+            $dateStr = $date->format('Y-m-d');
+            $dayRequests = $records->get($dateStr);
+            $dailyStats[$dateStr] = [
+                'date' => $date->copy(),
+                'total' => $dayRequests?->count() ?? 0,
+                'approved' => $dayRequests?->where('status', 'approved')->count() ?? 0,
+                'pending' => $dayRequests?->whereIn('status', ['pending', 'on-review'])->count() ?? 0,
+                'rejected' => $dayRequests?->where('status', 'rejected')->count() ?? 0,
+            ];
+        }
+
+        return view('reports.vm-weekly', compact('records', 'dailyStats', 'weekStart', 'weekEnd'));
+    }
+
+    public function vmMonthly()
+    {
+        $this->ensureAdmin();
+
+        $selectedMonth = (int) request('month', Carbon::now()->month);
+        $selectedYear = (int) request('year', Carbon::now()->year);
+
+        abort_if($selectedMonth < 1 || $selectedMonth > 12, 422, 'Bulan tidak valid.');
+        abort_if($selectedYear < 2020 || $selectedYear > Carbon::now()->year + 1, 422, 'Tahun tidak valid.');
+
+        $monthStart = Carbon::createFromDate((int) $selectedYear, (int) $selectedMonth, 1)->startOfMonth();
+        $monthEnd = $monthStart->copy()->endOfMonth();
+
+        $records = VmBorrowRequest::whereBetween('created_at', [$monthStart, $monthEnd])
+            ->with('user')
+            ->get()
+            ->groupBy(function ($item) {
+                return $item->created_at->format('Y-m-d');
+            });
+
+        $dailyStats = [];
+        for ($date = clone $monthStart; $date <= $monthEnd; $date->addDay()) {
+            $dateStr = $date->format('Y-m-d');
+            $dayRequests = $records->get($dateStr);
+            $dailyStats[$dateStr] = [
+                'date' => $date->copy(),
+                'total' => $dayRequests?->count() ?? 0,
+                'approved' => $dayRequests?->where('status', 'approved')->count() ?? 0,
+                'pending' => $dayRequests?->whereIn('status', ['pending', 'on-review'])->count() ?? 0,
+                'rejected' => $dayRequests?->where('status', 'rejected')->count() ?? 0,
+            ];
+        }
+
+        // Weekly summary
+        $weeklyStats = [];
+        $currentWeekStart = clone $monthStart;
+        while ($currentWeekStart <= $monthEnd) {
+            $currentWeekEnd = $currentWeekStart->copy()->addDays(6);
+            if ($currentWeekEnd > $monthEnd) {
+                $currentWeekEnd = $monthEnd;
+            }
+
+            $weekKey = $currentWeekStart->format('Y-m-d');
+            $weekRecords = VmBorrowRequest::whereBetween('created_at', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
+
+            $weeklyStats[$weekKey] = [
+                'start' => $currentWeekStart->copy(),
+                'end' => $currentWeekEnd->copy(),
+                'total' => $weekRecords->count(),
+                'approved' => $weekRecords->where('status', 'approved')->count(),
+                'pending' => $weekRecords->whereIn('status', ['pending', 'on-review'])->count(),
+                'rejected' => $weekRecords->where('status', 'rejected')->count(),
+            ];
+
+            $currentWeekStart->addDays(7);
+        }
+
+        // Active & expired summary for the month
+        $vmsCreatedThisMonth = VmBorrowRequest::whereBetween('created_at', [$monthStart, $monthEnd])
+            ->where('status', 'approved')
+            ->count();
+
+        $vmsActiveEndOfMonth = VmBorrowRequest::where('status', 'approved')
+            ->where(function ($q) use ($monthEnd) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', $monthEnd);
+            })
+            ->count();
+
+        $vmsExpiredThisMonth = VmBorrowRequest::where('status', 'approved')
+            ->whereNotNull('end_date')
+            ->whereBetween('end_date', [$monthStart, $monthEnd])
+            ->count();
+
+        return view('reports.vm-monthly', compact(
+            'records', 'dailyStats', 'weeklyStats',
+            'monthStart', 'monthEnd',
+            'selectedMonth', 'selectedYear',
+            'vmsCreatedThisMonth', 'vmsActiveEndOfMonth', 'vmsExpiredThisMonth'
+        ));
+    }
+
+    public function vmMonthlyPdf()
+    {
+        $this->ensureAdmin();
+
+        $selectedMonth = (int) request('month', Carbon::now()->month);
+        $selectedYear = (int) request('year', Carbon::now()->year);
+
+        abort_if($selectedMonth < 1 || $selectedMonth > 12, 422, 'Bulan tidak valid.');
+        abort_if($selectedYear < 2020 || $selectedYear > Carbon::now()->year + 1, 422, 'Tahun tidak valid.');
+
+        $monthStart = Carbon::createFromDate((int) $selectedYear, (int) $selectedMonth, 1)->startOfMonth();
+        $monthEnd = $monthStart->copy()->endOfMonth();
+
+        $records = VmBorrowRequest::whereBetween('created_at', [$monthStart, $monthEnd])
+            ->with('user')
+            ->get()
+            ->groupBy(function ($item) {
+                return $item->created_at->format('Y-m-d');
+            });
+
+        $dailyStats = [];
+        for ($date = clone $monthStart; $date <= $monthEnd; $date->addDay()) {
+            $dateStr = $date->format('Y-m-d');
+            $dayRequests = $records->get($dateStr);
+            $dailyStats[$dateStr] = [
+                'date' => $date->copy(),
+                'total' => $dayRequests?->count() ?? 0,
+                'approved' => $dayRequests?->where('status', 'approved')->count() ?? 0,
+                'pending' => $dayRequests?->whereIn('status', ['pending', 'on-review'])->count() ?? 0,
+                'rejected' => $dayRequests?->where('status', 'rejected')->count() ?? 0,
+            ];
+        }
+
+        $weeklyStats = [];
+        $currentWeekStart = clone $monthStart;
+        while ($currentWeekStart <= $monthEnd) {
+            $currentWeekEnd = $currentWeekStart->copy()->addDays(6);
+            if ($currentWeekEnd > $monthEnd) {
+                $currentWeekEnd = $monthEnd;
+            }
+
+            $weekKey = $currentWeekStart->format('Y-m-d');
+            $weekRecords = VmBorrowRequest::whereBetween('created_at', [$currentWeekStart, $currentWeekEnd->endOfDay()])->get();
+
+            $weeklyStats[$weekKey] = [
+                'start' => $currentWeekStart->copy(),
+                'end' => $currentWeekEnd->copy(),
+                'total' => $weekRecords->count(),
+                'approved' => $weekRecords->where('status', 'approved')->count(),
+                'pending' => $weekRecords->whereIn('status', ['pending', 'on-review'])->count(),
+                'rejected' => $weekRecords->where('status', 'rejected')->count(),
+            ];
+
+            $currentWeekStart->addDays(7);
+        }
+
+        $totalRecords = $records->flatten()->count();
+        $totalApproved = $records->flatten()->where('status', 'approved')->count();
+        $totalRejected = $records->flatten()->where('status', 'rejected')->count();
+        $totalPending = $records->flatten()->whereIn('status', ['pending', 'on-review'])->count();
+
+        $vmsCreatedThisMonth = VmBorrowRequest::whereBetween('created_at', [$monthStart, $monthEnd])
+            ->where('status', 'approved')
+            ->count();
+
+        $vmsActiveEndOfMonth = VmBorrowRequest::where('status', 'approved')
+            ->where(function ($q) use ($monthEnd) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', $monthEnd);
+            })
+            ->count();
+
+        $vmsExpiredThisMonth = VmBorrowRequest::where('status', 'approved')
+            ->whereNotNull('end_date')
+            ->whereBetween('end_date', [$monthStart, $monthEnd])
+            ->count();
+
+        $pdf = Pdf::loadView('reports.pdf.vm-monthly', compact(
+            'records', 'dailyStats', 'weeklyStats',
+            'monthStart', 'monthEnd',
+            'selectedMonth', 'selectedYear',
+            'totalRecords', 'totalApproved', 'totalRejected', 'totalPending',
+            'vmsCreatedThisMonth', 'vmsActiveEndOfMonth', 'vmsExpiredThisMonth'
+        ))->setPaper('a4', 'portrait');
+
+        return $pdf->download("laporan-vm-{$selectedYear}-{$selectedMonth}.pdf");
     }
 
     public function usageExportExcel(Request $request)
