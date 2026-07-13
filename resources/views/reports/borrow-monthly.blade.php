@@ -50,6 +50,7 @@
 
         <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm p-6">
             <h3 class="text-base font-semibold text-neutral-800 mb-4">Statistik Harian</h3>
+            <div class="overflow-x-auto">
             <table class="fluent-table">
                 <thead><tr><th>Tanggal</th><th>Hari</th><th class="text-center">Peminjaman</th><th class="text-center">Unit</th></tr></thead>
                 <tbody>
@@ -63,6 +64,7 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
         </div>
 
         @if($records->count() === 0)
@@ -73,6 +75,7 @@
                 @foreach($records as $dateStr => $dayRecords)
                     <div>
                         <h4 class="text-sm font-semibold text-neutral-800 mb-2">{{ \Carbon\Carbon::parse($dateStr)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</h4>
+                        <div class="overflow-x-auto">
                         <table class="fluent-table text-sm">
                             <thead><tr><th>Barang</th><th>Peminjam</th><th>NIM</th><th>Qty</th><th>Status</th></tr></thead>
                             <tbody>
@@ -85,9 +88,10 @@
                                         <td><span class="fluent-badge {{ $record->status==='dipinjam'?'fluent-badge-info':($record->status==='dikembalikan'?'fluent-badge-success':($record->status==='menunggu'?'fluent-badge-warning':'fluent-badge-danger')) }}">{{ ucfirst($record->status) }}</span></td>
                                     </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                                </tbody>
+                            </table>
+                        </div>
+                        </div>
                 @endforeach
             </div>
         @endif

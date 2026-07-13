@@ -24,6 +24,7 @@
         @endif
 
         <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm overflow-hidden">
+            <div class="overflow-x-auto">
             <table class="fluent-table">
                 <thead>
                     <tr>
@@ -81,6 +82,7 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
 
         @if ($users->hasPages())

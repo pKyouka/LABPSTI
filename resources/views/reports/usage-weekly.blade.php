@@ -34,6 +34,7 @@
                     @foreach($records as $dateStr => $dayRecords)
                         <div>
                             <h4 class="text-sm font-semibold text-neutral-800 mb-2">{{ \Carbon\Carbon::parse($dateStr)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</h4>
+                            <div class="overflow-x-auto">
                             <table class="fluent-table text-sm">
                                 <thead><tr><th>Lab</th><th>Pengguna</th><th>NIM</th><th>Waktu</th></tr></thead>
                                 <tbody>
@@ -47,6 +48,7 @@
                                     @endforeach
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     @endforeach
                 </div>

@@ -50,6 +50,7 @@
 
         <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm p-6">
             <h3 class="text-base font-semibold text-neutral-800 mb-4">Statistik Harian</h3>
+            <div class="overflow-x-auto">
             <table class="fluent-table">
                 <thead><tr><th>Tanggal</th><th>Hari</th><th class="text-center">Penggunaan</th></tr></thead>
                 <tbody>
@@ -62,6 +63,7 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
         </div>
 
         @if($records->count() === 0)
@@ -72,6 +74,7 @@
                 @foreach($records as $dateStr => $dayRecords)
                     <div>
                         <h4 class="text-sm font-semibold text-neutral-800 mb-2">{{ \Carbon\Carbon::parse($dateStr)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</h4>
+                        <div class="overflow-x-auto">
                         <table class="fluent-table text-sm">
                             <thead><tr><th>Lab</th><th>Pengguna</th><th>NIM</th><th>Waktu</th></tr></thead>
                             <tbody>
@@ -83,9 +86,10 @@
                                         <td>{{ $record->start_time?->format('H:i') ?? '-' }} {{ $record->end_time ? '- '.$record->end_time->format('H:i') : '' }}</td>
                                     </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                                </tbody>
+                            </table>
+                        </div>
+                        </div>
                 @endforeach
             </div>
         @endif

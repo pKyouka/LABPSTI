@@ -15,6 +15,7 @@
             <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm p-8 text-center text-neutral-500 text-sm font-medium">Tidak ada penggunaan lab pada hari ini.</div>
         @else
             <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm overflow-hidden">
+                <div class="overflow-x-auto">
                 <table class="fluent-table">
                     <thead><tr><th>Lab</th><th>Jumlah Pengguna</th><th>Aksi</th></tr></thead>
                     <tbody>
@@ -39,6 +40,7 @@
                         @endforeach
                     </tbody>
                 </table>
+                </div>
             </div>
         @endif
     </div>

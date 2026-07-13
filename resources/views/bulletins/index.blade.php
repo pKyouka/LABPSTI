@@ -20,6 +20,7 @@
             <div class="px-5 py-4 border-b border-neutral-100">
                 <p class="text-sm text-neutral-500">Daftar informasi terbaru yang ditampilkan di halaman publik lab.</p>
             </div>
+            <div class="overflow-x-auto">
             <table class="fluent-table">
                 <thead>
                     <tr>
@@ -83,6 +84,7 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
 
         <div>{{ $bulletins->links() }}</div>
