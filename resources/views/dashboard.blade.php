@@ -92,6 +92,7 @@
                 Peminjaman VM Saya
             </h3>
             <p class="text-xs text-neutral-400 mb-4">Status permintaan peminjaman Virtual Machine Anda.</p>
+            <div class="overflow-x-auto">
             <table class="fluent-table">
                 <thead>
                     <tr>
@@ -126,6 +127,7 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
             <a href="{{ route('vm_borrow.index') }}" class="inline-block mt-4 text-sm font-medium text-accent hover:text-accent-hover">Lihat semua &rarr;</a>
         </div>
         @endif

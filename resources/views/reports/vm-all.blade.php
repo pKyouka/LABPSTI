@@ -253,6 +253,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm p-6">
                 <h3 class="text-base font-semibold text-neutral-800 mb-4">Statistik Berdasarkan OS</h3>
+                <div class="overflow-x-auto">
                 <table class="fluent-table text-sm">
                     <thead>
                         <tr>
@@ -273,6 +274,7 @@
                         @endforeach
                     </tbody>
                 </table>
+                </div>
                 <div class="mt-3 flex gap-2">
                     <a href="{{ route('reports.vm.all', ['os' => 'debian']) }}" class="text-xs text-accent hover:underline">Filter Debian</a>
                     <span class="text-neutral-300">|</span>
