@@ -65,7 +65,27 @@ class VmBorrowController extends Controller
 
         $hosts = VmHost::where('is_active', true)->orderBy('name')->get();
 
-        return view('vm_borrow.show', compact('vmBorrow', 'hosts'));
+        $hostSpecsJson = json_encode($hosts->mapWithKeys(fn($h) => [
+            $h->id => [
+                'name'          => $h->name,
+                'ip_address'    => $h->ip_address,
+                'cpu_total'     => $h->cpu_total,
+                'cpu_used'      => $h->cpu_used,
+                'ram_total'     => $h->ram_total,
+                'ram_used'      => $h->ram_used,
+                'storage_total' => $h->storage_total,
+                'storage_used'  => $h->storage_used,
+                'is_active'     => $h->is_active,
+                'status'        => $h->statusLabel(),
+                'notes'         => $h->notes,
+            ]
+        ])->toArray());
+
+        $hostsDataJson = json_encode($hosts->mapWithKeys(fn($h) => [
+            $h->id => ['ip' => $h->ip_address, 'full' => $h->isFull()]
+        ])->toArray());
+
+        return view('vm_borrow.show', compact('vmBorrow', 'hosts', 'hostSpecsJson', 'hostsDataJson'));
     }
 
     private function ensureAdmin()

@@ -252,20 +252,8 @@
                 <script>
                     function tahap1ApprovalForm() {
                         return {
-                            selectedHostId: '{{ old('host_id', '') }}',
-                            hostSpecs: @json($hosts->mapWithKeys(fn($h) => [
-                                $h->id => [
-                                    'name' => $h->name,
-                                    'ip_address' => $h->ip_address,
-                                    'cpu_total' => $h->cpu_total,
-                                    'cpu_used' => $h->cpu_used,
-                                    'ram_total' => $h->ram_total,
-                                    'ram_used' => $h->ram_used,
-                                    'storage_total' => $h->storage_total,
-                                    'storage_used' => $h->storage_used,
-                                    'status' => $h->statusLabel(),
-                                ]
-                            ])),
+                            selectedHostId: '',
+                            hostSpecs: {!! $hostSpecsJson !!},
                             get selectedHostSpec() {
                                 return this.selectedHostId ? (this.hostSpecs[this.selectedHostId] || null) : null;
                             },
@@ -465,22 +453,8 @@
                             return {
                                 selectedHostId: '{{ old('host_id', $vmBorrow->host_id) }}',
                                 hostIp: '{{ old('host_ip', '') }}',
-                                hostData: @json($hosts->mapWithKeys(fn($h) => [$h->id => ['ip' => $h->ip_address, 'full' => $h->isFull()]])),
-                                hostSpecs: @json($hosts->mapWithKeys(fn($h) => [
-                                    $h->id => [
-                                        'name' => $h->name,
-                                        'ip_address' => $h->ip_address,
-                                        'cpu_total' => $h->cpu_total,
-                                        'cpu_used' => $h->cpu_used,
-                                        'ram_total' => $h->ram_total,
-                                        'ram_used' => $h->ram_used,
-                                        'storage_total' => $h->storage_total,
-                                        'storage_used' => $h->storage_used,
-                                        'is_active' => $h->is_active,
-                                        'status' => $h->statusLabel(),
-                                        'notes' => $h->notes,
-                                    ]
-                                ])),
+                                hostData: {!! $hostsDataJson !!},
+                                hostSpecs: {!! $hostSpecsJson !!},
                                 get selectedHostSpec() {
                                     return this.selectedHostId ? (this.hostSpecs[this.selectedHostId] || null) : null;
                                 },
