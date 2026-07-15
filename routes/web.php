@@ -12,6 +12,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VmBorrowController;
 use App\Http\Controllers\VmHostController;
+use App\Http\Controllers\VmServiceRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingPageController::class, 'index'])->name('landing');
@@ -98,6 +99,10 @@ Route::middleware('auth')->group(function () {
 
         // VM Host Management (Admin only)
         Route::resource('vm_hosts', VmHostController::class)->except(['show']);
+
+        // VM Service Requests (mahasiswa request sesuatu di VM mereka)
+        Route::post('vm_borrow/{vmBorrow}/service-request', [VmServiceRequestController::class, 'store'])->name('vm_borrow.service_request.store');
+        Route::post('vm_borrow/{vmBorrow}/service-request/{serviceRequest}/update', [VmServiceRequestController::class, 'updateStatus'])->name('vm_borrow.service_request.update');
 	});
 
 	require __DIR__.'/auth.php';

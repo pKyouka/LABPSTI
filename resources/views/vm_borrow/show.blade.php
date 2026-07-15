@@ -51,6 +51,7 @@
                             <p class="text-sm text-neutral-700">{{ $vmBorrow->admin_notes }}</p>
                         </div>
                     @endif
+                    @include('vm_borrow.partials._service_requests')
                     @include('vm_borrow.partials._reset_history')
                     @include('vm_borrow.partials._reset_user_actions')
                     @include('vm_borrow.partials._reset_admin_panel')
@@ -394,7 +395,7 @@
                                         </p>
                                     </div>
                                 </div>
-                                {{-- IP Address & Notes --}}
+                            {{-- IP Address & Notes --}}
                                 <div class="flex flex-wrap gap-x-6 gap-y-1 text-xs text-neutral-600">
                                     <span x-show="selectedHostSpec.ip_address">
                                         <span class="font-medium text-neutral-800">IP Address:</span>
@@ -404,6 +405,59 @@
                                         <span class="font-medium text-neutral-800">Catatan:</span>
                                         <span class="text-neutral-600" x-text="selectedHostSpec.notes"></span>
                                     </span>
+                                </div>
+                            </div>
+
+                            {{-- Alokasi Resource VM --}}
+                            <div x-show="selectedHostId" x-transition class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/30 p-4 space-y-4">
+                                <h4 class="text-sm font-semibold text-emerald-800 flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                                    Alokasi Resource untuk VM Ini
+                                </h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div>
+                                        <x-input-label for="allocated_cpu" value="CPU Cores" />
+                                        <x-text-input id="allocated_cpu" type="number" name="allocated_cpu" x-model.number="allocatedCpu" min="1" :max="128" :value="old('allocated_cpu', 1)" required />
+                                        <p class="text-[10px] text-neutral-400 mt-1">Min: 1 core</p>
+                                        <x-input-error :messages="$errors->get('allocated_cpu')" />
+                                    </div>
+                                    <div>
+                                        <x-input-label for="allocated_ram" value="RAM (MB)" />
+                                        <x-text-input id="allocated_ram" type="number" name="allocated_ram" x-model.number="allocatedRam" min="256" :max="524288" :value="old('allocated_ram', 1024)" required />
+                                        <p class="text-[10px] text-neutral-400 mt-1">Min: 256 MB (1 GB = 1024 MB)</p>
+                                        <x-input-error :messages="$errors->get('allocated_ram')" />
+                                    </div>
+                                    <div>
+                                        <x-input-label for="allocated_storage" value="Storage (GB)" />
+                                        <x-text-input id="allocated_storage" type="number" name="allocated_storage" x-model.number="allocatedStorage" min="1" :max="10000" :value="old('allocated_storage', 10)" required />
+                                        <p class="text-[10px] text-neutral-400 mt-1">Min: 1 GB</p>
+                                        <x-input-error :messages="$errors->get('allocated_storage')" />
+                                    </div>
+                                </div>
+
+                                {{-- Preview: Host setelah alokasi --}}
+                                <div x-show="selectedHostSpec" class="rounded-lg bg-white border border-emerald-200 p-3 space-y-2">
+                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-emerald-600">Setelah Alokasi — Sisa Resource Host</p>
+                                    <div class="grid grid-cols-3 gap-3 text-xs">
+                                        <div>
+                                            <span class="text-neutral-500">CPU:</span>
+                                            <span class="font-bold ml-1" x-text="afterAllocation.cpu + ' cores'"
+                                                :class="afterAllocation.cpu < 0 ? 'text-red-600' : 'text-emerald-700'"></span>
+                                            <span x-show="afterAllocation.cpu < 0" class="text-red-500 text-[10px] block">⚠ Melebihi kapasitas!</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-neutral-500">RAM:</span>
+                                            <span class="font-bold ml-1" x-text="(afterAllocation.ram / 1024).toFixed(1) + ' GB'"
+                                                :class="afterAllocation.ram < 0 ? 'text-red-600' : 'text-emerald-700'"></span>
+                                            <span x-show="afterAllocation.ram < 0" class="text-red-500 text-[10px] block">⚠ Melebihi kapasitas!</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-neutral-500">Storage:</span>
+                                            <span class="font-bold ml-1" x-text="afterAllocation.storage + ' GB'"
+                                                :class="afterAllocation.storage < 0 ? 'text-red-600' : 'text-emerald-700'"></span>
+                                            <span x-show="afterAllocation.storage < 0" class="text-red-500 text-[10px] block">⚠ Melebihi kapasitas!</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -453,10 +507,21 @@
                             return {
                                 selectedHostId: '{{ old('host_id', $vmBorrow->host_id) }}',
                                 hostIp: '{{ old('host_ip', '') }}',
+                                allocatedCpu: {{ old('allocated_cpu', 1) }},
+                                allocatedRam: {{ old('allocated_ram', 1024) }},
+                                allocatedStorage: {{ old('allocated_storage', 10) }},
                                 hostData: {!! $hostsDataJson !!},
                                 hostSpecs: {!! $hostSpecsJson !!},
                                 get selectedHostSpec() {
                                     return this.selectedHostId ? (this.hostSpecs[this.selectedHostId] || null) : null;
+                                },
+                                get afterAllocation() {
+                                    const spec = this.selectedHostSpec;
+                                    if (!spec) return { cpu: 0, ram: 0, storage: 0 };
+                                    const cpu = (spec.cpu_total || 0) - (spec.cpu_used || 0) - (this.allocatedCpu || 0);
+                                    const ram = (spec.ram_total || 0) - (spec.ram_used || 0) - (this.allocatedRam || 0);
+                                    const storage = (spec.storage_total || 0) - (spec.storage_used || 0) - (this.allocatedStorage || 0);
+                                    return { cpu, ram, storage };
                                 },
                                 init() {
                                     const select = document.getElementById('host_id');

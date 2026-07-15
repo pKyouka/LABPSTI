@@ -65,6 +65,8 @@ class VmBorrowController extends Controller
 
         $hosts = VmHost::where('is_active', true)->orderBy('name')->get();
 
+        $vmBorrow->load(['serviceRequests' => fn($q) => $q->latest()]);
+
         $hostSpecsJson = json_encode($hosts->mapWithKeys(fn($h) => [
             $h->id => [
                 'name'          => $h->name,
@@ -151,27 +153,54 @@ class VmBorrowController extends Controller
         }
 
         $data = $request->validate([
-            'host_id'       => 'nullable|exists:vm_hosts,id',
-            'host_ip'       => 'required|string|max:255',
-            'vm_username'   => 'required|string|max:255',
-            'vm_password'   => 'required|string|max:255',
-            'admin_notes'   => 'nullable|string|max:1000',
-            'duration_days' => 'required|integer|min:1|max:365',
+            'host_id'          => 'nullable|exists:vm_hosts,id',
+            'host_ip'          => 'required|string|max:255',
+            'vm_username'      => 'required|string|max:255',
+            'vm_password'      => 'required|string|max:255',
+            'admin_notes'      => 'nullable|string|max:1000',
+            'duration_days'    => 'required|integer|min:1|max:365',
+            'allocated_cpu'    => 'required|integer|min:1|max:128',
+            'allocated_ram'    => 'required|integer|min:256|max:524288',
+            'allocated_storage'=> 'required|integer|min:1|max:10000',
         ]);
+
+        // Validasi resource tidak melebihi kapasitas host
+        $host = $data['host_id'] ? VmHost::find($data['host_id']) : null;
+        if ($host) {
+            $cpu    = (int) $data['allocated_cpu'];
+            $ram    = (int) $data['allocated_ram'];
+            $storage= (int) $data['allocated_storage'];
+
+            if ($cpu > $host->cpuAvailable()) {
+                return back()->withErrors(['allocated_cpu' => "CPU tidak cukup. Tersedia hanya {$host->cpuAvailable()} cores."])->withInput();
+            }
+            if ($ram > $host->ramAvailable()) {
+                return back()->withErrors(['allocated_ram' => "RAM tidak cukup. Tersedia hanya " . round($host->ramAvailable() / 1024, 1) . " GB."])->withInput();
+            }
+            if ($storage > $host->storageAvailable()) {
+                return back()->withErrors(['allocated_storage' => "Storage tidak cukup. Tersedia hanya {$host->storageAvailable()} GB."])->withInput();
+            }
+
+            $host->deductResources($cpu, $ram, $storage);
+        }
 
         $vmBorrow->update([
-            'status'        => 'approved',
-            'host_id'       => $data['host_id'] ?? null,
-            'host_ip'       => $data['host_ip'],
-            'vm_username'   => $data['vm_username'],
-            'vm_password'   => $data['vm_password'],
-            'admin_notes'   => $data['admin_notes'],
-            'duration_days' => $data['duration_days'],
-            'end_date'      => \Carbon\Carbon::parse($vmBorrow->start_date)->addDays((int) $data['duration_days']),
-            'approved_by'   => Auth::id(),
+            'status'           => 'approved',
+            'host_id'          => $data['host_id'] ?? null,
+            'host_ip'          => $data['host_ip'],
+            'allocated_cpu'    => (int) $data['allocated_cpu'],
+            'allocated_ram'    => (int) $data['allocated_ram'],
+            'allocated_storage'=> (int) $data['allocated_storage'],
+            'vm_username'      => $data['vm_username'],
+            'vm_password'      => $data['vm_password'],
+            'admin_notes'      => $data['admin_notes'],
+            'duration_days'    => $data['duration_days'],
+            'end_date'         => \Carbon\Carbon::parse($vmBorrow->start_date)->addDays((int) $data['duration_days']),
+            'approved_by'      => Auth::id(),
         ]);
 
-        $message = 'VM telah berhasil diaktifkan. Kredensial telah diberikan kepada peminjam.';
+        $hostName = $host ? $host->name : 'Host';
+        $message = "VM telah berhasil diaktifkan di {$hostName}. Kredensial telah diberikan kepada peminjam.";
 
         return redirect()->route('vm_borrow.show', $vmBorrow)
             ->with('success', $message);

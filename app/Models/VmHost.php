@@ -134,4 +134,39 @@ class VmHost extends Model
     {
         return $this->hasMany(VmBorrowRequest::class, 'host_id');
     }
+
+    /**
+     * Deduct allocated resources when a VM is approved on this host.
+     */
+    public function deductResources(int $cpu, int $ram, int $storage): void
+    {
+        $this->cpu_used = ($this->cpu_used ?? 0) + $cpu;
+        $this->ram_used = ($this->ram_used ?? 0) + $ram;
+        $this->storage_used = ($this->storage_used ?? 0) + $storage;
+        $this->save();
+    }
+
+    /**
+     * Restore resources when a VM is released or rejected.
+     */
+    public function restoreResources(int $cpu, int $ram, int $storage): void
+    {
+        $this->cpu_used = max(0, ($this->cpu_used ?? 0) - $cpu);
+        $this->ram_used = max(0, ($this->ram_used ?? 0) - $ram);
+        $this->storage_used = max(0, ($this->storage_used ?? 0) - $storage);
+        $this->save();
+    }
+
+    /**
+     * Get available resources after selecting but before saving.
+     * Used for preview in admin form.
+     */
+    public function availableAfterAllocation(int $cpu, int $ram, int $storage): array
+    {
+        return [
+            'cpu'     => max(0, $this->cpuAvailable() - $cpu),
+            'ram'     => max(0, $this->ramAvailable() - $ram),
+            'storage' => max(0, $this->storageAvailable() - $storage),
+        ];
+    }
 }

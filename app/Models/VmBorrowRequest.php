@@ -18,6 +18,9 @@ class VmBorrowRequest extends Model
         'status',
         'host_id',
         'host_ip',
+        'allocated_cpu',
+        'allocated_ram',
+        'allocated_storage',
         'vm_username',
         'vm_password',
         'admin_notes',
@@ -33,6 +36,9 @@ class VmBorrowRequest extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date'   => 'date',
+        'allocated_cpu' => 'integer',
+        'allocated_ram' => 'integer',
+        'allocated_storage' => 'integer',
         'reset_requested_at' => 'datetime',
         'reset_approved_at' => 'datetime',
         'reset_rejected_at' => 'datetime',
@@ -52,6 +58,11 @@ class VmBorrowRequest extends Model
     public function host(): BelongsTo
     {
         return $this->belongsTo(VmHost::class, 'host_id');
+    }
+
+    public function serviceRequests(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(VmServiceRequest::class, 'vm_borrow_request_id');
     }
 
     public function isPending(): bool
