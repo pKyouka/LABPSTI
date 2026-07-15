@@ -95,7 +95,7 @@ class VmBorrowController extends Controller
     /**
      * ACC Tahap 1: Pindahkan status pending → on-review (pembuatan VM)
      */
-    public function moveToReview(VmBorrowRequest $vmBorrow)
+    public function moveToReview(Request $request, VmBorrowRequest $vmBorrow)
     {
         $this->ensureAdmin();
 
@@ -104,8 +104,13 @@ class VmBorrowController extends Controller
                 ->with('success', 'Permintaan ini sudah diproses sebelumnya.');
         }
 
+        $data = $request->validate([
+            'host_id' => 'nullable|exists:vm_hosts,id',
+        ]);
+
         $vmBorrow->update([
             'status'      => 'on-review',
+            'host_id'     => $data['host_id'] ?? null,
             'approved_by' => Auth::id(),
         ]);
 

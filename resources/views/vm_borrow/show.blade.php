@@ -160,7 +160,7 @@
                 </div>
 
                 {{-- Approve Confirmation & Action --}}
-                <div x-show="action === 'approve'" x-transition class="p-5 border-t border-neutral-100">
+                <div x-show="action === 'approve'" x-transition class="p-5 border-t border-neutral-100" x-data="tahap1ApprovalForm()">
                     <div>
                         <div class="flex items-start gap-3 mb-4">
                             <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
@@ -168,7 +168,7 @@
                             </div>
                             <div>
                                 <h4 class="text-base font-semibold text-emerald-800">Konfirmasi Persetujuan</h4>
-                                <p class="text-sm text-neutral-500 mt-0.5">Anda akan menyetujui permintaan VM berikut. Status akan berubah menjadi <strong>On-Review</strong> — silakan buat VM dan berikan kredensial setelah VM siap.</p>
+                                <p class="text-sm text-neutral-500 mt-0.5">Anda akan menyetujui permintaan VM berikut. Pilih host tujuan, lalu status akan berubah menjadi <strong>On-Review</strong> — silakan buat VM dan berikan kredensial setelah VM siap.</p>
                             </div>
                         </div>
                         <div class="bg-neutral-50 rounded-xl p-4 mb-4 text-sm space-y-2">
@@ -178,15 +178,100 @@
                             <div class="flex justify-between"><span class="text-neutral-500">Durasi Diminta</span><span class="font-medium text-neutral-800">{{ $vmBorrow->duration_days }} hari</span></div>
                             <div class="flex justify-between"><span class="text-neutral-500">Keperluan</span><span class="font-medium text-neutral-800">{{ Str::limit($vmBorrow->purpose, 60) }}</span></div>
                         </div>
+
+                        {{-- Pilih Host untuk VM --}}
+                        @if($hosts->isNotEmpty())
+                        <div class="mb-4">
+                            <x-input-label for="host_id_tahap1" value="Pilih Host VM Tujuan" />
+                            <select id="host_id_tahap1" name="host_id" x-model="selectedHostId"
+                                class="mt-1 block w-full rounded-lg border-neutral-200 shadow-sm focus:border-accent focus:ring focus:ring-accent/20 focus:ring-opacity-50 text-sm text-neutral-700">
+                                <option value="">-- Pilih Host --</option>
+                                @foreach($hosts as $host)
+                                    @php
+                                        $cpuPct = $host->cpuUsagePercent();
+                                        $ramPct = $host->ramUsagePercent();
+                                        $isFull = $host->isFull();
+                                    @endphp
+                                    <option value="{{ $host->id }}" @disabled($isFull) {{ old('host_id') == $host->id ? 'selected' : '' }}>
+                                        {{ $host->name }}
+                                        @if($host->ip_address) ({{ $host->ip_address }}) @endif
+                                        — CPU: {{ $cpuPct }}% | RAM: {{ $ramPct }}%
+                                        {{ $isFull ? '[PENUH]' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            {{-- Spesifikasi Host Detail --}}
+                            <div x-show="selectedHostId && selectedHostSpec" x-transition
+                                class="mt-3 rounded-xl border border-accent-200 bg-accent-light/30 p-4 space-y-3">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                    <h4 class="text-sm font-semibold text-accent-dark" x-text="'Spesifikasi Host: ' + (selectedHostSpec.name || '')"></h4>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div class="rounded-lg bg-white border border-neutral-200 p-3">
+                                        <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 mb-2">CPU Cores</p>
+                                        <span class="text-lg font-bold text-neutral-800" x-text="selectedHostSpec.cpu_used + ' / ' + selectedHostSpec.cpu_total"></span>
+                                        <span class="text-xs text-neutral-500 ml-1">cores</span>
+                                        <p class="text-[10px] text-neutral-500 mt-1">Tersedia: <span class="font-semibold" x-text="Math.max(0, selectedHostSpec.cpu_total - selectedHostSpec.cpu_used)+' cores'"></span></p>
+                                    </div>
+                                    <div class="rounded-lg bg-white border border-neutral-200 p-3">
+                                        <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 mb-2">RAM</p>
+                                        <span class="text-lg font-bold text-neutral-800" x-text="(selectedHostSpec.ram_used/1024).toFixed(1)+' / '+(selectedHostSpec.ram_total/1024).toFixed(1)"></span>
+                                        <span class="text-xs text-neutral-500 ml-1">GB</span>
+                                        <p class="text-[10px] text-neutral-500 mt-1">Tersedia: <span class="font-semibold" x-text="((selectedHostSpec.ram_total - selectedHostSpec.ram_used)/1024).toFixed(1)+' GB'"></span></p>
+                                    </div>
+                                    <div class="rounded-lg bg-white border border-neutral-200 p-3">
+                                        <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 mb-2">Storage</p>
+                                        <span class="text-lg font-bold text-neutral-800" x-text="selectedHostSpec.storage_used + ' / ' + selectedHostSpec.storage_total"></span>
+                                        <span class="text-xs text-neutral-500 ml-1">GB</span>
+                                        <p class="text-[10px] text-neutral-500 mt-1">Tersedia: <span class="font-semibold" x-text="(selectedHostSpec.storage_total - selectedHostSpec.storage_used)+' GB'"></span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @else
+                        <div class="rounded-xl bg-amber-50 border border-amber-200 p-4 mb-4">
+                            <p class="text-sm text-amber-700 font-medium">⚠️ Belum ada host VM yang tersedia.</p>
+                            <p class="text-xs text-amber-600 mt-1">Silakan tambahkan host terlebih dahulu di menu <a href="{{ route('vm_hosts.index') }}" class="underline font-medium">Manajemen Host VM</a>.</p>
+                        </div>
+                        @endif
+
                         <div class="flex items-center justify-end gap-2">
                             <button type="button" @click="action = null" class="fluent-btn fluent-btn-ghost fluent-btn-sm">Batal</button>
                             <form action="{{ route('vm_borrow.moveToReview', $vmBorrow) }}" method="POST" class="inline">
                                 @csrf
+                                <input type="hidden" name="host_id" :value="selectedHostId">
                                 <button type="submit" class="fluent-btn fluent-btn-primary fluent-btn-sm" onclick="return confirm('Setujui permintaan VM dari {{ $vmBorrow->user->display_name }}? Status akan menjadi On-Review.')">Setujui → On-Review</button>
                             </form>
                         </div>
                     </div>
                 </div>
+                <script>
+                    function tahap1ApprovalForm() {
+                        return {
+                            selectedHostId: '{{ old('host_id', '') }}',
+                            hostSpecs: @json($hosts->mapWithKeys(fn($h) => [
+                                $h->id => [
+                                    'name' => $h->name,
+                                    'ip_address' => $h->ip_address,
+                                    'cpu_total' => $h->cpu_total,
+                                    'cpu_used' => $h->cpu_used,
+                                    'ram_total' => $h->ram_total,
+                                    'ram_used' => $h->ram_used,
+                                    'storage_total' => $h->storage_total,
+                                    'storage_used' => $h->storage_used,
+                                    'status' => $h->statusLabel(),
+                                ]
+                            ])),
+                            get selectedHostSpec() {
+                                return this.selectedHostId ? (this.hostSpecs[this.selectedHostId] || null) : null;
+                            },
+                        }
+                    }
+                </script>
 
                 {{-- Reject Confirmation & Action --}}
                 <div x-show="action === 'reject'" x-transition class="p-5 border-t border-neutral-100">
@@ -236,12 +321,13 @@
                     </button>
                 </div>
                 <div x-show="showForm" x-transition class="p-5">
-                    <form action="{{ route('vm_borrow.approve', $vmBorrow) }}" method="POST" class="space-y-4">
+                    <form action="{{ route('vm_borrow.approve', $vmBorrow) }}" method="POST" class="space-y-4" x-data="vmApprovalForm()">
                         @csrf
                         @if($hosts->isNotEmpty())
                         <div>
                             <x-input-label for="host_id" value="Pilih Host VM" />
-                            <select id="host_id" name="host_id" class="mt-1 block w-full rounded-lg border-neutral-200 shadow-sm focus:border-accent focus:ring focus:ring-accent/20 focus:ring-opacity-50 text-sm text-neutral-700">
+                            <select id="host_id" name="host_id" x-model="selectedHostId"
+                                class="mt-1 block w-full rounded-lg border-neutral-200 shadow-sm focus:border-accent focus:ring focus:ring-accent/20 focus:ring-opacity-50 text-sm text-neutral-700">
                                 <option value="">-- Pilih Host --</option>
                                 @foreach($hosts as $host)
                                     @php
@@ -249,7 +335,7 @@
                                         $ramPct = $host->ramUsagePercent();
                                         $isFull = $host->isFull();
                                     @endphp
-                                    <option value="{{ $host->id }}" @disabled($isFull) {{ old('host_id') == $host->id ? 'selected' : '' }}>
+                                    <option value="{{ $host->id }}" data-ip="{{ $host->ip_address }}" @disabled($isFull) {{ old('host_id') == $host->id ? 'selected' : '' }}>
                                         {{ $host->name }}
                                         @if($host->ip_address) ({{ $host->ip_address }}) @endif
                                         — CPU: {{ $cpuPct }}% | RAM: {{ $ramPct }}%
@@ -258,12 +344,91 @@
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('host_id')" />
+
+                            {{-- Spesifikasi Host Detail (muncul saat admin memilih host) --}}
+                            <div x-show="selectedHostId && selectedHostSpec" x-transition
+                                class="mt-3 rounded-xl border border-accent-200 bg-accent-light/30 p-4 space-y-3">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                    <h4 class="text-sm font-semibold text-accent-dark" x-text="'Spesifikasi Host: ' + (selectedHostSpec.name || '')"></h4>
+                                    <span x-show="selectedHostSpec.status === 'penuh'" class="fluent-badge fluent-badge-danger text-xs">Penuh</span>
+                                    <span x-show="selectedHostSpec.status === 'nonaktif'" class="fluent-badge fluent-badge-danger text-xs">Nonaktif</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    {{-- CPU --}}
+                                    <div class="rounded-lg bg-white border border-neutral-200 p-3">
+                                        <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 mb-2">CPU Cores</p>
+                                        <div class="flex items-end justify-between gap-2">
+                                            <span class="text-lg font-bold text-neutral-800" x-text="selectedHostSpec.cpu_used + ' / ' + selectedHostSpec.cpu_total"></span>
+                                            <span class="text-xs text-neutral-500">cores</span>
+                                        </div>
+                                        <div class="mt-2 h-2 rounded-full bg-neutral-100 overflow-hidden">
+                                            <div class="h-full rounded-full transition-all duration-300"
+                                                :class="(selectedHostSpec.cpu_total > 0 ? (selectedHostSpec.cpu_used / selectedHostSpec.cpu_total * 100) : 0) >= 80 ? 'bg-red-500' : 'bg-accent'"
+                                                :style="'width: ' + (selectedHostSpec.cpu_total > 0 ? Math.min(100, (selectedHostSpec.cpu_used / selectedHostSpec.cpu_total * 100)) : 0) + '%'"></div>
+                                        </div>
+                                        <p class="text-[10px] text-neutral-500 mt-1">
+                                            Tersedia: <span class="font-semibold text-neutral-700" x-text="Math.max(0, (selectedHostSpec.cpu_total || 0) - (selectedHostSpec.cpu_used || 0)) + ' cores'"></span>
+                                        </p>
+                                    </div>
+                                    {{-- RAM --}}
+                                    <div class="rounded-lg bg-white border border-neutral-200 p-3">
+                                        <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 mb-2">RAM</p>
+                                        <div class="flex items-end justify-between gap-2">
+                                            <span class="text-lg font-bold text-neutral-800" x-text="(selectedHostSpec.ram_used / 1024).toFixed(1) + ' / ' + (selectedHostSpec.ram_total / 1024).toFixed(1)"></span>
+                                            <span class="text-xs text-neutral-500">GB</span>
+                                        </div>
+                                        <div class="mt-2 h-2 rounded-full bg-neutral-100 overflow-hidden">
+                                            <div class="h-full rounded-full transition-all duration-300"
+                                                :class="(selectedHostSpec.ram_total > 0 ? (selectedHostSpec.ram_used / selectedHostSpec.ram_total * 100) : 0) >= 80 ? 'bg-red-500' : 'bg-accent'"
+                                                :style="'width: ' + (selectedHostSpec.ram_total > 0 ? Math.min(100, (selectedHostSpec.ram_used / selectedHostSpec.ram_total * 100)) : 0) + '%'"></div>
+                                        </div>
+                                        <p class="text-[10px] text-neutral-500 mt-1">
+                                            Tersedia: <span class="font-semibold text-neutral-700" x-text="((Math.max(0, (selectedHostSpec.ram_total || 0) - (selectedHostSpec.ram_used || 0))) / 1024).toFixed(1) + ' GB'"></span>
+                                        </p>
+                                    </div>
+                                    {{-- Storage --}}
+                                    <div class="rounded-lg bg-white border border-neutral-200 p-3">
+                                        <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 mb-2">Storage</p>
+                                        <div class="flex items-end justify-between gap-2">
+                                            <span class="text-lg font-bold text-neutral-800" x-text="(selectedHostSpec.storage_used || 0) + ' / ' + (selectedHostSpec.storage_total || 0)"></span>
+                                            <span class="text-xs text-neutral-500">GB</span>
+                                        </div>
+                                        <div class="mt-2 h-2 rounded-full bg-neutral-100 overflow-hidden">
+                                            <div class="h-full rounded-full transition-all duration-300"
+                                                :class="(selectedHostSpec.storage_total > 0 ? (selectedHostSpec.storage_used / selectedHostSpec.storage_total * 100) : 0) >= 80 ? 'bg-red-500' : 'bg-accent'"
+                                                :style="'width: ' + (selectedHostSpec.storage_total > 0 ? Math.min(100, ((selectedHostSpec.storage_used || 0) / selectedHostSpec.storage_total * 100)) : 0) + '%'"></div>
+                                        </div>
+                                        <p class="text-[10px] text-neutral-500 mt-1">
+                                            Tersedia: <span class="font-semibold text-neutral-700" x-text="Math.max(0, (selectedHostSpec.storage_total || 0) - (selectedHostSpec.storage_used || 0)) + ' GB'"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                                {{-- IP Address & Notes --}}
+                                <div class="flex flex-wrap gap-x-6 gap-y-1 text-xs text-neutral-600">
+                                    <span x-show="selectedHostSpec.ip_address">
+                                        <span class="font-medium text-neutral-800">IP Address:</span>
+                                        <code class="text-accent font-mono" x-text="selectedHostSpec.ip_address"></code>
+                                    </span>
+                                    <span x-show="selectedHostSpec.notes" class="flex items-start gap-1">
+                                        <span class="font-medium text-neutral-800">Catatan:</span>
+                                        <span class="text-neutral-600" x-text="selectedHostSpec.notes"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        @else
+                        <div class="rounded-xl bg-amber-50 border border-amber-200 p-4">
+                            <p class="text-sm text-amber-700 font-medium">⚠️ Belum ada host VM yang tersedia.</p>
+                            <p class="text-xs text-amber-600 mt-1">Silakan tambahkan host terlebih dahulu di menu <a href="{{ route('vm_hosts.index') }}" class="underline font-medium">Manajemen Host VM</a>.</p>
                         </div>
                         @endif
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <x-input-label for="host_ip" value="Host IP / Alamat Server" />
-                                <x-text-input id="host_ip" type="text" name="host_ip" :value="old('host_ip')" placeholder="192.168.1.100" required />
+                                <x-text-input id="host_ip" type="text" name="host_ip" x-model="hostIp" placeholder="Pilih host di atas untuk mengisi otomatis" required />
                                 <x-input-error :messages="$errors->get('host_ip')" />
                             </div>
                             <div>
@@ -295,6 +460,44 @@
                             <button type="submit" class="fluent-btn fluent-btn-primary fluent-btn-sm" onclick="return confirm('Aktifkan VM dan berikan kredensial ke {{ $vmBorrow->user->display_name }}?')">🚀 Aktifkan VM & Berikan Kredensial</button>
                         </div>
                     </form>
+                    <script>
+                        function vmApprovalForm() {
+                            return {
+                                selectedHostId: '{{ old('host_id', $vmBorrow->host_id) }}',
+                                hostIp: '{{ old('host_ip', '') }}',
+                                hostData: @json($hosts->mapWithKeys(fn($h) => [$h->id => ['ip' => $h->ip_address, 'full' => $h->isFull()]])),
+                                hostSpecs: @json($hosts->mapWithKeys(fn($h) => [
+                                    $h->id => [
+                                        'name' => $h->name,
+                                        'ip_address' => $h->ip_address,
+                                        'cpu_total' => $h->cpu_total,
+                                        'cpu_used' => $h->cpu_used,
+                                        'ram_total' => $h->ram_total,
+                                        'ram_used' => $h->ram_used,
+                                        'storage_total' => $h->storage_total,
+                                        'storage_used' => $h->storage_used,
+                                        'is_active' => $h->is_active,
+                                        'status' => $h->statusLabel(),
+                                        'notes' => $h->notes,
+                                    ]
+                                ])),
+                                get selectedHostSpec() {
+                                    return this.selectedHostId ? (this.hostSpecs[this.selectedHostId] || null) : null;
+                                },
+                                init() {
+                                    const select = document.getElementById('host_id');
+                                    select.addEventListener('change', () => {
+                                        const opt = select.options[select.selectedIndex];
+                                        if (opt && opt.dataset.ip) {
+                                            this.hostIp = opt.dataset.ip;
+                                        } else {
+                                            this.hostIp = '';
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    </script>
                 </div>
             </div>
         @endif
