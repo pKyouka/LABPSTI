@@ -45,6 +45,64 @@
                         <p class="text-xs font-semibold uppercase tracking-wider text-accent mb-1">Cara Akses (SSH)</p>
                         <code class="text-sm font-mono text-neutral-800">ssh {{ $vmBorrow->vm_username }}&#64;{{ $vmBorrow->host_ip }}</code>
                     </div>
+
+                    {{-- Resource Terpasang + Edit (Admin only) --}}
+                    <div class="rounded-xl border border-neutral-200 bg-neutral-50/50 p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-sm font-semibold text-neutral-800">Resource VM Terpasang</h4>
+                            @if(Auth::user()->isAdmin())
+                                <button type="button" onclick="document.getElementById('editResourceForm').classList.toggle('hidden')"
+                                    class="fluent-btn fluent-btn-sm fluent-btn-ghost">✏️ Edit Resource</button>
+                            @endif
+                        </div>
+                        <div class="grid grid-cols-3 gap-3 text-sm">
+                            <div class="rounded-lg bg-white border border-neutral-200 px-3 py-2 text-center">
+                                <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">CPU</p>
+                                <p class="text-lg font-bold text-neutral-800">{{ $vmBorrow->allocated_cpu ?? '-' }} <span class="text-xs font-normal text-neutral-500">cores</span></p>
+                            </div>
+                            <div class="rounded-lg bg-white border border-neutral-200 px-3 py-2 text-center">
+                                <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">RAM</p>
+                                <p class="text-lg font-bold text-neutral-800">{{ number_format(($vmBorrow->allocated_ram ?? 0) / 1024, 1) }} <span class="text-xs font-normal text-neutral-500">GB</span></p>
+                            </div>
+                            <div class="rounded-lg bg-white border border-neutral-200 px-3 py-2 text-center">
+                                <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Storage</p>
+                                <p class="text-lg font-bold text-neutral-800">{{ $vmBorrow->allocated_storage ?? '-' }} <span class="text-xs font-normal text-neutral-500">GB</span></p>
+                            </div>
+                        </div>
+
+                        {{-- Form Edit Resource (Admin only) --}}
+                        @if(Auth::user()->isAdmin())
+                        <div id="editResourceForm" class="hidden border-t border-neutral-200 pt-3">
+                            <form action="{{ route('vm_borrow.edit_resources', $vmBorrow) }}" method="POST" class="space-y-3">
+                                @csrf
+                                <p class="text-xs text-neutral-500">Mengubah resource akan menyesuaikan alokasi pada host <strong>{{ $vmBorrow->host?->name ?? '-' }}</strong>. Resource lama akan dikembalikan ke host terlebih dahulu.</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div>
+                                        <x-input-label for="edit_allocated_cpu" value="CPU Cores" />
+                                        <x-text-input id="edit_allocated_cpu" type="number" name="allocated_cpu" :value="old('allocated_cpu', $vmBorrow->allocated_cpu)" min="1" max="128" required />
+                                        <x-input-error :messages="$errors->get('allocated_cpu')" />
+                                    </div>
+                                    <div>
+                                        <x-input-label for="edit_allocated_ram" value="RAM (MB)" />
+                                        <x-text-input id="edit_allocated_ram" type="number" name="allocated_ram" :value="old('allocated_ram', $vmBorrow->allocated_ram)" min="256" max="524288" required />
+                                        <p class="text-[10px] text-neutral-400 mt-1">{{ number_format(($vmBorrow->allocated_ram ?? 1024) / 1024, 1) }} GB</p>
+                                        <x-input-error :messages="$errors->get('allocated_ram')" />
+                                    </div>
+                                    <div>
+                                        <x-input-label for="edit_allocated_storage" value="Storage (GB)" />
+                                        <x-text-input id="edit_allocated_storage" type="number" name="allocated_storage" :value="old('allocated_storage', $vmBorrow->allocated_storage)" min="1" max="10000" required />
+                                        <x-input-error :messages="$errors->get('allocated_storage')" />
+                                    </div>
+                                </div>
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" onclick="document.getElementById('editResourceForm').classList.add('hidden')" class="fluent-btn fluent-btn-ghost fluent-btn-sm">Batal</button>
+                                    <button type="submit" class="fluent-btn fluent-btn-primary fluent-btn-sm">Simpan Resource</button>
+                                </div>
+                            </form>
+                        </div>
+                        @endif
+                    </div>
+
                     @if($vmBorrow->admin_notes)
                         <div>
                             <p class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-1">Catatan Admin</p>

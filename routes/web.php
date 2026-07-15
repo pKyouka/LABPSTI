@@ -103,6 +103,9 @@ Route::middleware('auth')->group(function () {
         // VM Service Requests (mahasiswa request sesuatu di VM mereka)
         Route::post('vm_borrow/{vmBorrow}/service-request', [VmServiceRequestController::class, 'store'])->name('vm_borrow.service_request.store');
         Route::post('vm_borrow/{vmBorrow}/service-request/{serviceRequest}/update', [VmServiceRequestController::class, 'updateStatus'])->name('vm_borrow.service_request.update');
+
+        // Edit resource VM (admin only)
+        Route::post('vm_borrow/{vmBorrow}/edit-resources', [VmBorrowController::class, 'editResources'])->name('vm_borrow.edit_resources');
 	});
 
 	require __DIR__.'/auth.php';

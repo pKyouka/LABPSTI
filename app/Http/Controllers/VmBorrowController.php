@@ -206,6 +206,64 @@ class VmBorrowController extends Controller
             ->with('success', $message);
     }
 
+    /**
+     * Edit resource alokasi VM yang sudah approved.
+     */
+    public function editResources(Request $request, VmBorrowRequest $vmBorrow)
+    {
+        $this->ensureAdmin();
+
+        if ($vmBorrow->status !== 'approved') {
+            return redirect()->route('vm_borrow.show', $vmBorrow)
+                ->with('success', 'Hanya VM yang sudah disetujui yang dapat diedit resourcenya.');
+        }
+
+        $data = $request->validate([
+            'allocated_cpu'    => 'required|integer|min:1|max:128',
+            'allocated_ram'    => 'required|integer|min:256|max:524288',
+            'allocated_storage'=> 'required|integer|min:1|max:10000',
+        ]);
+
+        $host = $vmBorrow->host;
+        $oldCpu     = (int) ($vmBorrow->allocated_cpu ?? 0);
+        $oldRam     = (int) ($vmBorrow->allocated_ram ?? 0);
+        $oldStorage = (int) ($vmBorrow->allocated_storage ?? 0);
+        $newCpu     = (int) $data['allocated_cpu'];
+        $newRam     = (int) $data['allocated_ram'];
+        $newStorage = (int) $data['allocated_storage'];
+
+        if ($host) {
+            // Kembalikan resource lama dulu, lalu cek apakah resource baru cukup
+            $host->restoreResources($oldCpu, $oldRam, $oldStorage);
+
+            if ($newCpu > $host->cpuAvailable()) {
+                // Kembalikan resource sebelum redirect
+                $host->deductResources($oldCpu, $oldRam, $oldStorage);
+                return back()->withErrors(['allocated_cpu' => "CPU tidak cukup. Tersedia hanya {$host->cpuAvailable()} cores."])->withInput();
+            }
+            if ($newRam > $host->ramAvailable()) {
+                $host->deductResources($oldCpu, $oldRam, $oldStorage);
+                return back()->withErrors(['allocated_ram' => "RAM tidak cukup. Tersedia hanya " . round($host->ramAvailable() / 1024, 1) . " GB."])->withInput();
+            }
+            if ($newStorage > $host->storageAvailable()) {
+                $host->deductResources($oldCpu, $oldRam, $oldStorage);
+                return back()->withErrors(['allocated_storage' => "Storage tidak cukup. Tersedia hanya {$host->storageAvailable()} GB."])->withInput();
+            }
+
+            $host->deductResources($newCpu, $newRam, $newStorage);
+        }
+
+        $vmBorrow->update([
+            'allocated_cpu'    => $newCpu,
+            'allocated_ram'    => $newRam,
+            'allocated_storage'=> $newStorage,
+        ]);
+
+        $hostName = $host ? $host->name : 'Host';
+        return redirect()->route('vm_borrow.show', $vmBorrow)
+            ->with('success', "Resource VM di {$hostName} berhasil diperbarui.");
+    }
+
     public function reject(Request $request, VmBorrowRequest $vmBorrow)
     {
         $this->ensureAdmin();
