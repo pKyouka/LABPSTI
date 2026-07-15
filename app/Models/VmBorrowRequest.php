@@ -16,6 +16,7 @@ class VmBorrowRequest extends Model
         'start_date',
         'end_date',
         'status',
+        'host_id',
         'host_ip',
         'vm_username',
         'vm_password',
@@ -46,6 +47,11 @@ class VmBorrowRequest extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function host(): BelongsTo
+    {
+        return $this->belongsTo(VmHost::class, 'host_id');
     }
 
     public function isPending(): bool

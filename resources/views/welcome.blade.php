@@ -55,6 +55,7 @@
                 </div>
                 <a href="#inventory" class="fl-nav-link px-3 py-2 text-[13px] font-medium text-neutral-600 hover:text-neutral-900 rounded-lg transition">Inventaris</a>
                 <a href="#bulletins" class="fl-nav-link px-3 py-2 text-[13px] font-medium text-neutral-600 hover:text-neutral-900 rounded-lg transition">Kabar Berita</a>
+                <a href="{{ route('vm_hosts.public') }}" class="fl-nav-link px-3 py-2 text-[13px] font-medium text-neutral-600 hover:text-neutral-900 rounded-lg transition">Host VM</a>
                 <a href="#stats" class="fl-nav-link px-3 py-2 text-[13px] font-medium text-neutral-600 hover:text-neutral-900 rounded-lg transition">Statistik</a>
             </div>
 

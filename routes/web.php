@@ -11,6 +11,7 @@ use App\Http\Controllers\LabController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VmBorrowController;
+use App\Http\Controllers\VmHostController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingPageController::class, 'index'])->name('landing');
@@ -19,6 +20,9 @@ Route::get('/kabar-berita', [LandingPageController::class, 'bulletins'])->name('
 Route::get('/kabar-berita/{bulletin}', [LandingPageController::class, 'showBulletin'])->name('landing.bulletins.show');
 Route::get('/lab/{category}', [LabController::class, 'show'])->name('lab.show');
 Route::get('/lab/{category}/berita/{bulletin}', [LabController::class, 'showBulletin'])->name('lab.bulletins.show');
+
+// Public VM Host Status — no login required
+Route::get('/vm-hosts', [VmHostController::class, 'publicIndex'])->name('vm_hosts.public');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])->name('dashboard');
@@ -91,6 +95,9 @@ Route::middleware('auth')->group(function () {
         Route::post("vm_borrow/{vmBorrow}/request-reset", [VmBorrowController::class, "requestReset"])->name("vm_borrow.request_reset");
         Route::post("vm_borrow/{vmBorrow}/approve-reset", [VmBorrowController::class, "approveReset"])->name("vm_borrow.approve_reset");
         Route::post("vm_borrow/{vmBorrow}/reject-reset", [VmBorrowController::class, "rejectReset"])->name("vm_borrow.reject_reset");
+
+        // VM Host Management (Admin only)
+        Route::resource('vm_hosts', VmHostController::class)->except(['show']);
 	});
 
 	require __DIR__.'/auth.php';

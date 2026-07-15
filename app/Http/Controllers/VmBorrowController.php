@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\VmBorrowRequest;
+use App\Models\VmHost;
 use App\Services\AnsibleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -62,7 +63,9 @@ class VmBorrowController extends Controller
     {
         $this->ensureOwnerOrAdmin($vmBorrow);
 
-        return view('vm_borrow.show', compact('vmBorrow'));
+        $hosts = VmHost::where('is_active', true)->orderBy('name')->get();
+
+        return view('vm_borrow.show', compact('vmBorrow', 'hosts'));
     }
 
     private function ensureAdmin()
@@ -123,15 +126,17 @@ class VmBorrowController extends Controller
         }
 
         $data = $request->validate([
-            'host_ip'      => 'required|string|max:255',
-            'vm_username'  => 'required|string|max:255',
-            'vm_password'  => 'required|string|max:255',
-            'admin_notes'  => 'nullable|string|max:1000',
+            'host_id'       => 'nullable|exists:vm_hosts,id',
+            'host_ip'       => 'required|string|max:255',
+            'vm_username'   => 'required|string|max:255',
+            'vm_password'   => 'required|string|max:255',
+            'admin_notes'   => 'nullable|string|max:1000',
             'duration_days' => 'required|integer|min:1|max:365',
         ]);
 
         $vmBorrow->update([
             'status'        => 'approved',
+            'host_id'       => $data['host_id'] ?? null,
             'host_ip'       => $data['host_ip'],
             'vm_username'   => $data['vm_username'],
             'vm_password'   => $data['vm_password'],

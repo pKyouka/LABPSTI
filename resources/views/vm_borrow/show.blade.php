@@ -238,6 +238,28 @@
                 <div x-show="showForm" x-transition class="p-5">
                     <form action="{{ route('vm_borrow.approve', $vmBorrow) }}" method="POST" class="space-y-4">
                         @csrf
+                        @if($hosts->isNotEmpty())
+                        <div>
+                            <x-input-label for="host_id" value="Pilih Host VM" />
+                            <select id="host_id" name="host_id" class="mt-1 block w-full rounded-lg border-neutral-200 shadow-sm focus:border-accent focus:ring focus:ring-accent/20 focus:ring-opacity-50 text-sm text-neutral-700">
+                                <option value="">-- Pilih Host --</option>
+                                @foreach($hosts as $host)
+                                    @php
+                                        $cpuPct = $host->cpuUsagePercent();
+                                        $ramPct = $host->ramUsagePercent();
+                                        $isFull = $host->isFull();
+                                    @endphp
+                                    <option value="{{ $host->id }}" @disabled($isFull) {{ old('host_id') == $host->id ? 'selected' : '' }}>
+                                        {{ $host->name }}
+                                        @if($host->ip_address) ({{ $host->ip_address }}) @endif
+                                        — CPU: {{ $cpuPct }}% | RAM: {{ $ramPct }}%
+                                        {{ $isFull ? '[PENUH]' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('host_id')" />
+                        </div>
+                        @endif
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <x-input-label for="host_ip" value="Host IP / Alamat Server" />

@@ -96,11 +96,11 @@
     @apply bg-white rounded-2xl;
     border: 1px solid rgba(0,0,0,0.06);
     box-shadow: 0 1px 2px rgba(0,0,0,0.02), 0 2px 4px rgba(0,0,0,0.04), 0 4px 8px rgba(0,0,0,0.04);
-    transition: box-shadow 0.25s cubic-bezier(0.33,0,0.67,1), transform 0.25s cubic-bezier(0.33,0,0.67,1);
+    transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 .fluent-card:hover {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.03), 0 6px 14px rgba(0,0,0,0.06), 0 12px 28px rgba(0,0,0,0.05);
-    transform: translateY(-2px);
+    background: rgba(0,0,0,0.02);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 2px 6px rgba(0,0,0,0.04);
 }
 .fluent-card-interactive:active { transform: scale(0.985); }
 
@@ -192,10 +192,10 @@
     padding: 14px 16px; font-size: 14px; color: var(--fluent-text-primary);
     border-bottom: 1px solid var(--fluent-divider);
 }
-.fluent-table tbody tr:hover td { background: rgba(0,120,212,0.03); }
+.fluent-table tbody tr:hover td { background: rgba(0,0,0,0.03); }
 .fluent-table tbody tr:last-child td { border-bottom: none; }
 .fluent-table tbody tr:nth-child(even) td { background: rgba(0,0,0,0.01); }
-.fluent-table tbody tr:nth-child(even):hover td { background: rgba(0,120,212,0.04); }
+.fluent-table tbody tr:nth-child(even):hover td { background: rgba(0,0,0,0.04); }
 
 /* Badges */
 .fluent-badge { display: inline-flex; align-items: center; padding: 2px 10px; font-size: 11px; font-weight: 600; border-radius: 999px; letter-spacing: 0.02em; white-space: nowrap; }
@@ -231,22 +231,17 @@
     background: rgba(255,255,255,0.65); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255,255,255,0.5); border-radius: 20px; padding: 24px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 3px 10px rgba(0,0,0,0.04);
-    transition: all 0.3s cubic-bezier(0.33,0,0.67,1);
+    transition: background 0.2s ease, box-shadow 0.2s ease;
 }
-.fluent-stat-card:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 6px 18px rgba(0,0,0,0.06), 0 16px 36px rgba(0,0,0,0.05); }
+.fluent-stat-card:hover { background: rgba(0,0,0,0.02); box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 3px 8px rgba(0,0,0,0.05); }
 
 .fluent-glow-border { position: relative; }
 .fluent-glow-border::before {
     content: ''; position: absolute; inset: -1px; border-radius: inherit;
-    background: linear-gradient(135deg, var(--fluent-accent), rgba(139,92,246,0.6), rgba(20,184,166,0.5), var(--fluent-accent));
-    background-size: 300% 300%; animation: fluentBorderGlow 6s ease infinite;
-    z-index: -1; opacity: 0; transition: opacity 0.5s ease;
+    background: rgba(0,0,0,0.08);
+    z-index: -1; opacity: 0; transition: opacity 0.2s ease;
 }
 .fluent-glow-border:hover::before { opacity: 1; }
-@keyframes fluentBorderGlow {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-}
 
 .fluent-reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1); }
 .fluent-reveal.show { opacity: 1; transform: translateY(0); }
