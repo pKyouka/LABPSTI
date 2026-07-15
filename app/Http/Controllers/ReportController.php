@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\BorrowRecord;
 use App\Models\LabUsageRecord;
 use App\Models\VmBorrowRequest;
-use App\Traits\RequiresAdmin;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -18,45 +17,35 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class ReportController extends Controller
 {
-    use RequiresAdmin;
-
     public function index()
     {
-        $this->ensureAdmin();
-
         $today = Carbon::today();
         $weekStart = Carbon::today()->startOfWeek();
         $monthStart = Carbon::today()->startOfMonth();
 
-        // Borrow records stats
         $borrowToday = BorrowRecord::whereDate('borrowed_at', $today)->count();
         $borrowWeek = BorrowRecord::whereBetween('borrowed_at', [$weekStart, Carbon::today()->endOfDay()])->count();
         $borrowMonth = BorrowRecord::whereBetween('borrowed_at', [$monthStart, Carbon::today()->endOfMonth()])->count();
 
-        // Lab usage records stats
         $usageToday = LabUsageRecord::whereDate('start_time', $today)->count();
         $usageWeek = LabUsageRecord::whereBetween('start_time', [$weekStart, Carbon::today()->endOfDay()])->count();
         $usageMonth = LabUsageRecord::whereBetween('start_time', [$monthStart, Carbon::today()->endOfMonth()])->count();
 
-        // VM usage stats
         $vmToday = VmBorrowRequest::whereDate('created_at', $today)->where('status', 'approved')->count();
         $vmWeek = VmBorrowRequest::whereBetween('created_at', [$weekStart, Carbon::today()->endOfDay()])->where('status', 'approved')->count();
         $vmMonth = VmBorrowRequest::whereBetween('created_at', [$monthStart, Carbon::today()->endOfMonth()])->where('status', 'approved')->count();
 
-        // Active VM count (approved & not expired)
         $vmActive = VmBorrowRequest::where('status', 'approved')
             ->where(function ($q) {
                 $q->whereNull('end_date')->orWhere('end_date', '>=', Carbon::today());
             })
             ->count();
 
-        // VM expiring soon (within 7 days)
         $vmExpiringSoon = VmBorrowRequest::where('status', 'approved')
             ->whereNotNull('end_date')
             ->whereBetween('end_date', [Carbon::today(), Carbon::today()->addDays(7)])
             ->count();
 
-        // VM already expired
         $vmExpired = VmBorrowRequest::where('status', 'approved')
             ->whereNotNull('end_date')
             ->where('end_date', '<', Carbon::today())
@@ -72,8 +61,6 @@ class ReportController extends Controller
 
     public function borrowDaily()
     {
-        $this->ensureAdmin();
-
         $today = Carbon::today();
 
         $records = BorrowRecord::whereDate('borrowed_at', $today)
@@ -94,8 +81,6 @@ class ReportController extends Controller
 
     public function borrowWeekly()
     {
-        $this->ensureAdmin();
-
         $weekStart = Carbon::today()->startOfWeek();
         $weekEnd = Carbon::today()->endOfWeek();
 
@@ -121,8 +106,6 @@ class ReportController extends Controller
 
     public function borrowMonthly()
     {
-        $this->ensureAdmin();
-
         $selectedMonth = (int) request('month', Carbon::now()->month);
         $selectedYear = (int) request('year', Carbon::now()->year);
 
@@ -149,7 +132,6 @@ class ReportController extends Controller
             ];
         }
 
-        // Weekly summary
         $weeklyStats = [];
         $currentWeekStart = clone $monthStart;
         while ($currentWeekStart <= $monthEnd) {
@@ -176,8 +158,6 @@ class ReportController extends Controller
 
     public function borrowMonthlyPdf()
     {
-        $this->ensureAdmin();
-
         $selectedMonth = (int) request('month', Carbon::now()->month);
         $selectedYear = (int) request('year', Carbon::now()->year);
 
@@ -236,12 +216,6 @@ class ReportController extends Controller
 
     public function usageDaily()
     {
-        $user = Auth::user();
-
-        if (!$user || !$user->isAdmin()) {
-            abort(403);
-        }
-
         $today = Carbon::today();
 
         $records = LabUsageRecord::whereDate('start_time', $today)
@@ -261,12 +235,6 @@ class ReportController extends Controller
 
     public function usageWeekly()
     {
-        $user = Auth::user();
-
-        if (!$user || !$user->isAdmin()) {
-            abort(403);
-        }
-
         $weekStart = Carbon::today()->startOfWeek();
         $weekEnd = Carbon::today()->endOfWeek();
 
@@ -291,12 +259,6 @@ class ReportController extends Controller
 
     public function usageMonthly()
     {
-        $user = Auth::user();
-
-        if (!$user || !$user->isAdmin()) {
-            abort(403);
-        }
-
         $selectedMonth = request('month', Carbon::now()->format('m'));
         $selectedYear = request('year', Carbon::now()->format('Y'));
 
@@ -319,7 +281,6 @@ class ReportController extends Controller
             ];
         }
 
-        // Weekly summary
         $weeklyStats = [];
         $currentWeekStart = clone $monthStart;
         while ($currentWeekStart <= $monthEnd) {
@@ -345,8 +306,6 @@ class ReportController extends Controller
 
     public function exportPage()
     {
-        $this->ensureAdmin();
-
         $defaultStart = Carbon::now()->startOfMonth()->format('Y-m-d');
         $defaultEnd = Carbon::now()->format('Y-m-d');
 
@@ -357,21 +316,16 @@ class ReportController extends Controller
 
     public function vmAll()
     {
-        $this->ensureAdmin();
-
         $query = VmBorrowRequest::with('user');
 
-        // Filter by status
         if ($status = request('status')) {
             $query->where('status', $status);
         }
 
-        // Filter by OS
         if ($os = request('os')) {
             $query->where('os_type', $os);
         }
 
-        // Filter by expiry
         if ($expiry = request('expiry')) {
             if ($expiry === 'active') {
                 $query->where('status', 'approved')
@@ -389,7 +343,6 @@ class ReportController extends Controller
             }
         }
 
-        // Search by user name
         if ($search = request('search')) {
             $query->whereHas('user', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -399,7 +352,6 @@ class ReportController extends Controller
 
         $vms = $query->latest()->paginate(20);
 
-        // Summary stats
         $total = VmBorrowRequest::count();
         $active = VmBorrowRequest::where('status', 'approved')
             ->where(function ($q) {
@@ -417,7 +369,6 @@ class ReportController extends Controller
 
         $summary = compact('total', 'active', 'expiringSoon', 'expired', 'pending');
 
-        // OS stats
         $allVms = VmBorrowRequest::all();
         $osStats = [];
         foreach (['debian', 'ubuntu'] as $os) {
@@ -435,7 +386,6 @@ class ReportController extends Controller
             ];
         }
 
-        // Expiring soon list for side panel
         $expiringSoonList = VmBorrowRequest::where('status', 'approved')
             ->whereNotNull('end_date')
             ->whereBetween('end_date', [Carbon::today(), Carbon::today()->addDays(7)])
@@ -450,8 +400,6 @@ class ReportController extends Controller
 
     public function vmDaily()
     {
-        $this->ensureAdmin();
-
         $today = Carbon::today();
 
         $records = VmBorrowRequest::whereDate('created_at', $today)
@@ -465,7 +413,6 @@ class ReportController extends Controller
                 ];
             });
 
-        // Also show currently active VMs (approved & not expired)
         $activeVms = VmBorrowRequest::where('status', 'approved')
             ->where(function ($q) {
                 $q->whereNull('end_date')->orWhere('end_date', '>=', Carbon::today());
@@ -478,8 +425,6 @@ class ReportController extends Controller
 
     public function vmWeekly()
     {
-        $this->ensureAdmin();
-
         $weekStart = Carbon::today()->startOfWeek();
         $weekEnd = Carbon::today()->endOfWeek();
 
@@ -508,8 +453,6 @@ class ReportController extends Controller
 
     public function vmMonthly()
     {
-        $this->ensureAdmin();
-
         $selectedMonth = (int) request('month', Carbon::now()->month);
         $selectedYear = (int) request('year', Carbon::now()->year);
 
@@ -539,7 +482,6 @@ class ReportController extends Controller
             ];
         }
 
-        // Weekly summary
         $weeklyStats = [];
         $currentWeekStart = clone $monthStart;
         while ($currentWeekStart <= $monthEnd) {
@@ -563,7 +505,6 @@ class ReportController extends Controller
             $currentWeekStart->addDays(7);
         }
 
-        // Active & expired summary for the month
         $vmsCreatedThisMonth = VmBorrowRequest::whereBetween('created_at', [$monthStart, $monthEnd])
             ->where('status', 'approved')
             ->count();
@@ -589,8 +530,6 @@ class ReportController extends Controller
 
     public function vmMonthlyPdf()
     {
-        $this->ensureAdmin();
-
         $selectedMonth = (int) request('month', Carbon::now()->month);
         $selectedYear = (int) request('year', Carbon::now()->year);
 
@@ -676,11 +615,6 @@ class ReportController extends Controller
 
     public function usageExportExcel(Request $request)
     {
-        $user = Auth::user();
-        if (!$user || !$user->isAdmin()) {
-            abort(403);
-        }
-
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
 
@@ -697,7 +631,6 @@ class ReportController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Penggunaan Lab');
 
-        // Header
         $sheet->mergeCells('A1:H1');
         $sheet->setCellValue('A1', 'LAPORAN PENGGUNAAN LAB');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
@@ -708,7 +641,6 @@ class ReportController extends Controller
         $sheet->getStyle('A2')->getFont()->setSize(11);
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Table headers
         $headers = ['No', 'Tanggal', 'Lab', 'Nama Pengguna', 'NIM/NIP', 'Waktu Mulai', 'Waktu Selesai', 'Keterangan'];
         $headerRow = 4;
         $col = 1;
@@ -722,7 +654,6 @@ class ReportController extends Controller
             $col++;
         }
 
-        // Data rows
         $row = 5;
         $no = 1;
         foreach ($records as $record) {
@@ -747,7 +678,6 @@ class ReportController extends Controller
             $row++;
         }
 
-        // Auto-size
         foreach (range(1, 8) as $c) {
             $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
             $sheet->getColumnDimension($colLetter)->setAutoSize(true);
@@ -765,8 +695,6 @@ class ReportController extends Controller
 
     public function borrowExportExcel(Request $request)
     {
-        $this->ensureAdmin();
-
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
 
@@ -782,7 +710,6 @@ class ReportController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Peminjaman Alat');
 
-        // Header
         $sheet->mergeCells('A1:J1');
         $sheet->setCellValue('A1', 'LAPORAN PEMINJAMAN ALAT & BARANG');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
@@ -793,7 +720,6 @@ class ReportController extends Controller
         $sheet->getStyle('A2')->getFont()->setSize(11);
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Table headers
         $headers = ['No', 'Tanggal Pinjam', 'Nama Peminjam', 'NIM/NIP', 'Alat/Barang', 'Jumlah', 'Tenggat Waktu', 'Tanggal Kembali', 'Status', 'Keterangan'];
         $headerRow = 4;
         $col = 1;
@@ -807,7 +733,6 @@ class ReportController extends Controller
             $col++;
         }
 
-        // Data rows
         $row = 5;
         $no = 1;
         foreach ($records as $record) {
@@ -835,7 +760,6 @@ class ReportController extends Controller
             $row++;
         }
 
-        // Auto-size
         foreach (range(1, 10) as $c) {
             $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
             $sheet->getColumnDimension($colLetter)->setAutoSize(true);
@@ -853,12 +777,6 @@ class ReportController extends Controller
 
     public function usageMonthlyPdf()
     {
-        $user = Auth::user();
-
-        if (!$user || !$user->isAdmin()) {
-            abort(403);
-        }
-
         $selectedMonth = request('month', Carbon::now()->format('m'));
         $selectedYear = request('year', Carbon::now()->format('Y'));
 

@@ -4,12 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\VmHost;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class VmHostController extends Controller
 {
     /**
-     * Display a listing of all hosts (public — no login required)
+     * Display all hosts (public — no login required)
      */
     public function publicIndex()
     {
@@ -22,8 +21,6 @@ class VmHostController extends Controller
      */
     public function index()
     {
-        $this->ensureAdmin();
-
         $hosts = VmHost::orderBy('name')->paginate(20);
         return view('vm_hosts.index', compact('hosts'));
     }
@@ -33,7 +30,6 @@ class VmHostController extends Controller
      */
     public function create()
     {
-        $this->ensureAdmin();
         return view('vm_hosts.create');
     }
 
@@ -42,8 +38,6 @@ class VmHostController extends Controller
      */
     public function store(Request $request)
     {
-        $this->ensureAdmin();
-
         $data = $request->validate([
             'name'          => 'required|string|max:255|unique:vm_hosts,name',
             'ip_address'    => 'nullable|string|max:255',
@@ -70,7 +64,6 @@ class VmHostController extends Controller
      */
     public function edit(VmHost $vmHost)
     {
-        $this->ensureAdmin();
         return view('vm_hosts.edit', compact('vmHost'));
     }
 
@@ -79,8 +72,6 @@ class VmHostController extends Controller
      */
     public function update(Request $request, VmHost $vmHost)
     {
-        $this->ensureAdmin();
-
         $data = $request->validate([
             'name'          => 'required|string|max:255|unique:vm_hosts,name,' . $vmHost->id,
             'ip_address'    => 'nullable|string|max:255',
@@ -107,8 +98,6 @@ class VmHostController extends Controller
      */
     public function destroy(VmHost $vmHost)
     {
-        $this->ensureAdmin();
-
         // Check if host has active borrow requests
         $activeRequests = $vmHost->vmBorrowRequests()
             ->whereIn('status', ['approved', 'on-review'])
@@ -122,12 +111,5 @@ class VmHostController extends Controller
 
         return redirect()->route('vm_hosts.index')
             ->with('success', 'Host berhasil dihapus.');
-    }
-
-    private function ensureAdmin()
-    {
-        if (!Auth::user() || !Auth::user()->isAdmin()) {
-            abort(403);
-        }
     }
 }

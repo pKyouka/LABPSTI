@@ -15,6 +15,13 @@ use App\Http\Controllers\VmHostController;
 use App\Http\Controllers\VmServiceRequestController;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| Guest Routes
+|--------------------------------------------------------------------------
+| Accessible without authentication.
+*/
+
 Route::get('/', [LandingPageController::class, 'index'])->name('landing');
 Route::get('/inventaris', [LandingPageController::class, 'inventory'])->name('landing.inventory');
 Route::get('/kabar-berita', [LandingPageController::class, 'bulletins'])->name('landing.bulletins');
@@ -22,36 +29,52 @@ Route::get('/kabar-berita/{bulletin}', [LandingPageController::class, 'showBulle
 Route::get('/lab/{category}', [LabController::class, 'show'])->name('lab.show');
 Route::get('/lab/{category}/berita/{bulletin}', [LabController::class, 'showBulletin'])->name('lab.bulletins.show');
 
-// Public VM Host Status — no login required
+/*
+|--------------------------------------------------------------------------
+| Public VM Host Status
+|--------------------------------------------------------------------------
+| Accessible without login.
+*/
+
 Route::get('/vm-hosts', [VmHostController::class, 'publicIndex'])->name('vm_hosts.public');
 
+/*
+|--------------------------------------------------------------------------
+| Authenticated Routes — Dashboard
+|--------------------------------------------------------------------------
+| Requires auth + verified email.
+*/
+
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])->name('dashboard');
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
+
+/*
+|--------------------------------------------------------------------------
+| Shared Routes (auth only — accessible by all authenticated users)
+|--------------------------------------------------------------------------
+| Role-based scoping handled inside each controller.
+*/
 
 Route::middleware('auth')->group(function () {
+
+    // Profile — same for all users
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Bulletin is available for all authenticated users, but scoped per role in controller.
+    // Bulletin — all can read; admin/auto-approve on create
     Route::get('bulletins', [BulletinController::class, 'index'])->name('bulletins.index');
     Route::get('bulletins/create', [BulletinController::class, 'create'])->name('bulletins.create');
     Route::post('bulletins', [BulletinController::class, 'store'])->name('bulletins.store');
     Route::get('bulletins/{bulletin}/edit', [BulletinController::class, 'edit'])->name('bulletins.edit');
     Route::put('bulletins/{bulletin}', [BulletinController::class, 'update'])->name('bulletins.update');
     Route::delete('bulletins/{bulletin}', [BulletinController::class, 'destroy'])->name('bulletins.destroy');
-    Route::post('bulletins/{bulletin}/approve', [BulletinController::class, 'approve'])->name('bulletins.approve');
-    Route::post('bulletins/{bulletin}/reject', [BulletinController::class, 'reject'])->name('bulletins.reject');
 
-    // Usage record is available for all authenticated users, but scoped per role in controller.
+    // Lab Usage — scoped per role in controller
     Route::resource('usage_records', LabUsageRecordController::class)->except(['show', 'edit', 'update']);
 
-    Route::get('inventory_items', [InventoryItemController::class, 'index'])->name('inventory_items.index');
-    Route::get('inventory_items/create', [InventoryItemController::class, 'create'])->name('inventory_items.create');
-    Route::get('inventory_items/{inventoryItem}', [InventoryItemController::class, 'show'])->name('inventory_items.show');
-    Route::post('inventory_items', [InventoryItemController::class, 'store'])->name('inventory_items.store');
-    Route::delete('inventory_items/{inventoryItem}', [InventoryItemController::class, 'destroy'])->name('inventory_items.destroy');
-
+    // Borrow Records — scoped per role in controller
     Route::get('borrow_records', [BorrowRecordController::class, 'index'])->name('borrow_records.index');
     Route::get('borrow_records/create', [BorrowRecordController::class, 'create'])->name('borrow_records.create');
     Route::post('borrow_records', [BorrowRecordController::class, 'store'])->name('borrow_records.store');
@@ -59,7 +82,11 @@ Route::middleware('auth')->group(function () {
     Route::post('borrow_records/{borrowRecord}/reject', [BorrowRecordController::class, 'reject'])->name('borrow_records.reject');
     Route::post('borrow_records/{borrowRecord}/return', [BorrowRecordController::class, 'markReturned'])->name('borrow_records.return');
 
-    // VM Borrow
+    // Inventory — index/show open to all; create/store/destroy restricted below
+    Route::get('inventory_items', [InventoryItemController::class, 'index'])->name('inventory_items.index');
+    Route::get('inventory_items/{inventoryItem}', [InventoryItemController::class, 'show'])->name('inventory_items.show');
+
+    // VM Borrow — index/show scoped per role
     Route::get('vm_borrow', [VmBorrowController::class, 'index'])->name('vm_borrow.index');
     Route::get('vm_borrow/create', [VmBorrowController::class, 'create'])->name('vm_borrow.create');
     Route::post('vm_borrow', [VmBorrowController::class, 'store'])->name('vm_borrow.store');
@@ -68,10 +95,34 @@ Route::middleware('auth')->group(function () {
     Route::post('vm_borrow/{vmBorrow}/approve', [VmBorrowController::class, 'approve'])->name('vm_borrow.approve');
     Route::post('vm_borrow/{vmBorrow}/reject', [VmBorrowController::class, 'reject'])->name('vm_borrow.reject');
 
-    // User Management (Admin only)
+    // VM Borrow Reset — any owner can request; admin approves/rejects
+    Route::post("vm_borrow/{vmBorrow}/request-reset", [VmBorrowController::class, "requestReset"])->name("vm_borrow.request_reset");
+    Route::post("vm_borrow/{vmBorrow}/approve-reset", [VmBorrowController::class, "approveReset"])->name("vm_borrow.approve_reset");
+    Route::post("vm_borrow/{vmBorrow}/reject-reset", [VmBorrowController::class, "rejectReset"])->name("vm_borrow.reject_reset");
+
+    // VM Service Requests
+    Route::post('vm_borrow/{vmBorrow}/service-request', [VmServiceRequestController::class, 'store'])->name('vm_borrow.service_request.store');
+    Route::post('vm_borrow/{vmBorrow}/service-request/{serviceRequest}/update', [VmServiceRequestController::class, 'updateStatus'])->name('vm_borrow.service_request.update');
+
+    // VM Host public status (already public above), but admin CRUD below
+
+    // VM Edit Resources — admin only
+    Route::post('vm_borrow/{vmBorrow}/edit-resources', [VmBorrowController::class, 'editResources'])->name('vm_borrow.edit_resources');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin Routes
+|--------------------------------------------------------------------------
+| Accessible only by users with role='admin'.
+*/
+
+Route::middleware(['auth', 'role:admin'])->group(function () {
+
+    // User Management
     Route::resource('users', UserController::class);
 
-    // Reports (Admin only)
+    // Reports — all endpoints admin-only
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/borrow/daily', [ReportController::class, 'borrowDaily'])->name('reports.borrow.daily');
     Route::get('reports/borrow/weekly', [ReportController::class, 'borrowWeekly'])->name('reports.borrow.weekly');
@@ -92,20 +143,17 @@ Route::middleware('auth')->group(function () {
     Route::get('reports/vm/monthly', [ReportController::class, 'vmMonthly'])->name('reports.vm.monthly');
     Route::get('reports/vm/monthly/pdf', [ReportController::class, 'vmMonthlyPdf'])->name('reports.vm.monthly.pdf');
 
-        // VM Borrow Reset
-        Route::post("vm_borrow/{vmBorrow}/request-reset", [VmBorrowController::class, "requestReset"])->name("vm_borrow.request_reset");
-        Route::post("vm_borrow/{vmBorrow}/approve-reset", [VmBorrowController::class, "approveReset"])->name("vm_borrow.approve_reset");
-        Route::post("vm_borrow/{vmBorrow}/reject-reset", [VmBorrowController::class, "rejectReset"])->name("vm_borrow.reject_reset");
+    // VM Host Management (admin only)
+    Route::resource('vm_hosts', VmHostController::class)->except(['show']);
 
-        // VM Host Management (Admin only)
-        Route::resource('vm_hosts', VmHostController::class)->except(['show']);
+    // Inventory CRUD (create, store, destroy) — index/show already in shared group
+    Route::get('inventory_items/create', [InventoryItemController::class, 'create'])->name('inventory_items.create');
+    Route::post('inventory_items', [InventoryItemController::class, 'store'])->name('inventory_items.store');
+    Route::delete('inventory_items/{inventoryItem}', [InventoryItemController::class, 'destroy'])->name('inventory_items.destroy');
 
-        // VM Service Requests (mahasiswa request sesuatu di VM mereka)
-        Route::post('vm_borrow/{vmBorrow}/service-request', [VmServiceRequestController::class, 'store'])->name('vm_borrow.service_request.store');
-        Route::post('vm_borrow/{vmBorrow}/service-request/{serviceRequest}/update', [VmServiceRequestController::class, 'updateStatus'])->name('vm_borrow.service_request.update');
+    // Bulletin approve/reject — admin only
+    Route::post('bulletins/{bulletin}/approve', [BulletinController::class, 'approve'])->name('bulletins.approve');
+    Route::post('bulletins/{bulletin}/reject', [BulletinController::class, 'reject'])->name('bulletins.reject');
+});
 
-        // Edit resource VM (admin only)
-        Route::post('vm_borrow/{vmBorrow}/edit-resources', [VmBorrowController::class, 'editResources'])->name('vm_borrow.edit_resources');
-	});
-
-	require __DIR__.'/auth.php';
+require __DIR__.'/auth.php';

@@ -3,13 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\InventoryItem;
-use App\Traits\RequiresAdmin;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class InventoryItemController extends Controller
 {
-    use RequiresAdmin;
 
     public function index(Request $request)
     {
@@ -37,17 +34,8 @@ class InventoryItemController extends Controller
         ]);
     }
 
-    public function create()
-    {
-        $this->ensureAdmin();
-
-        return view('inventory_items.create');
-    }
-
     public function store(Request $request)
     {
-        $this->ensureAdmin();
-
         $validated = $request->validate([
             'code' => 'nullable|string|max:100|unique:inventory_items,code',
             'name' => 'required|string|max:255',
@@ -96,8 +84,6 @@ class InventoryItemController extends Controller
 
     public function destroy(InventoryItem $inventoryItem)
     {
-        $this->ensureAdmin();
-
         if ($inventoryItem->borrowRecords()->exists()) {
             return redirect()->route('inventory_items.show', $inventoryItem)
                 ->with('error', 'Barang tidak bisa dihapus karena sudah memiliki riwayat peminjaman.');

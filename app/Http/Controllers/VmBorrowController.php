@@ -4,10 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\VmBorrowRequest;
 use App\Models\VmHost;
-use App\Services\AnsibleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class VmBorrowController extends Controller
 {
@@ -90,13 +88,6 @@ class VmBorrowController extends Controller
         return view('vm_borrow.show', compact('vmBorrow', 'hosts', 'hostSpecsJson', 'hostsDataJson'));
     }
 
-    private function ensureAdmin()
-    {
-        if (!Auth::user()->isAdmin()) {
-            abort(403);
-        }
-    }
-
     private function ensureOwnerOrAdmin(VmBorrowRequest $vmBorrow)
     {
         $user = Auth::user();
@@ -119,7 +110,9 @@ class VmBorrowController extends Controller
      */
     public function moveToReview(Request $request, VmBorrowRequest $vmBorrow)
     {
-        $this->ensureAdmin();
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
 
         if ($vmBorrow->status !== 'pending') {
             return redirect()->route('vm_borrow.show', $vmBorrow)
@@ -145,7 +138,9 @@ class VmBorrowController extends Controller
      */
     public function approve(Request $request, VmBorrowRequest $vmBorrow)
     {
-        $this->ensureAdmin();
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
 
         if ($vmBorrow->status !== 'on-review') {
             return redirect()->route('vm_borrow.show', $vmBorrow)
@@ -211,7 +206,9 @@ class VmBorrowController extends Controller
      */
     public function editResources(Request $request, VmBorrowRequest $vmBorrow)
     {
-        $this->ensureAdmin();
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
 
         if ($vmBorrow->status !== 'approved') {
             return redirect()->route('vm_borrow.show', $vmBorrow)
@@ -275,7 +272,9 @@ class VmBorrowController extends Controller
 
     public function reject(Request $request, VmBorrowRequest $vmBorrow)
     {
-        $this->ensureAdmin();
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
 
         if ($redirect = $this->ensurePending($vmBorrow)) {
             return $redirect;
@@ -318,7 +317,9 @@ class VmBorrowController extends Controller
 
     public function approveReset(Request $request, VmBorrowRequest $vmBorrow)
     {
-        $this->ensureAdmin();
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
 
         if ($vmBorrow->reset_status !== 'pending') {
             return back()->with('error', 'Tidak ada permintaan reset pending untuk VM ini.');
@@ -335,7 +336,9 @@ class VmBorrowController extends Controller
 
     public function rejectReset(Request $request, VmBorrowRequest $vmBorrow)
     {
-        $this->ensureAdmin();
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
 
         if ($vmBorrow->reset_status !== 'pending') {
             return back()->with('error', 'Tidak ada permintaan reset pending untuk VM ini.');

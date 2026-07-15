@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\BorrowRecord;
 use App\Models\InventoryItem;
-use App\Traits\RequiresAdmin;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +13,6 @@ use Illuminate\Validation\ValidationException;
 
 class BorrowRecordController extends Controller
 {
-    use RequiresAdmin;
 
     public function index(Request $request)
     {
@@ -156,7 +154,7 @@ class BorrowRecordController extends Controller
             'pickup_at' => 'required|date|after_or_equal:ready_at',
         ]);
 
-        DB::transaction(function () use ($borrowRecord, $user, $validated) {
+        DB::transaction(function () use ($borrowRecord, $validated) {
             if ($borrowRecord->approval_status !== 'pending') {
                 return;
             }
@@ -171,7 +169,7 @@ class BorrowRecordController extends Controller
 
             $borrowRecord->update([
                 'approval_status' => 'approved',
-                'approved_by' => $user->id,
+                'approved_by' => Auth::id(),
                 'approved_at' => now(),
                 'ready_at' => $validated['ready_at'],
                 'pickup_at' => $validated['pickup_at'],
@@ -208,7 +206,7 @@ class BorrowRecordController extends Controller
             'approval_status' => 'rejected',
             'approved_by' => null,
             'approved_at' => null,
-            'rejected_by' => $user->id,
+            'rejected_by' => Auth::id(),
             'rejected_at' => now(),
             'status' => 'ditolak',
         ]);

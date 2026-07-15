@@ -121,42 +121,6 @@ class BulletinController extends Controller
         return redirect()->route('bulletins.index')->with('success', $message);
     }
 
-    public function approve(Bulletin $bulletin)
-    {
-        $user = Auth::user();
-
-        abort_unless($user->isAdmin(), 403);
-
-        $bulletin->update([
-            'approval_status' => 'approved',
-            'approved_by' => $user->id,
-            'approved_at' => now(),
-            'rejected_by' => null,
-            'rejected_at' => null,
-            'rejection_reason' => null,
-            'published_at' => $bulletin->published_at ?? now(),
-        ]);
-
-        return redirect()->route('bulletins.index')->with('success', 'Buletin berhasil di-ACC.');
-    }
-
-    public function reject(Bulletin $bulletin)
-    {
-        $user = Auth::user();
-
-        abort_unless($user->isAdmin(), 403);
-
-        $bulletin->update([
-            'approval_status' => 'rejected',
-            'approved_by' => null,
-            'approved_at' => null,
-            'rejected_by' => $user->id,
-            'rejected_at' => now(),
-        ]);
-
-        return redirect()->route('bulletins.index')->with('success', 'Buletin ditolak.');
-    }
-
     public function destroy(Bulletin $bulletin)
     {
         $this->ensureCanManage($bulletin);
