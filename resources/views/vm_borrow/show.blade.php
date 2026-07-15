@@ -73,9 +73,38 @@
                         {{-- Form Edit Resource (Admin only) --}}
                         @if(Auth::user()->isAdmin())
                         <div id="editResourceForm" class="hidden border-t border-neutral-200 pt-3">
-                            <form action="{{ route('vm_borrow.edit_resources', $vmBorrow) }}" method="POST" class="space-y-3">
+                            <form action="{{ route('vm_borrow.edit_resources', $vmBorrow) }}" method="POST" class="space-y-3" x-data="editResourceForm()">
                                 @csrf
-                                <p class="text-xs text-neutral-500">Mengubah resource akan menyesuaikan alokasi pada host <strong>{{ $vmBorrow->host?->name ?? '-' }}</strong>. Resource lama akan dikembalikan ke host terlebih dahulu.</p>
+                                <p class="text-xs text-neutral-500">Resource lama akan dikembalikan ke host lama, lalu dialokasikan ke host yang dipilih di bawah.</p>
+                                @if($hosts->isNotEmpty())
+                                <div>
+                                    <x-input-label for="edit_host_id" value="Pindahkan ke Host (opsional)" />
+                                    <select id="edit_host_id" name="host_id" x-model="selectedHostId"
+                                        class="mt-1 block w-full rounded-lg border-neutral-200 shadow-sm focus:border-accent focus:ring focus:ring-accent/20 text-sm text-neutral-700">
+                                        <option value="">-- Pilih Host (biarkan untuk tidak pindah) --</option>
+                                        @foreach($hosts as $host)
+                                            @php
+                                                $cpuPct = $host->cpuUsagePercent();
+                                                $ramPct = $host->ramUsagePercent();
+                                                $isFull = $host->isFull();
+                                            @endphp
+                                            <option value="{{ $host->id }}" data-ip="{{ $host->ip_address }}"
+                                                @disabled($isFull && $host->id !== $vmBorrow->host_id)
+                                                {{ old('host_id', $vmBorrow->host_id) == $host->id ? 'selected' : '' }}>
+                                                {{ $host->name }}
+                                                @if($host->ip_address) ({{ $host->ip_address }}) @endif
+                                                — CPU: {{ $cpuPct }}% | RAM: {{ $ramPct }}%
+                                                {{ $isFull && $host->id !== $vmBorrow->host_id ? '[PENUH]' : '' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @endif
+                                <div>
+                                    <x-input-label for="edit_host_ip" value="Host IP / Alamat Server" />
+                                    <x-text-input id="edit_host_ip" type="text" name="host_ip" x-model="hostIp" :value="old('host_ip', $vmBorrow->host_ip)" required />
+                                    <x-input-error :messages="$errors->get('host_ip')" />
+                                </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <div>
                                         <x-input-label for="edit_allocated_cpu" value="CPU Cores" />
@@ -100,6 +129,25 @@
                                 </div>
                             </form>
                         </div>
+                        <script>
+                            function editResourceForm() {
+                                return {
+                                    selectedHostId: '{{ old('host_id', $vmBorrow->host_id) }}',
+                                    hostIp: '{{ old('host_ip', $vmBorrow->host_ip) }}',
+                                    init() {
+                                        const select = document.getElementById('edit_host_id');
+                                        select.addEventListener('change', () => {
+                                            const opt = select.options[select.selectedIndex];
+                                            if (opt && opt.dataset.ip) {
+                                                this.hostIp = opt.dataset.ip;
+                                            } else {
+                                                this.hostIp = '';
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        </script>
                         @endif
                     </div>
 

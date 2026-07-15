@@ -207,7 +207,7 @@ class VmBorrowController extends Controller
     }
 
     /**
-     * Edit resource alokasi VM yang sudah approved.
+     * Edit resource alokasi VM yang sudah approved (termasuk pindah host).
      */
     public function editResources(Request $request, VmBorrowRequest $vmBorrow)
     {
@@ -219,12 +219,17 @@ class VmBorrowController extends Controller
         }
 
         $data = $request->validate([
+            'host_id'          => 'nullable|exists:vm_hosts,id',
+            'host_ip'          => 'required|string|max:255',
             'allocated_cpu'    => 'required|integer|min:1|max:128',
             'allocated_ram'    => 'required|integer|min:256|max:524288',
             'allocated_storage'=> 'required|integer|min:1|max:10000',
         ]);
 
-        $host = $vmBorrow->host;
+        $oldHost = $vmBorrow->host;
+        $newHostId = $data['host_id'] ?? null;
+        $newHost = $newHostId ? VmHost::find($newHostId) : null;
+
         $oldCpu     = (int) ($vmBorrow->allocated_cpu ?? 0);
         $oldRam     = (int) ($vmBorrow->allocated_ram ?? 0);
         $oldStorage = (int) ($vmBorrow->allocated_storage ?? 0);
@@ -232,34 +237,38 @@ class VmBorrowController extends Controller
         $newRam     = (int) $data['allocated_ram'];
         $newStorage = (int) $data['allocated_storage'];
 
-        if ($host) {
-            // Kembalikan resource lama dulu, lalu cek apakah resource baru cukup
-            $host->restoreResources($oldCpu, $oldRam, $oldStorage);
+        // Kembalikan resource ke host lama
+        if ($oldHost) {
+            $oldHost->restoreResources($oldCpu, $oldRam, $oldStorage);
+        }
 
-            if ($newCpu > $host->cpuAvailable()) {
-                // Kembalikan resource sebelum redirect
-                $host->deductResources($oldCpu, $oldRam, $oldStorage);
-                return back()->withErrors(['allocated_cpu' => "CPU tidak cukup. Tersedia hanya {$host->cpuAvailable()} cores."])->withInput();
+        // Validasi resource cukup di host baru (jika ada host)
+        if ($newHost) {
+            if ($newCpu > $newHost->cpuAvailable()) {
+                if ($oldHost) $oldHost->deductResources($oldCpu, $oldRam, $oldStorage);
+                return back()->withErrors(['allocated_cpu' => "CPU tidak cukup. Tersedia hanya {$newHost->cpuAvailable()} cores."])->withInput();
             }
-            if ($newRam > $host->ramAvailable()) {
-                $host->deductResources($oldCpu, $oldRam, $oldStorage);
-                return back()->withErrors(['allocated_ram' => "RAM tidak cukup. Tersedia hanya " . round($host->ramAvailable() / 1024, 1) . " GB."])->withInput();
+            if ($newRam > $newHost->ramAvailable()) {
+                if ($oldHost) $oldHost->deductResources($oldCpu, $oldRam, $oldStorage);
+                return back()->withErrors(['allocated_ram' => "RAM tidak cukup. Tersedia hanya " . round($newHost->ramAvailable() / 1024, 1) . " GB."])->withInput();
             }
-            if ($newStorage > $host->storageAvailable()) {
-                $host->deductResources($oldCpu, $oldRam, $oldStorage);
-                return back()->withErrors(['allocated_storage' => "Storage tidak cukup. Tersedia hanya {$host->storageAvailable()} GB."])->withInput();
+            if ($newStorage > $newHost->storageAvailable()) {
+                if ($oldHost) $oldHost->deductResources($oldCpu, $oldRam, $oldStorage);
+                return back()->withErrors(['allocated_storage' => "Storage tidak cukup. Tersedia hanya {$newHost->storageAvailable()} GB."])->withInput();
             }
 
-            $host->deductResources($newCpu, $newRam, $newStorage);
+            $newHost->deductResources($newCpu, $newRam, $newStorage);
         }
 
         $vmBorrow->update([
+            'host_id'          => $newHostId,
+            'host_ip'          => $data['host_ip'],
             'allocated_cpu'    => $newCpu,
             'allocated_ram'    => $newRam,
             'allocated_storage'=> $newStorage,
         ]);
 
-        $hostName = $host ? $host->name : 'Host';
+        $hostName = $newHost ? $newHost->name : ($oldHost ? $oldHost->name : 'Host');
         return redirect()->route('vm_borrow.show', $vmBorrow)
             ->with('success', "Resource VM di {$hostName} berhasil diperbarui.");
     }
