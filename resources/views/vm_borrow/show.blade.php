@@ -47,13 +47,12 @@
                     </div>
 
                     {{-- Resource Terpasang + Edit (Admin only) --}}
+                    @if(Auth::user()->isAdmin())
                     <div class="rounded-xl border border-neutral-200 bg-neutral-50/50 p-4 space-y-3">
                         <div class="flex items-center justify-between">
                             <h4 class="text-sm font-semibold text-neutral-800">Resource VM Terpasang</h4>
-                            @if(Auth::user()->isAdmin())
-                                <button type="button" onclick="document.getElementById('editResourceForm').classList.toggle('hidden')"
-                                    class="fluent-btn fluent-btn-sm fluent-btn-ghost">✏️ Edit Resource</button>
-                            @endif
+                            <button type="button" onclick="document.getElementById('editResourceForm').classList.toggle('hidden')"
+                                class="fluent-btn fluent-btn-sm fluent-btn-ghost">✏️ Edit Resource</button>
                         </div>
                         <div class="grid grid-cols-3 gap-3 text-sm">
                             <div class="rounded-lg bg-white border border-neutral-200 px-3 py-2 text-center">
@@ -70,8 +69,7 @@
                             </div>
                         </div>
 
-                        {{-- Form Edit Resource (Admin only) --}}
-                        @if(Auth::user()->isAdmin())
+                        {{-- Form Edit Resource --}}
                         <div id="editResourceForm" class="hidden border-t border-neutral-200 pt-3">
                             <form action="{{ route('vm_borrow.edit_resources', $vmBorrow) }}" method="POST" class="space-y-3" x-data="editResourceForm()">
                                 @csrf
@@ -148,8 +146,8 @@
                                 }
                             }
                         </script>
-                        @endif
                     </div>
+                    @endif
 
                     @if($vmBorrow->admin_notes)
                         <div>
