@@ -4,8 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\VmBorrowRequest;
 use App\Models\VmServiceRequest;
+use App\Notifications\ResetRequestReceived;
+use App\Notifications\ResetRequestUpdated;
+use App\Notifications\ServiceRequestReceived;
+use App\Notifications\ServiceRequestUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
 
 class VmServiceRequestController extends Controller
 {
@@ -29,11 +34,15 @@ class VmServiceRequestController extends Controller
             'config_path'    => 'nullable|string|max:500',
         ]);
 
-        VmServiceRequest::create([
+        $serviceRequest = VmServiceRequest::create([
             'vm_borrow_request_id' => $vmBorrow->id,
             'requester_id'         => $user->id,
             ...$data,
         ]);
+
+        // Notify all admins
+        $admins = User::where('role', 'admin')->get();
+        Notification::send($admins, new ServiceRequestReceived($serviceRequest));
 
         return redirect()->route('vm_borrow.show', $vmBorrow)
             ->with('success', 'Permintaan layanan berhasil dikirim. Admin akan meninjau permintaan Anda.');
@@ -62,6 +71,9 @@ class VmServiceRequestController extends Controller
         }
 
         $serviceRequest->update($update);
+
+        // Notify the requester (student) about the status change
+        $serviceRequest->requester->notify(new ServiceRequestUpdated($serviceRequest));
 
         $message = match ($data['status']) {
             'completed' => 'Service request telah diselesaikan.',

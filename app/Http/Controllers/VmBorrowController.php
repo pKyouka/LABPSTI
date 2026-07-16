@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\VmBorrowRequest;
 use App\Models\VmHost;
+use App\Notifications\ResetRequestReceived;
+use App\Notifications\ResetRequestUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
 
 class VmBorrowController extends Controller
 {
@@ -312,6 +315,10 @@ class VmBorrowController extends Controller
             'reset_requested_at' => now(),
         ]);
 
+        // Notify all admins
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        Notification::send($admins, new ResetRequestReceived($vmBorrow));
+
         return back()->with('success', 'Permintaan reset telah dikirim ke admin.');
     }
 
@@ -330,6 +337,9 @@ class VmBorrowController extends Controller
             'reset_approved_by' => Auth::id(),
             'reset_approved_at' => now(),
         ]);
+
+        // Notify the student
+        $vmBorrow->user->notify(new ResetRequestUpdated($vmBorrow));
 
         return back()->with('success', 'Reset telah disetujui.');
     }
@@ -354,6 +364,9 @@ class VmBorrowController extends Controller
             'reset_rejected_at' => now(),
             'reset_rejection_reason' => $request->reset_rejection_reason,
         ]);
+
+        // Notify the student
+        $vmBorrow->user->notify(new ResetRequestUpdated($vmBorrow));
 
         return back()->with('success', 'Reset telah ditolak.');
     }

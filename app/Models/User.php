@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -86,6 +87,20 @@ class User extends Authenticatable
         }
 
         return trim($name);
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(\App\Models\Notification::class);
+    }
+
+    public function unreadNotificationCount(): int
+    {
+        return (int) DB::table('notifications')
+            ->where('notifiable_type', static::class)
+            ->where('notifiable_id', $this->id)
+            ->whereNull('read_at')
+            ->count();
     }
 
     public function externalNim(): ?string

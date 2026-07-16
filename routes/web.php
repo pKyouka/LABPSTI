@@ -51,6 +51,35 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 
 /*
 |--------------------------------------------------------------------------
+| Notifications (all authenticated users)
+|--------------------------------------------------------------------------
+*/
+
+Route::post('notifications/{notification}/read', function (\App\Models\Notification $notification) {
+    if ($notification->notifiable_id !== Auth::id()) {
+        abort(403);
+    }
+    $notification->markAsRead();
+
+    // Redirect back or to related resource
+    $type = $notification->data['type'] ?? '';
+    if (in_array($type, ['service_request_received', 'service_request_updated'])) {
+        return redirect()->route('vm_borrow.show', $notification->data['vm_borrow_request_id']);
+    }
+    if (in_array($type, ['reset_request_received', 'reset_request_updated'])) {
+        return redirect()->route('vm_borrow.show', $notification->data['vm_borrow_request_id']);
+    }
+
+    return redirect()->back();
+})->name('notifications.read');
+
+Route::post('notifications/mark-all-read', function () {
+    Auth::user()->notifications()->whereNull('read_at')->update(['read_at' => now()]);
+    return redirect()->back();
+})->name('notifications.markAllRead');
+
+/*
+|--------------------------------------------------------------------------
 | Shared Routes (auth only — accessible by all authenticated users)
 |--------------------------------------------------------------------------
 | Role-based scoping handled inside each controller.
