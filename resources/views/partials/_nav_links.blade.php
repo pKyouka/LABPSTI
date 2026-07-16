@@ -40,6 +40,64 @@
 </x-nav-link>
 
 @if(Auth::check() && Auth::user()->isAdmin())
+    @php
+        $pendingVm = \App\Models\VmBorrowRequest::where('status', 'pending')->count();
+        $pendingService = \App\Models\VmServiceRequest::where('status', 'pending')->count();
+        $pendingReset = \App\Models\VmBorrowRequest::where('reset_status', 'pending')->count();
+        $totalPending = $pendingVm + $pendingService + $pendingReset;
+    @endphp
+    @if($totalPending > 0)
+    <div class="sb-pending-widget">
+        <div class="sb-pending-header">
+            <svg class="w-3 h-3 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            <span class="sb-pending-title">Pending</span>
+            <span class="sb-pending-badge">{{ $totalPending }}</span>
+        </div>
+        <div class="sb-pending-items">
+            @if($pendingVm > 0)
+            <a href="{{ route('vm_borrow.index') }}" class="sb-pending-item">
+                <span>VM Request</span>
+                <span class="sb-pending-count">{{ $pendingVm }}</span>
+            </a>
+            @endif
+            @if($pendingService > 0)
+            <a href="{{ route('vm_borrow.index') }}" class="sb-pending-item">
+                <span>Service Request</span>
+                <span class="sb-pending-count">{{ $pendingService }}</span>
+            </a>
+            @endif
+            @if($pendingReset > 0)
+            <a href="{{ route('vm_borrow.index') }}" class="sb-pending-item">
+                <span>Reset Request</span>
+                <span class="sb-pending-count">{{ $pendingReset }}</span>
+            </a>
+            @endif
+        </div>
+    </div>
+@endif
+
+@if(Auth::check() && !Auth::user()->isAdmin())
+    @php
+        $myVm = \App\Models\VmBorrowRequest::where('user_id', Auth::id())
+            ->whereIn('status', ['on-review', 'approved'])
+            ->orWhereIn('reset_status', ['pending', 'approved', 'rejected'])
+            ->count();
+    @endphp
+    @if($myVm > 0)
+    <div class="sb-pending-widget">
+        <div class="sb-pending-header">
+            <svg class="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+            <span class="sb-pending-title">VM Saya</span>
+            <span class="sb-pending-badge sb-pending-badge-blue">{{ $myVm }}</span>
+        </div>
+        <a href="{{ route('vm_borrow.index') }}" class="sb-pending-item">
+            <span>Lihat detail</span>
+            <svg class="w-3 h-3 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+    </div>
+@endif
+
+@if(Auth::check() && Auth::user()->isAdmin())
 {{-- Administrasi --}}
 <div class="sb-category-label">Administrasi</div>
 

@@ -418,6 +418,89 @@ html.sb-collapsed #sidebar #sidebar-nav { overflow-x: hidden; padding-left: 6px;
     }
 }
 
+/* ============================================
+   Pending Request Widget — Sidebar
+   ============================================ */
+
+.sb-pending-widget {
+    margin: 8px 4px 4px;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.6);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    transition: box-shadow 0.15s ease;
+}
+
+.sb-pending-widget:hover {
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+html.sb-collapsed .sb-pending-widget { display: none; }
+
+.sb-pending-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #616161;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+
+.sb-pending-badge {
+    margin-left: auto;
+    background: #FFB501;
+    color: #1F1F1F;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 999px;
+    min-width: 20px;
+    text-align: center;
+}
+
+.sb-pending-badge-blue {
+    background: var(--fluent-accent-light);
+    color: var(--fluent-accent);
+}
+
+.sb-pending-items {
+    padding: 4px;
+}
+
+.sb-pending-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #424242;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background 0.1s ease;
+}
+
+.sb-pending-item:hover {
+    background: rgba(0,0,0,0.04);
+    color: #1F1F1F;
+}
+
+.sb-pending-count {
+    background: rgba(0,0,0,0.06);
+    color: #616161;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
+}
+
 #sidebar-backdrop {
     background: rgba(0,0,0,0.45);
     backdrop-filter: blur(4px);
