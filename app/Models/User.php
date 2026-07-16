@@ -91,7 +91,8 @@ class User extends Authenticatable
 
     public function notifications(): HasMany
     {
-        return $this->hasMany(\App\Models\Notification::class);
+        return $this->hasMany(\App\Models\Notification::class, 'notifiable_id')
+            ->where('notifiable_type', static::class);
     }
 
     public function unreadNotificationCount(): int

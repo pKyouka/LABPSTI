@@ -13,6 +13,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VmBorrowController;
 use App\Http\Controllers\VmHostController;
 use App\Http\Controllers\VmServiceRequestController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -56,7 +58,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 */
 
 Route::post('notifications/{notification}/read', function (\App\Models\Notification $notification) {
-    if ($notification->notifiable_id !== Auth::id()) {
+    if ((int) $notification->notifiable_id !== (int) Auth::id()) {
         abort(403);
     }
     $notification->markAsRead();
@@ -74,7 +76,10 @@ Route::post('notifications/{notification}/read', function (\App\Models\Notificat
 })->name('notifications.read');
 
 Route::post('notifications/mark-all-read', function () {
-    Auth::user()->notifications()->whereNull('read_at')->update(['read_at' => now()]);
+    DB::table('notifications')
+        ->where('notifiable_id', Auth::id())
+        ->whereNull('read_at')
+        ->update(['read_at' => now()]);
     return redirect()->back();
 })->name('notifications.markAllRead');
 
