@@ -29,6 +29,7 @@ class Notification extends DatabaseNotification
         return $query->whereIn('type', [
             \App\Notifications\ServiceRequestUpdated::class,
             \App\Notifications\ResetRequestUpdated::class,
+            \App\Notifications\VmBorrowRequestUpdated::class,
         ]);
     }
 }

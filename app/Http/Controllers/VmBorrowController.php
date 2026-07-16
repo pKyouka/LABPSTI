@@ -6,6 +6,7 @@ use App\Models\VmBorrowRequest;
 use App\Models\VmHost;
 use App\Notifications\ResetRequestReceived;
 use App\Notifications\ResetRequestUpdated;
+use App\Notifications\VmBorrowRequestUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
@@ -132,6 +133,9 @@ class VmBorrowController extends Controller
             'approved_by' => Auth::id(),
         ]);
 
+        // Notify the student
+        $vmBorrow->user->notify(new VmBorrowRequestUpdated($vmBorrow));
+
         return redirect()->route('vm_borrow.show', $vmBorrow)
             ->with('success', 'Permintaan VM telah disetujui. Status berubah menjadi On-Review — silakan buat VM dan berikan kredensial setelah selesai.');
     }
@@ -199,6 +203,9 @@ class VmBorrowController extends Controller
 
         $hostName = $host ? $host->name : 'Host';
         $message = "VM telah berhasil diaktifkan di {$hostName}. Kredensial telah diberikan kepada peminjam.";
+
+        // Notify the student
+        $vmBorrow->user->notify(new VmBorrowRequestUpdated($vmBorrow));
 
         return redirect()->route('vm_borrow.show', $vmBorrow)
             ->with('success', $message);
@@ -292,6 +299,9 @@ class VmBorrowController extends Controller
             'admin_notes' => $request->admin_notes,
             'approved_by' => Auth::id(),
         ]);
+
+        // Notify the student
+        $vmBorrow->user->notify(new VmBorrowRequestUpdated($vmBorrow));
 
         return redirect()->route('vm_borrow.show', $vmBorrow)
             ->with('success', 'Permintaan VM telah ditolak.');

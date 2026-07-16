@@ -134,8 +134,8 @@
                         <div class="relative" x-data="{ open: false }" @click.outside="open = false">
                             <button @click="open = !open" class="relative p-2 rounded-md text-neutral-500 hover:text-neutral-700 hover:bg-black/5 transition" title="Notifikasi">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                                <template x-if="{{ Auth::user()->unreadNotificationCount() }}">
-                                    <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center" x-text="{{ Auth::user()->unreadNotificationCount() }}"></span>
+                                <template x-if="{!! Auth::user()->unreadNotificationCount() !!}">
+                                    <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center" x-text="{!! Auth::user()->unreadNotificationCount() !!}"></span>
                                 </template>
                             </button>
 
@@ -153,8 +153,17 @@
                                 </div>
                                 {{-- Body --}}
                                 <div class="overflow-y-auto flex-1">
-                                    @php($unread = DB::table('notifications')->where('notifiable_id', Auth::id())->whereNull('read_at')->orderBy('created_at', 'desc')->limit(10)->get())
-                                    @php($read = DB::table('notifications')->where('notifiable_id', Auth::id())->whereNotNull('read_at')->orderBy('created_at', 'desc')->limit(10)->get())
+                                    @php
+                                        $isAdmin = Auth::user()->isAdmin();
+                                        $notifications = DB::table('notifications')
+                                            ->where('notifiable_id', Auth::id())
+                                            ->orderBy('created_at', 'desc')
+                                            ->limit(20)
+                                            ->get();
+
+                                        $unread = $notifications->where('read_at', null);
+                                        $read = $notifications->whereNotNull('read_at');
+                                    @endphp
                                     @if($unread->isEmpty() && $read->isEmpty())
                                         <div class="px-4 py-8 text-center">
                                             <svg class="w-8 h-8 text-neutral-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
@@ -167,8 +176,26 @@
                                                 <div class="flex gap-2.5">
                                                     <span class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1.5"></span>
                                                     <div class="min-w-0 flex-1">
-                                                        <p class="text-xs font-medium text-neutral-800">{{ $n->data['title'] ?? $n->data['os_info'] ?? 'Notifikasi' }}</p>
-                                                        <p class="text-[10px] text-neutral-500 mt-0.5">{{ $n->created_at->diffForHumans() }}</p>
+                                                        @php
+                                                            $nData = json_decode($n->data, true);
+                                                            $title = $nData['title']
+                                                                ?? $nData['status_label']
+                                                                ?? $nData['status']
+                                                                ?? $nData['os_info']
+                                                                ?? ($isAdmin
+                                                                    ? ($nData['requester_name'] ? 'Permintaan baru dari ' . $nData['requester_name'] : 'Notifikasi baru')
+                                                                    : 'Notifikasi')
+                                                            ;
+                                                            $subtitle = $nData['category_label']
+                                                                ?? $nData['reset_reason']
+                                                                ?? $nData['status']
+                                                                ?? ''
+                                                            ;
+                                                        @endphp
+                                                        <p class="text-xs font-medium text-neutral-800">{{ $title }}</p>
+                                                        <p class="text-[10px] text-neutral-500 mt-0.5">
+                                                            {{ $subtitle ? $subtitle . ' · ' : '' }}{{ $n->created_at->diffForHumans() }}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </a>
@@ -179,8 +206,26 @@
                                                 <div class="flex gap-2.5">
                                                     <span class="w-2 h-2 rounded-full bg-neutral-300 flex-shrink-0 mt-1.5"></span>
                                                     <div class="min-w-0 flex-1">
-                                                        <p class="text-xs text-neutral-600">{{ $n->data['title'] ?? $n->data['os_info'] ?? 'Notifikasi' }}</p>
-                                                        <p class="text-[10px] text-neutral-400 mt-0.5">{{ $n->created_at->diffForHumans() }}</p>
+                                                        @php
+                                                            $nData = json_decode($n->data, true);
+                                                            $title = $nData['title']
+                                                                ?? $nData['status_label']
+                                                                ?? $nData['status']
+                                                                ?? $nData['os_info']
+                                                                ?? ($isAdmin
+                                                                    ? ($nData['requester_name'] ? 'Permintaan dari ' . $nData['requester_name'] : 'Notifikasi')
+                                                                    : 'Notifikasi')
+                                                            ;
+                                                            $subtitle = $nData['category_label']
+                                                                ?? $nData['reset_reason']
+                                                                ?? $nData['status']
+                                                                ?? ''
+                                                            ;
+                                                        @endphp
+                                                        <p class="text-xs text-neutral-600">{{ $title }}</p>
+                                                        <p class="text-[10px] text-neutral-400 mt-0.5">
+                                                            {{ $subtitle ? $subtitle . ' · ' : '' }}{{ $n->created_at->diffForHumans() }}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </a>
