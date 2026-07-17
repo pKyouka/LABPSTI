@@ -196,7 +196,7 @@
                                         @endphp
                                         <p class="text-xs font-medium text-neutral-800">{{ $title }}</p>
                                         <p class="text-[10px] text-neutral-500 mt-0.5">
-                                            {{ $subtitle ? $subtitle . ' · ' : '' }}{{ $n->created_at->diffForHumans() }}
+                                            {{ $subtitle ? $subtitle . ' · ' : '' }}{{ \Carbon\Carbon::parse($n->created_at)->diffForHumans() }}
                                         </p>
                                                     </div>
                                                 </div>
@@ -227,7 +227,7 @@
                                                         @endphp
                                                         <p class="text-xs text-neutral-600">{{ $title }}</p>
                                                         <p class="text-[10px] text-neutral-400 mt-0.5">
-                                                            {{ $subtitle ? $subtitle . ' · ' : '' }}{{ $n->created_at->diffForHumans() }}
+                                                            {{ $subtitle ? $subtitle . ' · ' : '' }}{{ \Carbon\Carbon::parse($n->created_at)->diffForHumans() }}
                                                         </p>
                                                     </div>
                                                 </div>
