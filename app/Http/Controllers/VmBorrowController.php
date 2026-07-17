@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\VmBorrowRequest;
 use App\Models\VmHost;
 use App\Notifications\ResetRequestReceived;
 use App\Notifications\ResetRequestUpdated;
+use App\Notifications\VmBorrowRequestReceived;
 use App\Notifications\VmBorrowRequestUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -51,11 +53,15 @@ class VmBorrowController extends Controller
             return back()->withErrors(['os_version' => 'Versi OS tidak valid untuk tipe yang dipilih.'])->withInput();
         }
 
-        VmBorrowRequest::create([
+        $vmRequest = VmBorrowRequest::create([
             ...$data,
             'user_id' => Auth::id(),
             'status'  => 'pending',
         ]);
+
+        // Notify all admins
+        $admins = User::where('role', 'admin')->get();
+        Notification::send($admins, new VmBorrowRequestReceived($vmRequest));
 
         return redirect()->route('vm_borrow.index')
             ->with('success', 'Permintaan peminjaman VM berhasil dikirim. Menunggu persetujuan admin.');
@@ -235,7 +241,6 @@ class VmBorrowController extends Controller
 
         $oldHost = $vmBorrow->host;
         $newHostId = $data['host_id'] ?? null;
-        $newHost = $newHostId ? VmHost::find($newHostId) : null;
 
         $oldCpu     = (int) ($vmBorrow->allocated_cpu ?? 0);
         $oldRam     = (int) ($vmBorrow->allocated_ram ?? 0);
@@ -244,13 +249,59 @@ class VmBorrowController extends Controller
         $newRam     = (int) $data['allocated_ram'];
         $newStorage = (int) $data['allocated_storage'];
 
-        // Kembalikan resource ke host lama
-        if ($oldHost) {
-            $oldHost->restoreResources($oldCpu, $oldRam, $oldStorage);
+        // Fallback: jika user tidak pilih host baru, gunakan host yang sama
+        if (!$newHostId && $oldHost) {
+            $newHostId = $oldHost->id;
         }
 
-        // Validasi resource cukup di host baru (jika ada host)
-        if ($newHost) {
+        $newHost = $newHostId ? VmHost::find($newHostId) : null;
+
+        // Jika host tidak berubah, cukup sesuaikan selisih resource
+        if ($oldHost && $newHost && $oldHost->id === $newHost->id) {
+            $cpuDiff = $newCpu - $oldCpu;
+            $ramDiff = $newRam - $oldRam;
+            $storageDiff = $newStorage - $oldStorage;
+
+            // Validasi jika resource ditambah melebihi kapasitas
+            if ($cpuDiff > 0 && $cpuDiff > $newHost->cpuAvailable()) {
+                return back()->withErrors(['allocated_cpu' => "CPU tidak cukup. Tersedia hanya {$newHost->cpuAvailable()} cores (dibutuhkan tambahan {$cpuDiff})."])->withInput();
+            }
+            if ($ramDiff > 0 && $ramDiff > $newHost->ramAvailable()) {
+                return back()->withErrors(['allocated_ram' => "RAM tidak cukup. Tersedia hanya " . round($newHost->ramAvailable() / 1024, 1) . " GB (dibutuhkan tambahan " . round($ramDiff / 1024, 1) . " GB)."])->withInput();
+            }
+            if ($storageDiff > 0 && $storageDiff > $newHost->storageAvailable()) {
+                return back()->withErrors(['allocated_storage' => "Storage tidak cukup. Tersedia hanya {$newHost->storageAvailable()} GB (dibutuhkan tambahan {$storageDiff} GB)."])->withInput();
+            }
+
+            // Jika resource bertambah, potong dari host
+            if ($cpuDiff > 0) {
+                $newHost->deductResources($cpuDiff, 0, 0);
+            }
+            // Jika resource berkurang, kembalikan ke host
+            if ($cpuDiff < 0) {
+                $newHost->restoreResources(abs($cpuDiff), 0, 0);
+            }
+
+            if ($ramDiff > 0) {
+                $newHost->deductResources(0, $ramDiff, 0);
+            }
+            if ($ramDiff < 0) {
+                $newHost->restoreResources(0, abs($ramDiff), 0);
+            }
+
+            if ($storageDiff > 0) {
+                $newHost->deductResources(0, 0, $storageDiff);
+            }
+            if ($storageDiff < 0) {
+                $newHost->restoreResources(0, 0, abs($storageDiff));
+            }
+        }
+        // Host berbeda: kembalikan ke host lama, validasi + potong host baru
+        elseif ($newHost) {
+            if ($oldHost) {
+                $oldHost->restoreResources($oldCpu, $oldRam, $oldStorage);
+            }
+
             if ($newCpu > $newHost->cpuAvailable()) {
                 if ($oldHost) $oldHost->deductResources($oldCpu, $oldRam, $oldStorage);
                 return back()->withErrors(['allocated_cpu' => "CPU tidak cukup. Tersedia hanya {$newHost->cpuAvailable()} cores."])->withInput();

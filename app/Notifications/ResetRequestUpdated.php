@@ -3,10 +3,9 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class ResetRequestUpdated extends Notification implements ShouldQueue
+class ResetRequestUpdated extends Notification
 {
     use Queueable;
 

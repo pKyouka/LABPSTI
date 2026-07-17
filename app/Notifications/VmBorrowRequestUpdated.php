@@ -3,10 +3,9 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class VmBorrowRequestUpdated extends Notification implements ShouldQueue
+class VmBorrowRequestUpdated extends Notification
 {
     use Queueable;
 

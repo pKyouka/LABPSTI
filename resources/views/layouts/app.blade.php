@@ -176,26 +176,28 @@
                                                 <div class="flex gap-2.5">
                                                     <span class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1.5"></span>
                                                     <div class="min-w-0 flex-1">
-                                                        @php
-                                                            $nData = json_decode($n->data, true);
-                                                            $title = $nData['title']
-                                                                ?? $nData['status_label']
-                                                                ?? $nData['status']
-                                                                ?? $nData['os_info']
-                                                                ?? ($isAdmin
-                                                                    ? ($nData['requester_name'] ? 'Permintaan baru dari ' . $nData['requester_name'] : 'Notifikasi baru')
-                                                                    : 'Notifikasi')
-                                                            ;
-                                                            $subtitle = $nData['category_label']
-                                                                ?? $nData['reset_reason']
-                                                                ?? $nData['status']
-                                                                ?? ''
-                                                            ;
-                                                        @endphp
-                                                        <p class="text-xs font-medium text-neutral-800">{{ $title }}</p>
-                                                        <p class="text-[10px] text-neutral-500 mt-0.5">
-                                                            {{ $subtitle ? $subtitle . ' · ' : '' }}{{ $n->created_at->diffForHumans() }}
-                                                        </p>
+                                        @php
+                                            $nData = json_decode($n->data, true);
+                                            $title = $nData['title']
+                                                ?? $nData['status_label']
+                                                ?? (($nData['type'] ?? '') === 'vm_borrow_request_received' ? ('VM Baru dari ' . ($nData['user_name'] ?? '')) : null)
+                                                ?? (($nData['type'] ?? '') === 'reset_request_received' ? ('Reset VM oleh ' . ($nData['user_name'] ?? '')) : null)
+                                                ?? $nData['os_info']
+                                                ?? ($isAdmin
+                                                    ? ($nData['requester_name'] ? 'Permintaan baru dari ' . $nData['requester_name'] : 'Notifikasi baru')
+                                                    : 'Notifikasi')
+                                            ;
+                                            $subtitle = $nData['title']
+                                                ?? $nData['category_label']
+                                                ?? $nData['reset_reason']
+                                                ?? $nData['status']
+                                                ?? ''
+                                            ;
+                                        @endphp
+                                        <p class="text-xs font-medium text-neutral-800">{{ $title }}</p>
+                                        <p class="text-[10px] text-neutral-500 mt-0.5">
+                                            {{ $subtitle ? $subtitle . ' · ' : '' }}{{ $n->created_at->diffForHumans() }}
+                                        </p>
                                                     </div>
                                                 </div>
                                             </a>
@@ -210,7 +212,8 @@
                                                             $nData = json_decode($n->data, true);
                                                             $title = $nData['title']
                                                                 ?? $nData['status_label']
-                                                                ?? $nData['status']
+                                                                ?? (($nData['type'] ?? '') === 'vm_borrow_request_received' ? ('VM Baru: ' . ($nData['user_name'] ?? '')) : null)
+                                                                ?? (($nData['type'] ?? '') === 'reset_request_received' ? ('Reset VM: ' . ($nData['user_name'] ?? '')) : null)
                                                                 ?? $nData['os_info']
                                                                 ?? ($isAdmin
                                                                     ? ($nData['requester_name'] ? 'Permintaan dari ' . $nData['requester_name'] : 'Notifikasi')

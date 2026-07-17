@@ -65,7 +65,7 @@ Route::post('notifications/{notification}/read', function (\App\Models\Notificat
 
     // Redirect back or to related resource
     $type = $notification->data['type'] ?? '';
-    if (in_array($type, ['service_request_received', 'service_request_updated', 'vm_borrow_request_updated'])) {
+    if (in_array($type, ['vm_borrow_request_received', 'service_request_received', 'service_request_updated', 'vm_borrow_request_updated'])) {
         return redirect()->route('vm_borrow.show', $notification->data['vm_borrow_request_id']);
     }
     if (in_array($type, ['reset_request_received', 'reset_request_updated'])) {

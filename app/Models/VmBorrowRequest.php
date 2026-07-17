@@ -33,6 +33,10 @@ class VmBorrowRequest extends Model
         'reset_rejection_reason',
     ];
 
+    protected $attributes = [
+        'reset_status' => 'none',
+    ];
+
     protected $casts = [
         'start_date' => 'date',
         'end_date'   => 'date',

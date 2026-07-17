@@ -80,8 +80,10 @@
 @if(Auth::check() && !Auth::user()->isAdmin())
     @php
         $myVm = \App\Models\VmBorrowRequest::where('user_id', Auth::id())
-            ->whereIn('status', ['on-review', 'approved'])
-            ->orWhereIn('reset_status', ['pending', 'approved', 'rejected'])
+            ->where(function ($q) {
+                $q->whereIn('status', ['on-review', 'approved'])
+                  ->orWhereIn('reset_status', ['pending', 'approved', 'rejected']);
+            })
             ->count();
     @endphp
     @if($myVm > 0)
