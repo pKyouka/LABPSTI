@@ -37,18 +37,31 @@
                 </thead>
                 <tbody>
                     @forelse($requests as $req)
-                        <tr>
+                        @php
+                            $isPending = $req->status === 'pending';
+                            $isResetPending = $req->status === 'approved' && $req->reset_status === 'pending';
+                            $isServicePending = ($req->pending_service_count ?? 0) > 0;
+                            $rowHighlight = $isPending || $isResetPending || $isServicePending;
+                        @endphp
+                        <tr class="{{ $rowHighlight ? 'bg-amber-50/80' : '' }}">
                             @if(Auth::user()->isAdmin())
-                                <td class="font-medium text-neutral-800">{{ $req->user->display_name }}</td>
+                                <td class="font-medium {{ $rowHighlight ? 'text-amber-800' : 'text-neutral-800' }}">
+                                    <span class="inline-flex items-center gap-1.5">
+                                        @if($rowHighlight)
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>
+                                        @endif
+                                        {{ $req->user->display_name }}
+                                    </span>
+                                </td>
                             @endif
                             <td>
-                                <span class="font-medium text-neutral-800 capitalize">{{ $req->os_type }}</span>
-                                <span class="text-neutral-500"> {{ $req->os_version }}</span>
+                                <span class="font-medium {{ $rowHighlight ? 'text-amber-800' : 'text-neutral-800' }} capitalize">{{ $req->os_type }}</span>
+                                <span class="{{ $rowHighlight ? 'text-amber-600' : 'text-neutral-500' }}"> {{ $req->os_version }}</span>
                             </td>
-                            <td class="max-w-[200px] truncate" title="{{ $req->purpose }}">{{ $req->purpose }}</td>
-                            <td>{{ $req->start_date->format('d/m/Y') }}</td>
-                            <td>{{ $req->duration_days }} hari</td>
-                            <td>{{ $req->end_date?->format('d/m/Y') ?? '-' }}</td>
+                            <td class="max-w-[200px] truncate {{ $rowHighlight ? 'text-amber-900' : '' }}" title="{{ $req->purpose }}">{{ $req->purpose }}</td>
+                            <td class="{{ $rowHighlight ? 'text-amber-800' : '' }}">{{ $req->start_date->format('d/m/Y') }}</td>
+                            <td class="{{ $rowHighlight ? 'text-amber-800' : '' }}">{{ $req->duration_days }} hari</td>
+                            <td class="{{ $rowHighlight ? 'text-amber-800' : '' }}">{{ $req->end_date?->format('d/m/Y') ?? '-' }}</td>
                             <td>
                                 <div class="flex flex-col gap-1">
                                     @if($req->status === 'approved')
@@ -65,11 +78,14 @@
                                             {{ $req->reset_status === 'pending' ? 'Reset Pending' : ($req->reset_status === 'approved' ? 'Reset OK' : 'Reset Ditolak') }}
                                         </span>
                                     @endif
+                                    @if($isServicePending)
+                                        <span class="fluent-badge fluent-badge-warning">Service Pending</span>
+                                    @endif
                                 </div>
                             </td>
                             <td class="text-right">
-                                <a href="{{ route('vm_borrow.show', $req) }}" class="fluent-btn fluent-btn-ghost fluent-btn-sm">
-                                    {{ Auth::user()->isAdmin() && ($req->status === 'pending' || $req->status === 'on-review') ? 'Tinjau →' : 'Detail →' }}
+                                <a href="{{ route('vm_borrow.show', $req) }}" class="fluent-btn fluent-btn-ghost fluent-btn-sm {{ $rowHighlight ? 'text-amber-700 hover:text-amber-900' : '' }}">
+                                    {{ Auth::user()->isAdmin() && ($req->status === 'pending' || $req->status === 'on-review' || $isServicePending) ? 'Tinjau →' : 'Detail →' }}
                                 </a>
                             </td>
                         </tr>

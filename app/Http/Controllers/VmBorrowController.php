@@ -19,15 +19,14 @@ class VmBorrowController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->isAdmin()) {
-            $requests = VmBorrowRequest::with('user')
-                ->latest()
-                ->paginate(20);
-        } else {
-            $requests = VmBorrowRequest::where('user_id', $user->id)
-                ->latest()
-                ->paginate(20);
+        $query = VmBorrowRequest::with('user')
+            ->withCount(['serviceRequests as pending_service_count' => fn ($q) => $q->where('status', 'pending')]);
+
+        if (! $user->isAdmin()) {
+            $query->where('user_id', $user->id);
         }
+
+        $requests = $query->latest()->paginate(20);
 
         return view('vm_borrow.index', compact('requests'));
     }
