@@ -34,6 +34,11 @@ class InventoryItemController extends Controller
         ]);
     }
 
+    public function create()
+    {
+        return view('inventory_items.create');
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

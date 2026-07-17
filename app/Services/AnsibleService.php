@@ -96,12 +96,17 @@ class AnsibleService
      */
     protected function runPlaybook(string $playbook, array $extraVars): array
     {
-        $extraVarsJson = escapeshellarg(json_encode($extraVars));
         $inventory = escapeshellarg($this->inventoryFile);
         $playbookEscaped = escapeshellarg($playbook);
-        $ansibleCfg = escapeshellarg($this->ansibleDir);
+        $ansibleCfg = escapeshellarg($this->ansibleDir . '/ansible.cfg');
+        $extraVarsJson = escapeshellarg(json_encode($extraVars, JSON_UNESCAPED_SLASHES));
 
-        $command = "ANSIBLE_CONFIG={$ansibleCfg}/ansible.cfg ansible-playbook -i {$inventory} {$playbookEscaped} --extra-vars='{$extraVarsJson}' 2>&1";
+        // Single-level escaping only — do not wrap escapeshellarg() output again.
+        $command = 'ANSIBLE_CONFIG='.$ansibleCfg
+            .' ansible-playbook -i '.$inventory
+            .' '.$playbookEscaped
+            .' --extra-vars '.$extraVarsJson
+            .' 2>&1';
 
         $output = [];
         $returnCode = 0;
@@ -157,7 +162,8 @@ class AnsibleService
             mkdir($keyDir, 0700, true);
         }
 
-        exec("ssh-keygen -t ed25519 -f {$keyPath} -N '' -q", $output, $rc);
+        $keyPathEscaped = escapeshellarg($keyPath);
+        exec("ssh-keygen -t ed25519 -f {$keyPathEscaped} -N '' -q", $output, $rc);
         if ($rc === 0 && file_exists($keyPath)) {
             return trim(file_get_contents($keyPath));
         }

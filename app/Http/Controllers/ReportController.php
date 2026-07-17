@@ -344,9 +344,10 @@ class ReportController extends Controller
         }
 
         if ($search = request('search')) {
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('id_number', 'like', "%{$search}%");
+            $term = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], (string) $search);
+            $query->whereHas('user', function ($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%")
+                  ->orWhere('email', 'like', "%{$term}%");
             });
         }
 

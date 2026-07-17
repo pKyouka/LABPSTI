@@ -130,8 +130,8 @@
                         <script>
                             function editResourceForm() {
                                 return {
-                                    selectedHostId: '{{ old('host_id', $vmBorrow->host_id) }}',
-                                    hostIp: '{{ old('host_ip', $vmBorrow->host_ip) }}',
+                                    selectedHostId: @json(old('host_id', $vmBorrow->host_id)),
+                                    hostIp: @json(old('host_ip', $vmBorrow->host_ip)),
                                     init() {
                                         const select = document.getElementById('edit_host_id');
                                         select.addEventListener('change', () => {
@@ -358,7 +358,7 @@
                     function tahap1ApprovalForm() {
                         return {
                             selectedHostId: '',
-                            hostSpecs: {!! $hostSpecsJson !!},
+                            hostSpecs: @json($hostSpecs),
                             get selectedHostSpec() {
                                 return this.selectedHostId ? (this.hostSpecs[this.selectedHostId] || null) : null;
                             },
@@ -609,13 +609,13 @@
                     <script>
                         function vmApprovalForm() {
                             return {
-                                selectedHostId: '{{ old('host_id', $vmBorrow->host_id) }}',
-                                hostIp: '{{ old('host_ip', '') }}',
-                                allocatedCpu: {{ old('allocated_cpu', 1) }},
-                                allocatedRam: {{ old('allocated_ram', 1024) }},
-                                allocatedStorage: {{ old('allocated_storage', 10) }},
-                                hostData: {!! $hostsDataJson !!},
-                                hostSpecs: {!! $hostSpecsJson !!},
+                                selectedHostId: @json(old('host_id', $vmBorrow->host_id)),
+                                hostIp: @json(old('host_ip', '')),
+                                allocatedCpu: @json((int) old('allocated_cpu', 1)),
+                                allocatedRam: @json((int) old('allocated_ram', 1024)),
+                                allocatedStorage: @json((int) old('allocated_storage', 10)),
+                                hostData: @json($hostsData),
+                                hostSpecs: @json($hostSpecs),
                                 get selectedHostSpec() {
                                     return this.selectedHostId ? (this.hostSpecs[this.selectedHostId] || null) : null;
                                 },

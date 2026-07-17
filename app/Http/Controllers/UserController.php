@@ -30,12 +30,13 @@ class UserController extends Controller
             'role'     => ['required', Rule::in(['admin', 'mahasiswa'])],
         ]);
 
-        User::create([
+        $user = new User([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role'     => $validated['role'],
         ]);
+        $user->role = $validated['role'];
+        $user->save();
 
         return redirect()->route('users.index')
             ->with('success', 'User berhasil ditambahkan.');
@@ -55,17 +56,15 @@ class UserController extends Controller
             'role'     => ['required', Rule::in(['admin', 'mahasiswa'])],
         ]);
 
-        $data = [
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'role' => $validated['role'],
-        ];
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->role = $validated['role'];
 
-        if (!empty($validated['password'])) {
-            $data['password'] = Hash::make($validated['password']);
+        if (! empty($validated['password'])) {
+            $user->password = Hash::make($validated['password']);
         }
 
-        $user->update($data);
+        $user->save();
 
         return redirect()->route('users.index')
             ->with('success', 'User berhasil diperbarui.');

@@ -22,16 +22,24 @@ class DashboardController extends Controller
         $usageQuery = LabUsageRecord::query();
         $borrowQuery = BorrowRecord::query();
 
-        if (! $isAdmin && $nim !== null) {
-            $usageQuery->where('user_id_number', $nim);
-            $borrowQuery->where('user_id_number', $nim);
+        // Non-admin must never see global records.
+        if (! $isAdmin) {
+            if ($nim === null) {
+                $usageQuery->whereRaw('1 = 0');
+                $borrowQuery->whereRaw('1 = 0');
+            } else {
+                $usageQuery->where('user_id_number', $nim);
+                $borrowQuery->where('user_id_number', $nim);
+            }
         }
 
         $stats = [
-            'bulletin_count' => Bulletin::count(),
+            'bulletin_count' => $isAdmin
+                ? Bulletin::count()
+                : Bulletin::where('approval_status', 'approved')->count(),
             'usage_count' => (clone $usageQuery)->count(),
             'borrow_count' => (clone $borrowQuery)->count(),
-            'item_count' => InventoryItem::count(),
+            'item_count' => InventoryItem::where('is_active', true)->count(),
         ];
 
         $usagePerLab = $usageQuery

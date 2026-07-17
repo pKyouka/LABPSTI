@@ -38,7 +38,13 @@ class VmServiceRequestController extends Controller
         $serviceRequest = VmServiceRequest::create([
             'vm_borrow_request_id' => $vmBorrow->id,
             'requester_id'         => $user->id,
-            ...$data,
+            'category'             => $data['category'],
+            'title'                => $data['title'],
+            'description'          => $data['description'],
+            'port_number'          => $data['port_number'] ?? null,
+            'software_name'        => $data['software_name'] ?? null,
+            'config_path'          => $data['config_path'] ?? null,
+            'status'               => 'pending',
         ]);
 
         // Notify all admins

@@ -130,110 +130,75 @@
                             {{ now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
                         </span>
 
-                        {{-- Notification Bell --}}
-                        <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-                            <button @click="open = !open" class="relative p-2 rounded-md text-neutral-500 hover:text-neutral-700 hover:bg-black/5 transition" title="Notifikasi">
+                        {{-- Notification Bell (live poll, no full-page reload needed) --}}
+                        <div
+                            class="relative"
+                            x-data="notificationBell(@js(route('notifications.feed')), @js(route('notifications.markAllRead')), @js(csrf_token()))"
+                            x-init="init()"
+                            @click.outside="open = false"
+                        >
+                            <button @click="open = !open; if (open) refresh()" type="button" class="relative p-2 rounded-md text-neutral-500 hover:text-neutral-700 hover:bg-black/5 transition" title="Notifikasi">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                                <template x-if="{!! Auth::user()->unreadNotificationCount() !!}">
-                                    <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center" x-text="{!! Auth::user()->unreadNotificationCount() !!}"></span>
-                                </template>
+                                <span
+                                    x-show="unreadCount > 0"
+                                    x-text="unreadCount > 99 ? '99+' : unreadCount"
+                                    x-cloak
+                                    class="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center"
+                                ></span>
                             </button>
 
-                            {{-- Dropdown --}}
-                            <div x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 translate-y-2 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+                            <div
+                                x-show="open"
+                                x-transition:enter="transition ease-out duration-150"
+                                x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+                                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave="transition ease-in duration-100"
+                                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave-end="opacity-0 translate-y-2 scale-95"
                                 class="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-fluent-lg border border-neutral-200 overflow-hidden max-h-[calc(100vh-12rem)] flex flex-col"
-                                style="display: none;">
-                                {{-- Header --}}
+                                style="display: none;"
+                            >
                                 <div class="px-4 py-3 border-b border-neutral-100 flex items-center justify-between flex-shrink-0">
                                     <h3 class="text-sm font-semibold text-neutral-800">Notifikasi</h3>
-                                    <form action="{{ route('notifications.markAllRead') }}" method="POST" class="flex-shrink-0">
-                                        @csrf
-                                        <button type="submit" class="text-[10px] font-medium text-accent hover:text-accent-hover">Tandai semua dibaca</button>
-                                    </form>
+                                    <button
+                                        type="button"
+                                        @click="markAllRead()"
+                                        :disabled="unreadCount === 0 || marking"
+                                        class="text-[10px] font-medium text-accent hover:text-accent-hover disabled:opacity-40"
+                                    >Tandai semua dibaca</button>
                                 </div>
-                                {{-- Body --}}
                                 <div class="overflow-y-auto flex-1">
-                                    @php
-                                        $isAdmin = Auth::user()->isAdmin();
-                                        $notifications = DB::table('notifications')
-                                            ->where('notifiable_id', Auth::id())
-                                            ->orderBy('created_at', 'desc')
-                                            ->limit(20)
-                                            ->get();
-
-                                        $unread = $notifications->where('read_at', null);
-                                        $read = $notifications->whereNotNull('read_at');
-                                    @endphp
-                                    @if($unread->isEmpty() && $read->isEmpty())
+                                    <template x-if="loading && items.length === 0">
+                                        <div class="px-4 py-8 text-center">
+                                            <p class="text-xs text-neutral-400">Memuat…</p>
+                                        </div>
+                                    </template>
+                                    <template x-if="!loading && items.length === 0">
                                         <div class="px-4 py-8 text-center">
                                             <svg class="w-8 h-8 text-neutral-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
                                             <p class="text-xs text-neutral-400">Belum ada notifikasi</p>
                                         </div>
-                                    @else
-                                        {{-- Unread --}}
-                                        @foreach($unread as $n)
-                                            <a href="{{ route('notifications.read', $n->id) }}" class="block px-4 py-3 border-b border-neutral-50 hover:bg-neutral-50 transition {{ $loop->last ? 'border-b-0' : '' }}">
+                                    </template>
+                                    <template x-for="n in items" :key="n.id">
+                                        <form :action="n.read_url" method="POST" class="block border-b border-neutral-50 last:border-b-0">
+                                            <input type="hidden" name="_token" :value="csrf">
+                                            <button type="submit" class="w-full text-left px-4 py-3 hover:bg-neutral-50 transition">
                                                 <div class="flex gap-2.5">
-                                                    <span class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1.5"></span>
+                                                    <span
+                                                        class="w-2 h-2 rounded-full flex-shrink-0 mt-1.5"
+                                                        :class="n.is_unread ? 'bg-red-500' : 'bg-neutral-300'"
+                                                    ></span>
                                                     <div class="min-w-0 flex-1">
-                                        @php
-                                            $nData = json_decode($n->data, true);
-                                            $title = $nData['title']
-                                                ?? $nData['status_label']
-                                                ?? (($nData['type'] ?? '') === 'vm_borrow_request_received' ? ('VM Baru dari ' . ($nData['user_name'] ?? '')) : null)
-                                                ?? (($nData['type'] ?? '') === 'reset_request_received' ? ('Reset VM oleh ' . ($nData['user_name'] ?? '')) : null)
-                                                ?? $nData['os_info']
-                                                ?? ($isAdmin
-                                                    ? ($nData['requester_name'] ? 'Permintaan baru dari ' . $nData['requester_name'] : 'Notifikasi baru')
-                                                    : 'Notifikasi')
-                                            ;
-                                            $subtitle = $nData['title']
-                                                ?? $nData['category_label']
-                                                ?? $nData['reset_reason']
-                                                ?? $nData['status']
-                                                ?? ''
-                                            ;
-                                        @endphp
-                                        <p class="text-xs font-medium text-neutral-800">{{ $title }}</p>
-                                        <p class="text-[10px] text-neutral-500 mt-0.5">
-                                            {{ $subtitle ? $subtitle . ' · ' : '' }}{{ \Carbon\Carbon::parse($n->created_at)->diffForHumans() }}
-                                        </p>
-                                                    </div>
-                                                </div>
-                                            </a>
-                                        @endforeach
-                                        {{-- Read --}}
-                                        @foreach($read as $n)
-                                            <a href="{{ route('notifications.read', $n->id) }}" class="block px-4 py-3 border-b border-neutral-50 hover:bg-neutral-50 transition {{ $loop->last ? 'border-b-0' : '' }}">
-                                                <div class="flex gap-2.5">
-                                                    <span class="w-2 h-2 rounded-full bg-neutral-300 flex-shrink-0 mt-1.5"></span>
-                                                    <div class="min-w-0 flex-1">
-                                                        @php
-                                                            $nData = json_decode($n->data, true);
-                                                            $title = $nData['title']
-                                                                ?? $nData['status_label']
-                                                                ?? (($nData['type'] ?? '') === 'vm_borrow_request_received' ? ('VM Baru: ' . ($nData['user_name'] ?? '')) : null)
-                                                                ?? (($nData['type'] ?? '') === 'reset_request_received' ? ('Reset VM: ' . ($nData['user_name'] ?? '')) : null)
-                                                                ?? $nData['os_info']
-                                                                ?? ($isAdmin
-                                                                    ? ($nData['requester_name'] ? 'Permintaan dari ' . $nData['requester_name'] : 'Notifikasi')
-                                                                    : 'Notifikasi')
-                                                            ;
-                                                            $subtitle = $nData['category_label']
-                                                                ?? $nData['reset_reason']
-                                                                ?? $nData['status']
-                                                                ?? ''
-                                                            ;
-                                                        @endphp
-                                                        <p class="text-xs text-neutral-600">{{ $title }}</p>
+                                                        <p class="text-xs font-medium" :class="n.is_unread ? 'text-neutral-800' : 'text-neutral-600'" x-text="n.title"></p>
                                                         <p class="text-[10px] text-neutral-400 mt-0.5">
-                                                            {{ $subtitle ? $subtitle . ' · ' : '' }}{{ \Carbon\Carbon::parse($n->created_at)->diffForHumans() }}
+                                                            <span x-show="n.subtitle" x-text="n.subtitle + ' · '"></span>
+                                                            <span x-text="n.created_at"></span>
                                                         </p>
                                                     </div>
                                                 </div>
-                                            </a>
-                                        @endforeach
-                                    @endif
+                                            </button>
+                                        </form>
+                                    </template>
                                 </div>
                             </div>
                         </div>

@@ -112,7 +112,7 @@
                                     <h3 class="text-lg font-semibold text-neutral-800 mb-3 line-clamp-2 group-hover:text-accent transition-colors leading-snug">
                                         <a href="{{ route('lab.bulletins.show', ['category' => $category, 'bulletin' => $bulletin]) }}">{{ $bulletin->title }}</a>
                                     </h3>
-                                    <p class="text-[13px] text-neutral-500 mb-5 line-clamp-3 leading-relaxed">{!! strip_tags($bulletin->content) !!}</p>
+                                    <p class="text-[13px] text-neutral-500 mb-5 line-clamp-3 leading-relaxed">{{ Str::limit(strip_tags($bulletin->content), 200) }}</p>
                                     <a href="{{ route('lab.bulletins.show', ['category' => $category, 'bulletin' => $bulletin]) }}" class="inline-flex items-center gap-1.5 text-[13px] font-semibold text-accent hover:text-accent-hover transition group/btn">
                                         Baca Selengkapnya
                                         <svg class="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>

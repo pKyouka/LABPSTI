@@ -45,7 +45,7 @@
 
             <section class="fluent-card p-6 sm:p-10">
                 <div class="prose prose-neutral max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-a:text-accent prose-img:rounded-xl">
-                    {!! $bulletin->content !!}
+                    {!! nl2br(e($bulletin->content)) !!}
                 </div>
             </section>
         </article>

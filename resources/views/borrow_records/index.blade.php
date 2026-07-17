@@ -81,14 +81,14 @@
                             <td>{{ $record->due_at?->format('d/m/Y H:i') ?? '-' }}</td>
                             <td>
                                 @if($record->request_pdf_path)
-                                    <a href="{{ asset('storage/'.$record->request_pdf_path) }}" target="_blank" class="text-accent font-medium text-sm hover:underline">Lihat</a>
+                                    <a href="{{ route('borrow_records.pdf.request', $record) }}" target="_blank" class="text-accent font-medium text-sm hover:underline">Lihat</a>
                                 @else
                                     <span class="text-neutral-400">-</span>
                                 @endif
                             </td>
                             <td>
                                 @if($record->approval_pdf_path)
-                                    <a href="{{ asset('storage/'.$record->approval_pdf_path) }}" target="_blank" class="text-emerald-600 font-medium text-sm hover:underline">ACC</a>
+                                    <a href="{{ route('borrow_records.pdf.approval', $record) }}" target="_blank" class="text-emerald-600 font-medium text-sm hover:underline">ACC</a>
                                 @else
                                     <span class="text-neutral-400">-</span>
                                 @endif

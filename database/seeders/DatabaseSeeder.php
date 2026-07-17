@@ -20,25 +20,19 @@ class DatabaseSeeder extends Seeder
         \App\Models\Category::firstOrCreate(['name' => 'Digital Forensik']);
 
         // Admin User
-        User::updateOrCreate(
-            ['email' => 'admin@lab.com'],
-            [
-                'name' => 'Admin Lab',
-                'password' => bcrypt('password'),
-                'role' => 'admin',
-                'email_verified_at' => now(),
-            ]
-        );
+        $admin = User::firstOrNew(['email' => 'admin@lab.com']);
+        $admin->name = 'Admin Lab';
+        $admin->password = bcrypt('password');
+        $admin->role = 'admin';
+        $admin->email_verified_at = now();
+        $admin->save();
 
         // Regular User
-        User::updateOrCreate(
-            ['email' => 'user@lab.com'],
-            [
-                'name' => 'User Lab',
-                'password' => bcrypt('password'),
-                'role' => 'user',
-            ]
-        );
+        $user = User::firstOrNew(['email' => 'user@lab.com']);
+        $user->name = 'User Lab';
+        $user->password = bcrypt('password');
+        $user->role = 'user';
+        $user->save();
 
         $this->call(InventoryItemSeeder::class);
         $this->call(HistoricalActivitySeeder::class);

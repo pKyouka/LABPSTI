@@ -13,6 +13,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VmBorrowController;
 use App\Http\Controllers\VmHostController;
 use App\Http\Controllers\VmServiceRequestController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -47,41 +48,10 @@ Route::get('/vm-hosts', [VmHostController::class, 'publicIndex'])->name('vm_host
 | Requires auth + verified email.
 */
 
+// verified not enforced — User does not implement MustVerifyEmail (external auth has no email flow).
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('dashboard');
-
-/*
-|--------------------------------------------------------------------------
-| Notifications (all authenticated users)
-|--------------------------------------------------------------------------
-*/
-
-Route::get('notifications/{notification}/read', function (\App\Models\Notification $notification) {
-    if ((int) $notification->notifiable_id !== (int) Auth::id()) {
-        abort(403);
-    }
-    $notification->markAsRead();
-
-    // Redirect back or to related resource
-    $type = $notification->data['type'] ?? '';
-    if (in_array($type, ['vm_borrow_request_received', 'service_request_received', 'service_request_updated', 'vm_borrow_request_updated'])) {
-        return redirect()->route('vm_borrow.show', $notification->data['vm_borrow_request_id']);
-    }
-    if (in_array($type, ['reset_request_received', 'reset_request_updated'])) {
-        return redirect()->route('vm_borrow.show', $notification->data['vm_borrow_request_id']);
-    }
-
-    return redirect()->back();
-})->name('notifications.read');
-
-Route::post('notifications/mark-all-read', function () {
-    DB::table('notifications')
-        ->where('notifiable_id', Auth::id())
-        ->whereNull('read_at')
-        ->update(['read_at' => now()]);
-    return redirect()->back();
-})->name('notifications.markAllRead');
 
 /*
 |--------------------------------------------------------------------------
@@ -91,6 +61,40 @@ Route::post('notifications/mark-all-read', function () {
 */
 
 Route::middleware('auth')->group(function () {
+
+    // Notifications
+    Route::get('notifications/feed', [NotificationController::class, 'feed'])->name('notifications.feed');
+
+    Route::post('notifications/{notification}/read', function (\App\Models\Notification $notification) {
+        if (
+            (int) $notification->notifiable_id !== (int) Auth::id()
+            || $notification->notifiable_type !== Auth::user()::class
+        ) {
+            abort(403);
+        }
+        $notification->markAsRead();
+
+        $type = $notification->data['type'] ?? '';
+        if (in_array($type, ['vm_borrow_request_received', 'service_request_received', 'service_request_updated', 'vm_borrow_request_updated', 'reset_request_received', 'reset_request_updated'], true)) {
+            return redirect()->route('vm_borrow.show', $notification->data['vm_borrow_request_id']);
+        }
+
+        return redirect()->back();
+    })->name('notifications.read');
+
+    Route::post('notifications/mark-all-read', function () {
+        DB::table('notifications')
+            ->where('notifiable_type', Auth::user()::class)
+            ->where('notifiable_id', Auth::id())
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        if (request()->expectsJson()) {
+            return response()->json(['ok' => true]);
+        }
+
+        return redirect()->back();
+    })->name('notifications.markAllRead');
 
     // Profile — same for all users
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -112,36 +116,21 @@ Route::middleware('auth')->group(function () {
     Route::get('borrow_records', [BorrowRecordController::class, 'index'])->name('borrow_records.index');
     Route::get('borrow_records/create', [BorrowRecordController::class, 'create'])->name('borrow_records.create');
     Route::post('borrow_records', [BorrowRecordController::class, 'store'])->name('borrow_records.store');
-    Route::post('borrow_records/{borrowRecord}/approve', [BorrowRecordController::class, 'approve'])->name('borrow_records.approve');
-    Route::post('borrow_records/{borrowRecord}/reject', [BorrowRecordController::class, 'reject'])->name('borrow_records.reject');
+    Route::get('borrow_records/{borrowRecord}/pdf/request', [BorrowRecordController::class, 'downloadRequestPdf'])->name('borrow_records.pdf.request');
+    Route::get('borrow_records/{borrowRecord}/pdf/approval', [BorrowRecordController::class, 'downloadApprovalPdf'])->name('borrow_records.pdf.approval');
     Route::post('borrow_records/{borrowRecord}/return', [BorrowRecordController::class, 'markReturned'])->name('borrow_records.return');
 
     // Inventory — index/show open to all; create/store/destroy restricted below
     Route::get('inventory_items', [InventoryItemController::class, 'index'])->name('inventory_items.index');
     Route::get('inventory_items/{inventoryItem}', [InventoryItemController::class, 'show'])->name('inventory_items.show');
 
-    // VM Borrow — index/show scoped per role
+    // VM Borrow — index/show/store scoped per role in controller
     Route::get('vm_borrow', [VmBorrowController::class, 'index'])->name('vm_borrow.index');
     Route::get('vm_borrow/create', [VmBorrowController::class, 'create'])->name('vm_borrow.create');
     Route::post('vm_borrow', [VmBorrowController::class, 'store'])->name('vm_borrow.store');
     Route::get('vm_borrow/{vmBorrow}', [VmBorrowController::class, 'show'])->name('vm_borrow.show');
-    Route::post('vm_borrow/{vmBorrow}/move-to-review', [VmBorrowController::class, 'moveToReview'])->name('vm_borrow.moveToReview');
-    Route::post('vm_borrow/{vmBorrow}/approve', [VmBorrowController::class, 'approve'])->name('vm_borrow.approve');
-    Route::post('vm_borrow/{vmBorrow}/reject', [VmBorrowController::class, 'reject'])->name('vm_borrow.reject');
-
-    // VM Borrow Reset — any owner can request; admin approves/rejects
-    Route::post("vm_borrow/{vmBorrow}/request-reset", [VmBorrowController::class, "requestReset"])->name("vm_borrow.request_reset");
-    Route::post("vm_borrow/{vmBorrow}/approve-reset", [VmBorrowController::class, "approveReset"])->name("vm_borrow.approve_reset");
-    Route::post("vm_borrow/{vmBorrow}/reject-reset", [VmBorrowController::class, "rejectReset"])->name("vm_borrow.reject_reset");
-
-    // VM Service Requests
+    Route::post('vm_borrow/{vmBorrow}/request-reset', [VmBorrowController::class, 'requestReset'])->name('vm_borrow.request_reset');
     Route::post('vm_borrow/{vmBorrow}/service-request', [VmServiceRequestController::class, 'store'])->name('vm_borrow.service_request.store');
-    Route::post('vm_borrow/{vmBorrow}/service-request/{serviceRequest}/update', [VmServiceRequestController::class, 'updateStatus'])->name('vm_borrow.service_request.update');
-
-    // VM Host public status (already public above), but admin CRUD below
-
-    // VM Edit Resources — admin only
-    Route::post('vm_borrow/{vmBorrow}/edit-resources', [VmBorrowController::class, 'editResources'])->name('vm_borrow.edit_resources');
 });
 
 /*
@@ -152,6 +141,19 @@ Route::middleware('auth')->group(function () {
 */
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
+
+    // Borrow approve/reject — admin only
+    Route::post('borrow_records/{borrowRecord}/approve', [BorrowRecordController::class, 'approve'])->name('borrow_records.approve');
+    Route::post('borrow_records/{borrowRecord}/reject', [BorrowRecordController::class, 'reject'])->name('borrow_records.reject');
+
+    // VM admin actions
+    Route::post('vm_borrow/{vmBorrow}/move-to-review', [VmBorrowController::class, 'moveToReview'])->name('vm_borrow.moveToReview');
+    Route::post('vm_borrow/{vmBorrow}/approve', [VmBorrowController::class, 'approve'])->name('vm_borrow.approve');
+    Route::post('vm_borrow/{vmBorrow}/reject', [VmBorrowController::class, 'reject'])->name('vm_borrow.reject');
+    Route::post('vm_borrow/{vmBorrow}/approve-reset', [VmBorrowController::class, 'approveReset'])->name('vm_borrow.approve_reset');
+    Route::post('vm_borrow/{vmBorrow}/reject-reset', [VmBorrowController::class, 'rejectReset'])->name('vm_borrow.reject_reset');
+    Route::post('vm_borrow/{vmBorrow}/edit-resources', [VmBorrowController::class, 'editResources'])->name('vm_borrow.edit_resources');
+    Route::post('vm_borrow/{vmBorrow}/service-request/{serviceRequest}/update', [VmServiceRequestController::class, 'updateStatus'])->name('vm_borrow.service_request.update');
 
     // User Management
     Route::resource('users', UserController::class);

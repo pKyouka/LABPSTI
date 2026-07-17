@@ -59,13 +59,20 @@ class BorrowRecord extends Model
         if (
             $this->approval_pdf_path === null ||
             $this->approval_pdf_md5 === null ||
-            $this->approval_pdf_sha256 === null ||
-            ! Storage::disk('public')->exists($this->approval_pdf_path)
+            $this->approval_pdf_sha256 === null
         ) {
             return false;
         }
 
-        $fullPath = Storage::disk('public')->path($this->approval_pdf_path);
+        $disk = Storage::disk('local')->exists($this->approval_pdf_path)
+            ? 'local'
+            : (Storage::disk('public')->exists($this->approval_pdf_path) ? 'public' : null);
+
+        if ($disk === null) {
+            return false;
+        }
+
+        $fullPath = Storage::disk($disk)->path($this->approval_pdf_path);
 
         return hash_file('md5', $fullPath) === $this->approval_pdf_md5
             && hash_file('sha256', $fullPath) === $this->approval_pdf_sha256;

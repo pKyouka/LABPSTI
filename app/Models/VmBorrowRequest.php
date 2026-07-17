@@ -37,12 +37,17 @@ class VmBorrowRequest extends Model
         'reset_status' => 'none',
     ];
 
+    protected $hidden = [
+        'vm_password',
+    ];
+
     protected $casts = [
         'start_date' => 'date',
         'end_date'   => 'date',
         'allocated_cpu' => 'integer',
         'allocated_ram' => 'integer',
         'allocated_storage' => 'integer',
+        'vm_password' => 'encrypted',
         'reset_requested_at' => 'datetime',
         'reset_approved_at' => 'datetime',
         'reset_rejected_at' => 'datetime',

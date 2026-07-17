@@ -38,10 +38,12 @@ class BulletinController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'category_id' => 'required|exists:categories,id',
             'published_at' => 'nullable|date',
         ]);
+
+        $validated['content'] = strip_tags($validated['content']);
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('bulletins', 'public');
@@ -89,10 +91,12 @@ class BulletinController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'category_id' => 'required|exists:categories,id',
             'published_at' => 'nullable|date',
         ]);
+
+        $validated['content'] = strip_tags($validated['content']);
 
         if ($request->hasFile('image')) {
             if ($bulletin->image) {
@@ -130,6 +134,47 @@ class BulletinController extends Controller
         }
         $bulletin->delete();
         return redirect()->route('bulletins.index')->with('success', 'Buletin berhasil dihapus.');
+    }
+
+    public function approve(Bulletin $bulletin)
+    {
+        if ($bulletin->approval_status !== 'pending') {
+            return redirect()->route('bulletins.index')
+                ->with('success', 'Buletin sudah diproses sebelumnya.');
+        }
+
+        $bulletin->update([
+            'approval_status' => 'approved',
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+            'rejected_by' => null,
+            'rejected_at' => null,
+            'rejection_reason' => null,
+            'published_at' => $bulletin->published_at ?? now(),
+        ]);
+
+        return redirect()->route('bulletins.index')
+            ->with('success', 'Buletin berhasil di-ACC dan dipublikasikan.');
+    }
+
+    public function reject(Bulletin $bulletin)
+    {
+        if ($bulletin->approval_status !== 'pending') {
+            return redirect()->route('bulletins.index')
+                ->with('success', 'Buletin sudah diproses sebelumnya.');
+        }
+
+        $bulletin->update([
+            'approval_status' => 'rejected',
+            'rejected_by' => Auth::id(),
+            'rejected_at' => now(),
+            'approved_by' => null,
+            'approved_at' => null,
+            'published_at' => null,
+        ]);
+
+        return redirect()->route('bulletins.index')
+            ->with('success', 'Buletin ditolak.');
     }
 
     private function ensureCanManage(Bulletin $bulletin): void

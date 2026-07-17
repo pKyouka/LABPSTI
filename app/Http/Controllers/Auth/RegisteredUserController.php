@@ -36,11 +36,14 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
+        $user = new User([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+        // Never allow self-registration as admin.
+        $user->role = 'mahasiswa';
+        $user->save();
 
         event(new Registered($user));
 

@@ -198,7 +198,7 @@
                                 <a href="{{ route('landing.bulletins.show', $bulletin) }}">{{ $bulletin->title }}</a>
                             </h3>
                             <p class="text-[13px] text-neutral-500 mb-5 line-clamp-3 leading-relaxed">
-                                {!! strip_tags($bulletin->content) !!}
+                                {{ Str::limit(strip_tags($bulletin->content), 200) }}
                             </p>
                             <div class="mt-auto pt-4 border-t border-neutral-100">
                                 <a href="{{ route('landing.bulletins.show', $bulletin) }}" class="inline-flex items-center gap-1.5 text-[13px] font-semibold text-accent hover:text-accent-hover transition group/btn">

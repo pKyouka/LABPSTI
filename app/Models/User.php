@@ -25,7 +25,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
+        // role is intentionally NOT fillable — set explicitly in admin UserController only
     ];
 
     /**

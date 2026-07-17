@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BorrowRecord;
 use App\Models\InventoryItem;
+use App\Traits\RequiresAdmin;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class BorrowRecordController extends Controller
 {
+    use RequiresAdmin;
 
     public function index(Request $request)
     {
@@ -109,7 +111,7 @@ class BorrowRecordController extends Controller
 
         DB::transaction(function () use ($validated, $isAdmin, $user) {
             $item = InventoryItem::whereKey($validated['inventory_item_id'])->lockForUpdate()->firstOrFail();
-            $requestPdfPath = $validated['request_pdf']->store('borrow-records', 'public');
+            $requestPdfPath = $validated['request_pdf']->store('borrow-records', 'local');
 
             if ($isAdmin && $item->available_stock < (int) $validated['quantity']) {
                 throw ValidationException::withMessages([
@@ -256,12 +258,54 @@ class BorrowRecordController extends Controller
         $md5 = md5($output);
         $sha256 = hash('sha256', $output);
 
-        Storage::disk('public')->put($path, $output);
+        Storage::disk('local')->put($path, $output);
 
         return [
             'path' => $path,
             'md5' => $md5,
             'sha256' => $sha256,
         ];
+    }
+
+    public function downloadRequestPdf(BorrowRecord $borrowRecord)
+    {
+        $this->ensureCanAccessBorrowRecord($borrowRecord);
+        abort_if(! $borrowRecord->request_pdf_path, 404);
+
+        return $this->downloadBorrowPdf($borrowRecord->request_pdf_path, 'request-'.$borrowRecord->id.'.pdf');
+    }
+
+    public function downloadApprovalPdf(BorrowRecord $borrowRecord)
+    {
+        $this->ensureCanAccessBorrowRecord($borrowRecord);
+        abort_if(! $borrowRecord->approval_pdf_path, 404);
+
+        return $this->downloadBorrowPdf($borrowRecord->approval_pdf_path, 'approval-'.$borrowRecord->id.'.pdf');
+    }
+
+    private function ensureCanAccessBorrowRecord(BorrowRecord $borrowRecord): void
+    {
+        $user = Auth::user();
+
+        if ($user->isAdmin()) {
+            return;
+        }
+
+        $nim = $user->externalNim();
+        abort_if($nim === null || (string) $borrowRecord->user_id_number !== $nim, 403);
+    }
+
+    private function downloadBorrowPdf(string $path, string $downloadName)
+    {
+        // Prefer private disk; fall back to legacy public files during migration.
+        if (Storage::disk('local')->exists($path)) {
+            return Storage::disk('local')->download($path, $downloadName);
+        }
+
+        if (Storage::disk('public')->exists($path)) {
+            return Storage::disk('public')->download($path, $downloadName);
+        }
+
+        abort(404);
     }
 }

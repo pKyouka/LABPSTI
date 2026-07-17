@@ -122,14 +122,11 @@ class LoginRequest extends FormRequest
             ?: $this->resolveDisplayName($response->json(), $response->body())
             ?: $username;
 
-        $user = User::updateOrCreate(
-            ['email' => $username.'@unisa-auth.local'],
-            [
-                'name' => $displayName,
-                'password' => Hash::make(Str::random(40)),
-                'role' => 'mahasiswa',
-            ]
-        );
+        $user = User::firstOrNew(['email' => $username.'@unisa-auth.local']);
+        $user->name = $displayName;
+        $user->password = Hash::make(Str::random(40));
+        $user->role = 'mahasiswa';
+        $user->save();
 
         Auth::login($user, $this->boolean('remember'));
 
@@ -190,61 +187,60 @@ class LoginRequest extends FormRequest
 
     /**
      * Determine whether the external service indicates a successful login.
+     * Fail-closed: only explicit success signals are accepted.
      */
     private function isExternalAuthAccepted(mixed $jsonBody, string $rawBody): bool
     {
-        if (is_array($jsonBody)) {
-            // Explicit isallowed field takes priority.
-            $isAllowed = data_get($jsonBody, 'isallowed');
-
-            if (is_bool($isAllowed)) {
-                if ($isAllowed === false) {
-                    return false;
-                }
-            } elseif (is_string($isAllowed)) {
-                $normalized = Str::lower(trim($isAllowed));
-                if (in_array($normalized, ['false', 'no', '0', 'n'], true)) {
-                    return false;
-                }
-                if (in_array($normalized, ['true', 'yes', '1', 'y'], true)) {
-                    // Still fall through to check status hints below.
-                }
-            }
-
-            $statusHints = [
-                data_get($jsonBody, 'status'),
-                data_get($jsonBody, 'success'),
-                data_get($jsonBody, 'authenticated'),
-                data_get($jsonBody, 'data.status'),
-                data_get($jsonBody, 'data.success'),
-            ];
-
-            foreach ($statusHints as $hint) {
-                if (is_bool($hint)) {
-                    return $hint;
-                }
-
-                if (is_string($hint)) {
-                    $normalized = Str::lower(trim($hint));
-
-                    if (in_array($normalized, ['false', 'fail', 'failed', 'error', 'invalid', '0'], true)) {
-                        return false;
-                    }
-
-                    if (in_array($normalized, ['true', 'ok', 'success', 'berhasil', 'valid', '1'], true)) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        $normalizedBody = Str::lower($rawBody);
-
-        if (preg_match('/(gagal|invalid|salah|error|tidak\s+valid|login\s+failed)/u', $normalizedBody) === 1) {
+        if (! is_array($jsonBody) || $jsonBody === []) {
             return false;
         }
 
-        return true;
+        $isAllowed = data_get($jsonBody, 'isallowed');
+
+        if (is_bool($isAllowed)) {
+            return $isAllowed;
+        }
+
+        if (is_string($isAllowed) || is_int($isAllowed)) {
+            $normalized = Str::lower(trim((string) $isAllowed));
+
+            if (in_array($normalized, ['true', 'yes', '1', 'y'], true)) {
+                return true;
+            }
+
+            if (in_array($normalized, ['false', 'no', '0', 'n'], true)) {
+                return false;
+            }
+        }
+
+        $statusHints = [
+            data_get($jsonBody, 'status'),
+            data_get($jsonBody, 'success'),
+            data_get($jsonBody, 'authenticated'),
+            data_get($jsonBody, 'data.status'),
+            data_get($jsonBody, 'data.success'),
+        ];
+
+        foreach ($statusHints as $hint) {
+            if (is_bool($hint)) {
+                return $hint;
+            }
+
+            if (is_string($hint) || is_int($hint)) {
+                $normalized = Str::lower(trim((string) $hint));
+
+                if (in_array($normalized, ['true', 'ok', 'success', 'berhasil', 'valid', '1'], true)) {
+                    return true;
+                }
+
+                if (in_array($normalized, ['false', 'fail', 'failed', 'error', 'invalid', '0'], true)) {
+                    return false;
+                }
+            }
+        }
+
+        // No explicit success signal → reject (fail-closed).
+        return false;
     }
 
     /**

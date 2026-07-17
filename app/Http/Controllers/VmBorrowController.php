@@ -74,7 +74,7 @@ class VmBorrowController extends Controller
 
         $vmBorrow->load(['serviceRequests' => fn($q) => $q->latest()]);
 
-        $hostSpecsJson = json_encode($hosts->mapWithKeys(fn($h) => [
+        $hostSpecs = $hosts->mapWithKeys(fn ($h) => [
             $h->id => [
                 'name'          => $h->name,
                 'ip_address'    => $h->ip_address,
@@ -87,14 +87,14 @@ class VmBorrowController extends Controller
                 'is_active'     => $h->is_active,
                 'status'        => $h->statusLabel(),
                 'notes'         => $h->notes,
-            ]
-        ])->toArray());
+            ],
+        ])->all();
 
-        $hostsDataJson = json_encode($hosts->mapWithKeys(fn($h) => [
-            $h->id => ['ip' => $h->ip_address, 'full' => $h->isFull()]
-        ])->toArray());
+        $hostsData = $hosts->mapWithKeys(fn ($h) => [
+            $h->id => ['ip' => $h->ip_address, 'full' => $h->isFull()],
+        ])->all();
 
-        return view('vm_borrow.show', compact('vmBorrow', 'hosts', 'hostSpecsJson', 'hostsDataJson'));
+        return view('vm_borrow.show', compact('vmBorrow', 'hosts', 'hostSpecs', 'hostsData'));
     }
 
     private function ensureOwnerOrAdmin(VmBorrowRequest $vmBorrow)
@@ -369,9 +369,13 @@ class VmBorrowController extends Controller
             return back()->with('error', 'Reset sudah diminta atau diproses.');
         }
 
+        $data = $request->validate([
+            'reset_reason' => 'nullable|string|max:1000',
+        ]);
+
         $vmBorrow->update([
             'reset_status' => 'pending',
-            'reset_reason' => $request->reset_reason,
+            'reset_reason' => $data['reset_reason'] ?? null,
             'reset_requested_at' => now(),
         ]);
 
