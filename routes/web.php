@@ -57,7 +57,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 |--------------------------------------------------------------------------
 */
 
-Route::post('notifications/{notification}/read', function (\App\Models\Notification $notification) {
+Route::get('notifications/{notification}/read', function (\App\Models\Notification $notification) {
     if ((int) $notification->notifiable_id !== (int) Auth::id()) {
         abort(403);
     }
