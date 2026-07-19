@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center gap-3">
-            <a href="{{ route('vm_hosts.index') }}" class="text-neutral-400 hover:text-neutral-600 transition">
+            <a href="{{ route('proxmox.index') }}" class="text-neutral-400 hover:text-neutral-600 transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
             </a>
             <h2 class="text-lg font-semibold text-neutral-800">
@@ -17,10 +17,11 @@
                 @method('PUT')
 
                 <div class="space-y-5">
-                    <!-- Name -->
+                    <!-- Name = hostname / Proxmox node name (match key) -->
                     <div>
-                        <x-input-label for="name" :value="__('Nama Host')" />
+                        <x-input-label for="name" :value="__('Hostname')" />
                         <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $vmHost->name)" required autofocus />
+                        <p class="mt-1 text-[11px] text-neutral-400">Harus sama dengan nama node Proxmox agar resource match.</p>
                         <x-input-error :messages="$errors->get('name')" class="mt-1" />
                     </div>
 
@@ -112,14 +113,21 @@
                     </div>
 
                     <!-- Submit -->
-                    <div class="flex items-center gap-3 pt-4 border-t border-neutral-100">
+                    <div class="flex items-center gap-3 pt-4 border-t border-neutral-100 flex-wrap">
                         <button type="submit" class="fluent-btn fluent-btn-primary">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             Perbarui Host
                         </button>
-                        <a href="{{ route('vm_hosts.index') }}" class="fluent-btn fluent-btn-ghost">Batal</a>
+                        <a href="{{ route('proxmox.index') }}" class="fluent-btn fluent-btn-ghost">Batal</a>
                     </div>
                 </div>
+            </form>
+
+            <form action="{{ route('vm_hosts.destroy', $vmHost) }}" method="POST" class="mt-4 pt-4 border-t border-neutral-100" onsubmit="return confirm('Hapus host \'{{ $vmHost->name }}\' dari alokasi lab? Node Proxmox tidak terpengaruh.')">
+                @csrf @method('DELETE')
+                <button type="submit" class="fluent-btn fluent-btn-ghost fluent-btn-sm text-red-600 hover:bg-red-50">
+                    Hapus Host
+                </button>
             </form>
         </div>
     </div>

@@ -34,31 +34,52 @@ class VmBorrowController extends Controller
     public function create()
     {
         $osVersions = VmBorrowRequest::osVersions();
-        return view('vm_borrow.create', compact('osVersions'));
+        $users = Auth::user()->isAdmin()
+            ? User::orderBy('name')->get(['id', 'name', 'email', 'role'])
+            : collect();
+
+        return view('vm_borrow.create', compact('osVersions', 'users'));
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $isAdmin = Auth::user()->isAdmin();
+
+        $rules = [
             'os_type'       => 'required|in:debian,ubuntu',
             'os_version'    => 'required|string',
             'purpose'       => 'required|string|max:500',
             'duration_days' => 'required|integer|min:1|max:365',
             'start_date'    => 'required|date|after_or_equal:today',
-        ]);
+        ];
+
+        if ($isAdmin) {
+            $rules['user_id'] = 'required|exists:users,id';
+        }
+
+        $data = $request->validate($rules);
 
         $osVersions = VmBorrowRequest::osVersions();
-        if (!in_array($data['os_version'], $osVersions[$data['os_type']] ?? [])) {
+        if (! in_array($data['os_version'], $osVersions[$data['os_type']] ?? [])) {
             return back()->withErrors(['os_version' => 'Versi OS tidak valid untuk tipe yang dipilih.'])->withInput();
         }
 
+        $ownerId = $isAdmin ? (int) $data['user_id'] : Auth::id();
+        unset($data['user_id']);
+
         $vmRequest = VmBorrowRequest::create([
             ...$data,
-            'user_id' => Auth::id(),
+            'user_id' => $ownerId,
             'status'  => 'pending',
         ]);
 
-        // Notify all admins
+        if ($isAdmin) {
+            // Admin buat atas nama user → langsung ke detail untuk ACC
+            return redirect()->route('vm_borrow.show', $vmRequest)
+                ->with('success', 'Permintaan VM dibuat untuk '.$vmRequest->user->display_name.'. Lanjutkan ACC di halaman ini.');
+        }
+
+        // User biasa → notif admin
         $admins = User::where('role', 'admin')->get();
         Notification::send($admins, new VmBorrowRequestReceived($vmRequest));
 
@@ -433,5 +454,43 @@ class VmBorrowController extends Controller
         $vmBorrow->user->notify(new ResetRequestUpdated($vmBorrow));
 
         return back()->with('success', 'Reset telah ditolak.');
+    }
+
+    /**
+     * Hapus permintaan VM.
+     * Admin: semua status. User: hanya milik sendiri + status pending.
+     * Restore resource host bila approved + ada alokasi.
+     */
+    public function destroy(VmBorrowRequest $vmBorrow)
+    {
+        $user = Auth::user();
+        $isAdmin = $user->isAdmin();
+
+        if (! $isAdmin && $vmBorrow->user_id !== $user->id) {
+            abort(403);
+        }
+
+        if (! $isAdmin && $vmBorrow->status !== 'pending') {
+            return back()->with('error', 'Hanya permintaan berstatus Menunggu yang bisa dihapus sendiri.');
+        }
+
+        // Kembalikan resource ke host bila sudah di-allocate
+        if ($vmBorrow->status === 'approved' && $vmBorrow->host_id) {
+            $host = $vmBorrow->host;
+            if ($host) {
+                $host->restoreResources(
+                    (int) ($vmBorrow->allocated_cpu ?? 0),
+                    (int) ($vmBorrow->allocated_ram ?? 0),
+                    (int) ($vmBorrow->allocated_storage ?? 0),
+                );
+            }
+        }
+
+        $label = '#'.$vmBorrow->id.' · '.ucfirst($vmBorrow->os_type).' '.$vmBorrow->os_version;
+        $vmBorrow->delete(); // service_requests cascade
+
+        return redirect()
+            ->route('vm_borrow.index')
+            ->with('success', "Permintaan VM {$label} dihapus.");
     }
 }

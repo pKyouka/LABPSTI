@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center gap-3">
-            <a href="{{ route('vm_hosts.index') }}" class="text-neutral-400 hover:text-neutral-600 transition">
+            <a href="{{ route('proxmox.index') }}" class="text-neutral-400 hover:text-neutral-600 transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
             </a>
             <h2 class="text-lg font-semibold text-neutral-800">
@@ -16,10 +16,11 @@
                 @csrf
 
                 <div class="space-y-5">
-                    <!-- Name -->
+                    <!-- Name = hostname / Proxmox node name (match key) -->
                     <div>
-                        <x-input-label for="name" :value="__('Nama Host')" />
-                        <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name')" required autofocus placeholder="Contoh: HV-01, Proxmox-Main" />
+                        <x-input-label for="name" :value="__('Hostname')" />
+                        <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name')" required autofocus placeholder="Harus sama dengan nama node Proxmox, mis. pve" />
+                        <p class="mt-1 text-[11px] text-neutral-400">Dipakai match ke node Proxmox. Sync Resource isi otomatis dari cluster.</p>
                         <x-input-error :messages="$errors->get('name')" class="mt-1" />
                     </div>
 
@@ -97,7 +98,7 @@
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             Simpan Host
                         </button>
-                        <a href="{{ route('vm_hosts.index') }}" class="fluent-btn fluent-btn-ghost">Batal</a>
+                        <a href="{{ route('proxmox.index') }}" class="fluent-btn fluent-btn-ghost">Batal</a>
                     </div>
                 </div>
             </form>

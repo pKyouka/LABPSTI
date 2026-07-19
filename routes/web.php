@@ -14,6 +14,7 @@ use App\Http\Controllers\VmBorrowController;
 use App\Http\Controllers\VmHostController;
 use App\Http\Controllers\VmServiceRequestController;
 use App\Http\Controllers\ProxmoxController;
+use App\Http\Controllers\ProxmoxServerController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -125,11 +126,12 @@ Route::middleware('auth')->group(function () {
     Route::get('inventory_items', [InventoryItemController::class, 'index'])->name('inventory_items.index');
     Route::get('inventory_items/{inventoryItem}', [InventoryItemController::class, 'show'])->name('inventory_items.show');
 
-    // VM Borrow — index/show/store scoped per role in controller
+    // VM Borrow — index/show/store/destroy scoped per role in controller
     Route::get('vm_borrow', [VmBorrowController::class, 'index'])->name('vm_borrow.index');
     Route::get('vm_borrow/create', [VmBorrowController::class, 'create'])->name('vm_borrow.create');
     Route::post('vm_borrow', [VmBorrowController::class, 'store'])->name('vm_borrow.store');
     Route::get('vm_borrow/{vmBorrow}', [VmBorrowController::class, 'show'])->name('vm_borrow.show');
+    Route::delete('vm_borrow/{vmBorrow}', [VmBorrowController::class, 'destroy'])->name('vm_borrow.destroy');
     Route::post('vm_borrow/{vmBorrow}/request-reset', [VmBorrowController::class, 'requestReset'])->name('vm_borrow.request_reset');
     Route::post('vm_borrow/{vmBorrow}/service-request', [VmServiceRequestController::class, 'store'])->name('vm_borrow.service_request.store');
 });
@@ -183,7 +185,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // VM Host Management (admin only)
     Route::resource('vm_hosts', VmHostController::class)->except(['show']);
 
-    // Proxmox direct API (admin only)
+    // Proxmox multi-server (admin only) — kredensial di DB, bukan .env
     Route::get('proxmox', [ProxmoxController::class, 'index'])->name('proxmox.index');
     Route::get('proxmox/create', [ProxmoxController::class, 'create'])->name('proxmox.create');
     Route::post('proxmox', [ProxmoxController::class, 'store'])->name('proxmox.store');
@@ -194,6 +196,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::delete('proxmox', [ProxmoxController::class, 'destroy'])->name('proxmox.destroy');
     Route::post('proxmox/sync-hosts', [ProxmoxController::class, 'syncHosts'])->name('proxmox.sync_hosts');
     Route::get('proxmox/test', [ProxmoxController::class, 'test'])->name('proxmox.test');
+
+    Route::get('proxmox/servers/create', [ProxmoxServerController::class, 'create'])->name('proxmox.servers.create');
+    Route::post('proxmox/servers', [ProxmoxServerController::class, 'store'])->name('proxmox.servers.store');
+    Route::get('proxmox/servers/{proxmoxServer}/edit', [ProxmoxServerController::class, 'edit'])->name('proxmox.servers.edit');
+    Route::put('proxmox/servers/{proxmoxServer}', [ProxmoxServerController::class, 'update'])->name('proxmox.servers.update');
+    Route::delete('proxmox/servers/{proxmoxServer}', [ProxmoxServerController::class, 'destroy'])->name('proxmox.servers.destroy');
+    Route::post('proxmox/servers/{proxmoxServer}/test', [ProxmoxServerController::class, 'test'])->name('proxmox.servers.test');
 
     // Inventory CRUD (create, store, destroy) — index/show already in shared group
     Route::get('inventory_items/create', [InventoryItemController::class, 'create'])->name('inventory_items.create');

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ProxmoxServer;
 use App\Models\VmHost;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
@@ -11,22 +12,82 @@ use RuntimeException;
 
 class ProxmoxService
 {
-    protected string $baseUrl;
-    protected string $user;
-    protected string $password;
-    protected bool $verifySsl;
-    protected int $timeout;
+    protected string $baseUrl = '';
+    protected string $user = '';
+    protected string $password = '';
+    protected bool $verifySsl = false;
+    protected int $timeout = 30;
 
     protected ?string $ticket = null;
     protected ?string $csrf = null;
 
+    protected ?ProxmoxServer $server = null;
+
+    /**
+     * Defaults global (timeout, fallback create-VM specs).
+     * Kredensial per-server lewat forServer() / fromConfigFallback().
+     */
     public function __construct()
     {
-        $this->baseUrl = config('proxmox.host');
-        $this->user = config('proxmox.user');
-        $this->password = (string) config('proxmox.password');
-        $this->verifySsl = (bool) config('proxmox.verify_ssl');
         $this->timeout = (int) config('proxmox.timeout', 30);
+    }
+
+    public function forServer(ProxmoxServer $server): static
+    {
+        $clone = clone $this;
+        $clone->server = $server;
+        $clone->baseUrl = $server->baseUrl();
+        $clone->user = $server->user;
+        $clone->password = (string) $server->password;
+        $clone->verifySsl = (bool) $server->verify_ssl;
+        $clone->ticket = null;
+        $clone->csrf = null;
+
+        return $clone;
+    }
+
+    /**
+     * Fallback .env bila belum ada row di DB (migrasi lama).
+     */
+    public function fromConfigFallback(): static
+    {
+        $clone = clone $this;
+        $clone->server = null;
+        $clone->baseUrl = (string) config('proxmox.host');
+        $clone->user = (string) config('proxmox.user');
+        $clone->password = (string) config('proxmox.password');
+        $clone->verifySsl = (bool) config('proxmox.verify_ssl');
+        $clone->ticket = null;
+        $clone->csrf = null;
+
+        return $clone;
+    }
+
+    public function server(): ?ProxmoxServer
+    {
+        return $this->server;
+    }
+
+    public function defaultNode(): ?string
+    {
+        return $this->server?->node ?: config('proxmox.node');
+    }
+
+    public function defaultStorage(): string
+    {
+        return $this->server?->storage ?: (string) config('proxmox.storage', 'local-zfs');
+    }
+
+    public function defaultBridge(): string
+    {
+        return $this->server?->bridge ?: (string) config('proxmox.bridge', 'vmbr0');
+    }
+
+    public function defaultTemplateVmid(): ?int
+    {
+        $id = $this->server?->template_vmid ?: config('proxmox.template_vmid');
+
+        return $id ? (int) $id : null;
     }
 
     public function isConfigured(): bool
@@ -124,14 +185,14 @@ class ProxmoxService
      */
     public function createVm(array $params): array
     {
-        $node = $params['node'] ?? config('proxmox.node');
+        $node = $params['node'] ?? $this->defaultNode();
         $vmid = $params['vmid'] ?? $this->getNextId();
         $name = $params['name'] ?? ('vm-'.$vmid);
         $cores = (int) ($params['cores'] ?? config('proxmox.defaults.cores'));
         $memory = (int) ($params['memory'] ?? config('proxmox.defaults.memory'));
         $diskGb = (int) ($params['disk'] ?? config('proxmox.defaults.disk'));
-        $storage = $params['storage'] ?? config('proxmox.storage');
-        $bridge = $params['bridge'] ?? config('proxmox.bridge');
+        $storage = $params['storage'] ?? $this->defaultStorage();
+        $bridge = $params['bridge'] ?? $this->defaultBridge();
 
         $body = [
             'vmid' => $vmid,
@@ -172,11 +233,11 @@ class ProxmoxService
      */
     public function cloneTemplate(array $params): array
     {
-        $node = $params['node'] ?? config('proxmox.node');
-        $templateId = (int) ($params['template_vmid'] ?? config('proxmox.template_vmid'));
+        $node = $params['node'] ?? $this->defaultNode();
+        $templateId = (int) ($params['template_vmid'] ?? $this->defaultTemplateVmid());
 
         if (! $templateId) {
-            throw new RuntimeException('Template VMID belum dikonfigurasi (PROXMOX_TEMPLATE_VMID).');
+            throw new RuntimeException('Template VMID belum dikonfigurasi di server Proxmox ini.');
         }
 
         $vmid = $params['vmid'] ?? $this->getNextId();
@@ -193,7 +254,7 @@ class ProxmoxService
             $body['description'] = $params['description'];
         }
 
-        $storage = $params['storage'] ?? config('proxmox.storage');
+        $storage = $params['storage'] ?? $this->defaultStorage();
         if ($storage) {
             $body['storage'] = $storage;
         }
@@ -266,19 +327,25 @@ class ProxmoxService
 
     /**
      * Sinkron node Proxmox → tabel vm_hosts (resource live).
+     * Hostname prefix: "{serverName}/{node}" bila multi-server, else node name.
      */
-    public function syncHosts(): array
+    public function syncHosts(bool $prefixServer = false): array
     {
         $nodes = $this->getNodes();
         $synced = [];
+        $serverLabel = $this->server?->name;
 
         foreach ($nodes as $nodeInfo) {
-            $name = $nodeInfo['node'] ?? null;
-            if (! $name) {
+            $nodeName = $nodeInfo['node'] ?? null;
+            if (! $nodeName) {
                 continue;
             }
 
-            $status = $this->getNodeStatus($name);
+            $hostKey = ($prefixServer && $serverLabel)
+                ? $serverLabel.'/'.$nodeName
+                : $nodeName;
+
+            $status = $this->getNodeStatus($nodeName);
 
             $cpuTotal = (int) ($status['cpuinfo']['cpus'] ?? $nodeInfo['maxcpu'] ?? 0);
             // maxmem bytes → MB
@@ -289,11 +356,10 @@ class ProxmoxService
             $storageTotalGb = (int) round(($status['rootfs']['total'] ?? 0) / 1024 / 1024 / 1024);
             $storageUsedGb = (int) round(($status['rootfs']['used'] ?? 0) / 1024 / 1024 / 1024);
 
-            // CPU used ≈ load * cores (rough) — pakai maxcpu allocation dari VMs lebih akurat via resources
-            $cpuUsed = $this->estimateCpuUsed($name);
+            $cpuUsed = $this->estimateCpuUsed($nodeName);
 
             $host = VmHost::updateOrCreate(
-                ['name' => $name],
+                ['name' => $hostKey],
                 [
                     'ip_address' => $this->extractNodeIp() ?? null,
                     'cpu_total' => $cpuTotal,
@@ -303,7 +369,9 @@ class ProxmoxService
                     'storage_total' => $storageTotalGb,
                     'storage_used' => min($storageUsedGb, $storageTotalGb),
                     'is_active' => ($nodeInfo['status'] ?? '') === 'online',
-                    'notes' => 'Disinkron dari Proxmox API '.now()->toDateTimeString(),
+                    'notes' => 'Disinkron dari Proxmox'
+                        .($serverLabel ? " [{$serverLabel}]" : '')
+                        .' '.now()->toDateTimeString(),
                 ]
             );
 
@@ -353,7 +421,7 @@ class ProxmoxService
         }
 
         if (! $this->isConfigured()) {
-            throw new RuntimeException('Proxmox belum dikonfigurasi. Isi PROXMOX_HOST, PROXMOX_USER, PROXMOX_PASSWORD di .env');
+            throw new RuntimeException('Proxmox belum dikonfigurasi. Tambah server di menu Host & Proxmox.');
         }
 
         $response = $this->rawClient()
@@ -365,10 +433,11 @@ class ProxmoxService
 
         if (! $response->successful()) {
             Log::error('Proxmox auth failed', [
+                'host' => $this->baseUrl,
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
-            throw new RuntimeException('Autentikasi Proxmox gagal (HTTP '.$response->status().'). Cek user/password root@pam.');
+            throw new RuntimeException('Autentikasi Proxmox gagal (HTTP '.$response->status().'). Cek user/password di server.');
         }
 
         $data = $response->json('data');
@@ -446,6 +515,7 @@ class ProxmoxService
             Log::error('Proxmox API error', [
                 'method' => $method,
                 'path' => $path,
+                'host' => $this->baseUrl,
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
@@ -480,6 +550,8 @@ class ProxmoxService
 
     protected function cacheKey(): string
     {
-        return 'proxmox.ticket.'.md5($this->baseUrl.'|'.$this->user);
+        $id = $this->server?->id ?? 'env';
+
+        return 'proxmox.ticket.'.$id.'.'.md5($this->baseUrl.'|'.$this->user);
     }
 }

@@ -1,8 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <h2 class="text-lg font-semibold text-neutral-800">{{ __('Ajukan Peminjaman Virtual Machine') }}</h2>
-            <p class="text-sm text-neutral-500 mt-1">Isi formulir untuk mengajukan permintaan VM. Akan diproses oleh admin.</p>
+            <h2 class="text-lg font-semibold text-neutral-800">
+                {{ Auth::user()->isAdmin() ? __('Buat Peminjaman VM untuk User') : __('Ajukan Peminjaman Virtual Machine') }}
+            </h2>
+            <p class="text-sm text-neutral-500 mt-1">
+                {{ Auth::user()->isAdmin()
+                    ? 'Pilih user, isi OS & detail. Setelah disimpan bisa langsung ACC di halaman detail.'
+                    : 'Isi formulir untuk mengajukan permintaan VM. Akan diproses oleh admin.' }}
+            </p>
         </div>
     </x-slot>
 
@@ -14,8 +20,30 @@
         <form action="{{ route('vm_borrow.store') }}" method="POST" x-data="vmBorrowForm()">
             @csrf
 
-            {{-- Choose an OS --}}
+            @if(Auth::user()->isAdmin())
             <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm overflow-hidden">
+                <div class="px-6 py-5 border-b border-neutral-100">
+                    <h3 class="text-base font-semibold text-neutral-900">Peminjam</h3>
+                    <p class="text-sm text-neutral-500 mt-0.5">VM akan terdaftar atas nama user ini.</p>
+                </div>
+                <div class="p-6">
+                    <x-input-label for="user_id" value="User" class="text-sm font-medium" />
+                    <select id="user_id" name="user_id" required
+                        class="mt-1.5 block w-full rounded-xl border-neutral-200 bg-white shadow-sm focus:border-accent focus:ring-accent text-sm">
+                        <option value="">— Pilih user —</option>
+                        @foreach($users as $u)
+                            <option value="{{ $u->id }}" @selected(old('user_id') == $u->id)>
+                                {{ $u->name }} · {{ $u->email }}{{ $u->role === 'admin' ? ' (admin)' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <x-input-error :messages="$errors->get('user_id')" class="mt-1" />
+                </div>
+            </div>
+            @endif
+
+            {{-- Choose an OS --}}
+            <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm overflow-hidden {{ Auth::user()->isAdmin() ? 'mt-6' : '' }}">
                 <div class="px-6 py-5 border-b border-neutral-100">
                     <h3 class="text-base font-semibold text-neutral-900">Pilih Sistem Operasi</h3>
                     <p class="text-sm text-neutral-500 mt-0.5">Pilih distribusi Linux yang ingin digunakan.</p>
@@ -186,7 +214,9 @@
             {{-- Submit --}}
             <div class="flex items-center justify-end gap-3 pt-2">
                 <a href="{{ route('vm_borrow.index') }}" class="text-sm font-medium text-neutral-500 hover:text-neutral-700 transition">Batal</a>
-                <x-primary-button type="submit" size="sm">Kirim Permintaan VM</x-primary-button>
+                <x-primary-button type="submit" size="sm">
+                    {{ Auth::user()->isAdmin() ? 'Buat untuk User' : 'Kirim Permintaan VM' }}
+                </x-primary-button>
             </div>
         </form>
     </div>

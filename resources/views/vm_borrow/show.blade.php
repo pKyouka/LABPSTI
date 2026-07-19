@@ -1,17 +1,33 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center gap-4">
+        <div class="flex justify-between items-center gap-4 flex-wrap">
             <div>
                 <h2 class="text-lg font-semibold text-neutral-800">Detail Permintaan VM</h2>
                 <p class="text-sm text-neutral-500 mt-0.5">#{{ $vmBorrow->id }} &mdash; Diajukan {{ $vmBorrow->created_at->diffForHumans() }}</p>
             </div>
-            <a href="{{ route('vm_borrow.index') }}" class="fluent-btn fluent-btn-secondary fluent-btn-sm">← Kembali</a>
+            <div class="flex items-center gap-2">
+                @php
+                    $canDelete = Auth::user()->isAdmin()
+                        || ($vmBorrow->user_id === Auth::id() && $vmBorrow->status === 'pending');
+                @endphp
+                @if($canDelete)
+                <form action="{{ route('vm_borrow.destroy', $vmBorrow) }}" method="POST"
+                    onsubmit="return confirm('Hapus permintaan VM #{{ $vmBorrow->id }}?{{ $vmBorrow->status === 'approved' ? ' Resource host akan dikembalikan.' : '' }}')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="fluent-btn fluent-btn-ghost fluent-btn-sm text-red-600 hover:bg-red-50">Hapus</button>
+                </form>
+                @endif
+                <a href="{{ route('vm_borrow.index') }}" class="fluent-btn fluent-btn-secondary fluent-btn-sm">← Kembali</a>
+            </div>
         </div>
     </x-slot>
 
     <div class="space-y-6">
         @if(session('success'))
             <div class="px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium rounded-xl">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm font-medium rounded-xl">{{ session('error') }}</div>
         @endif
 
         @if($vmBorrow->status === 'approved')

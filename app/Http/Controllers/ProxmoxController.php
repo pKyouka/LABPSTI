@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ProxmoxServer;
+use App\Models\VmHost;
 use App\Services\ProxmoxService;
 use Illuminate\Http\Request;
 use RuntimeException;
@@ -10,21 +12,31 @@ class ProxmoxController extends Controller
 {
     public function __construct(protected ProxmoxService $proxmox) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $configured = $this->proxmox->isConfigured();
+        // One-shot: kalau DB kosong tapi .env masih punya kredensial → import
+        $this->bootstrapFromEnvIfEmpty();
+
+        $servers = ProxmoxServer::orderBy('name')->get();
+        $filterHost = $request->query('host');
+
+        $activeServer = $this->resolveServer($request, $servers);
+        $configured = (bool) $activeServer;
+
         $error = null;
         $connection = null;
         $nodes = [];
         $vms = [];
+        $hostsByName = VmHost::orderBy('name')->get()->keyBy(fn (VmHost $h) => strtolower($h->name));
 
-        if ($configured) {
+        if ($activeServer) {
+            $svc = $this->proxmox->forServer($activeServer);
             try {
-                $connection = $this->proxmox->testConnection();
-                $nodes = collect($this->proxmox->getNodes())->map(function (array $n) {
+                $connection = $svc->testConnection();
+                $nodes = collect($svc->getNodes())->map(function (array $n) use ($svc, $hostsByName) {
                     $status = [];
                     try {
-                        $status = $this->proxmox->getNodeStatus($n['node']);
+                        $status = $svc->getNodeStatus($n['node']);
                     } catch (\Throwable) {
                         // node offline
                     }
@@ -32,9 +44,11 @@ class ProxmoxController extends Controller
                     $memTotal = $status['memory']['total'] ?? $n['maxmem'] ?? 0;
                     $memUsed = $status['memory']['used'] ?? $n['mem'] ?? 0;
                     $cpu = $status['cpu'] ?? $n['cpu'] ?? 0;
+                    $name = $n['node'];
+                    $host = $hostsByName->get(strtolower($name));
 
                     return [
-                        'name' => $n['node'],
+                        'name' => $name,
                         'status' => $n['status'] ?? 'unknown',
                         'cpu_pct' => round(((float) $cpu) * 100, 1),
                         'cpus' => $status['cpuinfo']['cpus'] ?? $n['maxcpu'] ?? 0,
@@ -42,10 +56,11 @@ class ProxmoxController extends Controller
                         'mem_total_gb' => round($memTotal / 1024 / 1024 / 1024, 1),
                         'mem_pct' => $memTotal > 0 ? round(($memUsed / $memTotal) * 100, 1) : 0,
                         'uptime' => $status['uptime'] ?? $n['uptime'] ?? 0,
+                        'host' => $host,
                     ];
                 })->all();
 
-                $vms = $this->proxmox->getClusterVms();
+                $vms = $svc->getClusterVms();
             } catch (RuntimeException $e) {
                 $error = $e->getMessage();
             } catch (\Throwable $e) {
@@ -53,38 +68,72 @@ class ProxmoxController extends Controller
             }
         }
 
-        return view('proxmox.index', compact('configured', 'connection', 'nodes', 'vms', 'error'));
+        $nodeNames = collect($nodes)->pluck('name')->map(fn ($n) => strtolower($n))->all();
+        $orphanHosts = $hostsByName
+            ->reject(fn (VmHost $h) => in_array(strtolower($h->name), $nodeNames, true))
+            ->values();
+
+        if ($filterHost) {
+            $vms = collect($vms)
+                ->filter(fn ($vm) => strcasecmp((string) ($vm['node'] ?? ''), $filterHost) === 0)
+                ->values()
+                ->all();
+        }
+
+        return view('proxmox.index', compact(
+            'servers', 'activeServer', 'configured',
+            'connection', 'nodes', 'vms', 'error',
+            'hostsByName', 'orphanHosts', 'filterHost'
+        ));
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $servers = ProxmoxServer::active()->orderBy('name')->get();
+        $activeServer = $this->resolveServer($request, $servers);
+
         $nodes = [];
         $nextId = null;
         $error = null;
-        $templateVmid = config('proxmox.template_vmid');
+        $templateVmid = null;
+        $storage = 'local-zfs';
+        $bridge = 'vmbr0';
+        $defaultNode = null;
 
-        try {
-            $nodes = collect($this->proxmox->getNodes())->pluck('node')->all();
-            $nextId = $this->proxmox->getNextId();
-        } catch (\Throwable $e) {
-            $error = $e->getMessage();
+        if (! $activeServer) {
+            $error = 'Belum ada server Proxmox aktif. Tambah server dulu.';
+        } else {
+            $svc = $this->proxmox->forServer($activeServer);
+            $templateVmid = $svc->defaultTemplateVmid();
+            $storage = $svc->defaultStorage();
+            $bridge = $svc->defaultBridge();
+            $defaultNode = $svc->defaultNode();
+            try {
+                $nodes = collect($svc->getNodes())->pluck('node')->all();
+                $nextId = $svc->getNextId();
+            } catch (\Throwable $e) {
+                $error = $e->getMessage();
+            }
         }
 
         return view('proxmox.create', [
+            'servers' => $servers,
+            'activeServer' => $activeServer,
             'nodes' => $nodes,
             'nextId' => $nextId,
             'error' => $error,
             'templateVmid' => $templateVmid,
             'defaults' => config('proxmox.defaults'),
-            'defaultNode' => config('proxmox.node'),
-            'storage' => config('proxmox.storage'),
-            'bridge' => config('proxmox.bridge'),
+            'defaultNode' => $defaultNode,
+            'storage' => $storage,
+            'bridge' => $bridge,
         ]);
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
+            'server_id' => 'required|exists:proxmox_servers,id',
             'mode' => 'required|in:blank,clone',
             'node' => 'required|string|max:64',
             'name' => 'required|string|max:64|regex:/^[A-Za-z0-9][A-Za-z0-9.\-_]*$/',
@@ -99,42 +148,45 @@ class ProxmoxController extends Controller
             'start_after' => 'boolean',
         ]);
 
+        $server = ProxmoxServer::findOrFail($data['server_id']);
+        $svc = $this->proxmox->forServer($server);
+
         try {
             if ($data['mode'] === 'clone') {
-                $result = $this->proxmox->cloneTemplate([
+                $result = $svc->cloneTemplate([
                     'node' => $data['node'],
                     'vmid' => $data['vmid'] ?? null,
                     'name' => $data['name'],
                     'cores' => $data['cores'],
                     'memory' => $data['memory'],
-                    'storage' => $data['storage'] ?? config('proxmox.storage'),
-                    'template_vmid' => $data['template_vmid'] ?? config('proxmox.template_vmid'),
+                    'storage' => $data['storage'] ?? $svc->defaultStorage(),
+                    'template_vmid' => $data['template_vmid'] ?? $svc->defaultTemplateVmid(),
                     'description' => $data['description'] ?? null,
                 ]);
             } else {
-                $result = $this->proxmox->createVm([
+                $result = $svc->createVm([
                     'node' => $data['node'],
                     'vmid' => $data['vmid'] ?? null,
                     'name' => $data['name'],
                     'cores' => $data['cores'],
                     'memory' => $data['memory'],
                     'disk' => $data['disk'],
-                    'storage' => $data['storage'] ?? config('proxmox.storage'),
-                    'bridge' => $data['bridge'] ?? config('proxmox.bridge'),
+                    'storage' => $data['storage'] ?? $svc->defaultStorage(),
+                    'bridge' => $data['bridge'] ?? $svc->defaultBridge(),
                     'description' => $data['description'] ?? null,
                 ]);
             }
 
             if ($request->boolean('start_after') && $data['mode'] === 'clone') {
                 try {
-                    $this->proxmox->startVm($result['node'], $result['vmid']);
+                    $svc->startVm($result['node'], $result['vmid']);
                 } catch (\Throwable) {
                     // clone mungkin masih running task
                 }
             }
 
             return redirect()
-                ->route('proxmox.index')
+                ->route('proxmox.index', ['server' => $server->id])
                 ->with('success', "VM {$result['name']} (ID {$result['vmid']}) berhasil dibuat di node {$result['node']}.");
         } catch (\Throwable $e) {
             return back()->withInput()->with('error', $e->getMessage());
@@ -164,13 +216,15 @@ class ProxmoxController extends Controller
     public function destroy(Request $request)
     {
         $data = $request->validate([
+            'server_id' => 'required|exists:proxmox_servers,id',
             'node' => 'required|string|max:64',
             'vmid' => 'required|integer|min:100',
             'type' => 'required|in:qemu,lxc',
         ]);
 
         try {
-            $this->proxmox->deleteVm($data['node'], $data['vmid'], $data['type']);
+            $svc = $this->proxmox->forServer(ProxmoxServer::findOrFail($data['server_id']));
+            $svc->deleteVm($data['node'], $data['vmid'], $data['type']);
 
             return back()->with('success', "VM/CT {$data['vmid']} dihapus dari node {$data['node']}.");
         } catch (\Throwable $e) {
@@ -178,24 +232,40 @@ class ProxmoxController extends Controller
         }
     }
 
-    public function syncHosts()
+    public function syncHosts(Request $request)
     {
+        $data = $request->validate([
+            'server_id' => 'required|exists:proxmox_servers,id',
+        ]);
+
         try {
-            $hosts = $this->proxmox->syncHosts();
+            $server = ProxmoxServer::findOrFail($data['server_id']);
+            // Prefix server name bila multi-server agar hostname unik
+            $multi = ProxmoxServer::count() > 1;
+            $hosts = $this->proxmox->forServer($server)->syncHosts(prefixServer: $multi);
             $count = count($hosts);
 
             return redirect()
-                ->route('vm_hosts.index')
-                ->with('success', "Berhasil sinkron {$count} node Proxmox ke Host VM.");
+                ->route('proxmox.index', ['server' => $server->id])
+                ->with('success', "Berhasil sinkron {$count} node dari \"{$server->name}\" ke Host VM.");
         } catch (\Throwable $e) {
             return back()->with('error', $e->getMessage());
         }
     }
 
-    public function test()
+    public function test(Request $request)
     {
+        $serverId = $request->query('server');
         try {
-            $result = $this->proxmox->testConnection();
+            $server = $serverId
+                ? ProxmoxServer::findOrFail($serverId)
+                : ProxmoxServer::active()->orderBy('name')->first();
+
+            if (! $server) {
+                return response()->json(['ok' => false, 'error' => 'Tidak ada server Proxmox.'], 422);
+            }
+
+            $result = $this->proxmox->forServer($server)->testConnection();
 
             return response()->json(['ok' => true, 'data' => $result]);
         } catch (\Throwable $e) {
@@ -206,17 +276,19 @@ class ProxmoxController extends Controller
     protected function powerAction(Request $request, string $action)
     {
         $data = $request->validate([
+            'server_id' => 'required|exists:proxmox_servers,id',
             'node' => 'required|string|max:64',
             'vmid' => 'required|integer|min:100',
             'type' => 'required|in:qemu,lxc',
         ]);
 
         try {
+            $svc = $this->proxmox->forServer(ProxmoxServer::findOrFail($data['server_id']));
             match ($action) {
-                'start' => $this->proxmox->startVm($data['node'], $data['vmid'], $data['type']),
-                'stop' => $this->proxmox->stopVm($data['node'], $data['vmid'], $data['type']),
-                'shutdown' => $this->proxmox->shutdownVm($data['node'], $data['vmid'], $data['type']),
-                'reboot' => $this->proxmox->rebootVm($data['node'], $data['vmid'], $data['type']),
+                'start' => $svc->startVm($data['node'], $data['vmid'], $data['type']),
+                'stop' => $svc->stopVm($data['node'], $data['vmid'], $data['type']),
+                'shutdown' => $svc->shutdownVm($data['node'], $data['vmid'], $data['type']),
+                'reboot' => $svc->rebootVm($data['node'], $data['vmid'], $data['type']),
             };
 
             $labels = [
@@ -230,5 +302,54 @@ class ProxmoxController extends Controller
         } catch (\Throwable $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, ProxmoxServer>  $servers
+     */
+    protected function resolveServer(Request $request, $servers): ?ProxmoxServer
+    {
+        $id = $request->query('server') ?? $request->input('server_id');
+        if ($id) {
+            $found = $servers->firstWhere('id', (int) $id);
+            if ($found) {
+                return $found;
+            }
+            // fallback fetch bila collection beda scope
+            return ProxmoxServer::find($id);
+        }
+
+        return $servers->first(fn (ProxmoxServer $s) => $s->is_active) ?? $servers->first();
+    }
+
+    /**
+     * Import server dari .env bila tabel masih kosong (migrasi dari setup lama).
+     */
+    protected function bootstrapFromEnvIfEmpty(): void
+    {
+        if (ProxmoxServer::exists()) {
+            return;
+        }
+
+        $host = rtrim((string) config('proxmox.host'), '/');
+        $password = (string) config('proxmox.password');
+
+        if ($host === '' || $password === '') {
+            return;
+        }
+
+        ProxmoxServer::create([
+            'name' => 'Proxmox '.parse_url($host, PHP_URL_HOST),
+            'host' => $host,
+            'user' => (string) config('proxmox.user', 'root@pam'),
+            'password' => $password,
+            'node' => config('proxmox.node') ?: null,
+            'storage' => (string) config('proxmox.storage', 'local-zfs'),
+            'bridge' => (string) config('proxmox.bridge', 'vmbr0'),
+            'template_vmid' => config('proxmox.template_vmid') ?: null,
+            'verify_ssl' => (bool) config('proxmox.verify_ssl', false),
+            'is_active' => true,
+            'notes' => 'Diimpor otomatis dari .env',
+        ]);
     }
 }

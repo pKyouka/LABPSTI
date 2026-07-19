@@ -4,18 +4,19 @@
             <h2 class="text-lg font-semibold text-neutral-800">
                 {{ __('Peminjaman Virtual Machine') }}
             </h2>
-            @if(!Auth::user()->isAdmin())
-                <a href="{{ route('vm_borrow.create') }}" class="fluent-btn fluent-btn-primary fluent-btn-sm">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                    Ajukan VM
-                </a>
-            @endif
+            <a href="{{ route('vm_borrow.create') }}" class="fluent-btn fluent-btn-primary fluent-btn-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                {{ Auth::user()->isAdmin() ? 'Buat VM untuk User' : 'Ajukan VM' }}
+            </a>
         </div>
     </x-slot>
 
     <div class="space-y-6">
         @if(session('success'))
             <div class="px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium rounded-xl">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm font-medium rounded-xl">{{ session('error') }}</div>
         @endif
 
         <div class="bg-white rounded-2xl border border-neutral-200 shadow-fluent-sm overflow-hidden">
@@ -84,9 +85,22 @@
                                 </div>
                             </td>
                             <td class="text-right">
-                                <a href="{{ route('vm_borrow.show', $req) }}" class="fluent-btn fluent-btn-ghost fluent-btn-sm {{ $rowHighlight ? 'text-amber-700 hover:text-amber-900' : '' }}">
-                                    {{ Auth::user()->isAdmin() && ($req->status === 'pending' || $req->status === 'on-review' || $isServicePending) ? 'Tinjau →' : 'Detail →' }}
-                                </a>
+                                @php
+                                    $canDelete = Auth::user()->isAdmin()
+                                        || ($req->user_id === Auth::id() && $req->status === 'pending');
+                                @endphp
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <a href="{{ route('vm_borrow.show', $req) }}" class="fluent-btn fluent-btn-ghost fluent-btn-sm {{ $rowHighlight ? 'text-amber-700 hover:text-amber-900' : '' }}">
+                                        {{ Auth::user()->isAdmin() && ($req->status === 'pending' || $req->status === 'on-review' || $isServicePending) ? 'Tinjau →' : 'Detail →' }}
+                                    </a>
+                                    @if($canDelete)
+                                    <form action="{{ route('vm_borrow.destroy', $req) }}" method="POST"
+                                        onsubmit="return confirm('Hapus permintaan VM #{{ $req->id }} ({{ ucfirst($req->os_type) }} {{ $req->os_version }})?{{ $req->status === 'approved' ? ' Resource host akan dikembalikan.' : '' }}')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="fluent-btn fluent-btn-ghost fluent-btn-sm text-red-600 hover:bg-red-50">Hapus</button>
+                                    </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty

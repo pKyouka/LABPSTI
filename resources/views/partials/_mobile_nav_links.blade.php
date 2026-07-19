@@ -21,11 +21,8 @@
 <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
     {{ __('User') }}
 </x-responsive-nav-link>
-<x-responsive-nav-link :href="route('vm_hosts.index')" :active="request()->routeIs('vm_hosts.*')">
-    {{ __('Host VM') }}
-</x-responsive-nav-link>
-<x-responsive-nav-link :href="route('proxmox.index')" :active="request()->routeIs('proxmox.*')">
-    {{ __('Proxmox') }}
+<x-responsive-nav-link :href="route('proxmox.index')" :active="request()->routeIs('proxmox.*') || request()->routeIs('vm_hosts.*')">
+    {{ __('Host & Proxmox') }}
 </x-responsive-nav-link>
 <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
     {{ __('Laporan') }}

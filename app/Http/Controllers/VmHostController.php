@@ -17,12 +17,11 @@ class VmHostController extends Controller
     }
 
     /**
-     * Display listing for admin management
+     * Host VM digabung ke jalur Proxmox (match by hostname).
      */
     public function index()
     {
-        $hosts = VmHost::orderBy('name')->paginate(20);
-        return view('vm_hosts.index', compact('hosts'));
+        return redirect()->route('proxmox.index');
     }
 
     /**
@@ -55,7 +54,7 @@ class VmHostController extends Controller
 
         VmHost::create($data);
 
-        return redirect()->route('vm_hosts.index')
+        return redirect()->route('proxmox.index')
             ->with('success', 'Host berhasil ditambahkan.');
     }
 
@@ -89,7 +88,7 @@ class VmHostController extends Controller
 
         $vmHost->update($data);
 
-        return redirect()->route('vm_hosts.index')
+        return redirect()->route('proxmox.index')
             ->with('success', 'Host berhasil diperbarui.');
     }
 
@@ -109,7 +108,7 @@ class VmHostController extends Controller
 
         $vmHost->delete();
 
-        return redirect()->route('vm_hosts.index')
+        return redirect()->route('proxmox.index')
             ->with('success', 'Host berhasil dihapus.');
     }
 }

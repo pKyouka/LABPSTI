@@ -21,6 +21,22 @@
                 @csrf
 
                 <div class="space-y-5">
+                    @if(isset($servers) && $servers->count() > 1)
+                    <div>
+                        <x-input-label for="server_id" value="Server Proxmox" />
+                        <select id="server_id" name="server_id" class="mt-1 block w-full rounded-lg border-neutral-200 shadow-sm focus:border-accent focus:ring focus:ring-accent/20 text-sm" required
+                            onchange="window.location='{{ route('proxmox.create') }}?server='+this.value">
+                            @foreach($servers as $srv)
+                                <option value="{{ $srv->id }}" @selected(old('server_id', $activeServer?->id) == $srv->id)>{{ $srv->name }} · {{ $srv->host }}</option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('server_id')" class="mt-1" />
+                    </div>
+                    @elseif($activeServer)
+                        <input type="hidden" name="server_id" value="{{ old('server_id', $activeServer->id) }}">
+                        <p class="text-[12px] text-neutral-500">Server: <span class="font-medium text-neutral-700">{{ $activeServer->name }}</span> <span class="font-mono text-neutral-400">{{ $activeServer->host }}</span></p>
+                    @endif
+
                     {{-- Mode --}}
                     <div>
                         <x-input-label :value="__('Mode Pembuatan')" />
@@ -72,7 +88,7 @@
                     <div x-show="mode === 'clone'" x-cloak>
                         <x-input-label for="template_vmid" :value="__('Template VMID')" />
                         <x-text-input id="template_vmid" name="template_vmid" type="number" class="mt-1 block w-full" :value="old('template_vmid', $templateVmid)" min="100" placeholder="ID template di Proxmox" />
-                        <p class="text-[11px] text-neutral-400 mt-1">Default dari env: {{ $templateVmid ?: 'belum diset (PROXMOX_TEMPLATE_VMID)' }}</p>
+                        <p class="text-[11px] text-neutral-400 mt-1">Default server: {{ $templateVmid ?: 'belum diset di server' }}</p>
                         <x-input-error :messages="$errors->get('template_vmid')" class="mt-1" />
                     </div>
 

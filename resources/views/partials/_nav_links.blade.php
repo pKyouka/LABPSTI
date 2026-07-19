@@ -110,14 +110,9 @@
     <span class="sb-nav-label">User</span>
 </x-nav-link>
 
-<x-nav-link :href="route('vm_hosts.index')" :active="request()->routeIs('vm_hosts.*')">
+<x-nav-link :href="route('proxmox.index')" :active="request()->routeIs('proxmox.*') || request()->routeIs('vm_hosts.*')">
     <span class="sb-nav-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg></span>
-    <span class="sb-nav-label">Host VM</span>
-</x-nav-link>
-
-<x-nav-link :href="route('proxmox.index')" :active="request()->routeIs('proxmox.*')">
-    <span class="sb-nav-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg></span>
-    <span class="sb-nav-label">Proxmox</span>
+    <span class="sb-nav-label">Host &amp; Proxmox</span>
 </x-nav-link>
 
 <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
