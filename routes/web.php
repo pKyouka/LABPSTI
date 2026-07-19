@@ -13,6 +13,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VmBorrowController;
 use App\Http\Controllers\VmHostController;
 use App\Http\Controllers\VmServiceRequestController;
+use App\Http\Controllers\ProxmoxController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -181,6 +182,18 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     // VM Host Management (admin only)
     Route::resource('vm_hosts', VmHostController::class)->except(['show']);
+
+    // Proxmox direct API (admin only)
+    Route::get('proxmox', [ProxmoxController::class, 'index'])->name('proxmox.index');
+    Route::get('proxmox/create', [ProxmoxController::class, 'create'])->name('proxmox.create');
+    Route::post('proxmox', [ProxmoxController::class, 'store'])->name('proxmox.store');
+    Route::post('proxmox/start', [ProxmoxController::class, 'start'])->name('proxmox.start');
+    Route::post('proxmox/stop', [ProxmoxController::class, 'stop'])->name('proxmox.stop');
+    Route::post('proxmox/shutdown', [ProxmoxController::class, 'shutdown'])->name('proxmox.shutdown');
+    Route::post('proxmox/reboot', [ProxmoxController::class, 'reboot'])->name('proxmox.reboot');
+    Route::delete('proxmox', [ProxmoxController::class, 'destroy'])->name('proxmox.destroy');
+    Route::post('proxmox/sync-hosts', [ProxmoxController::class, 'syncHosts'])->name('proxmox.sync_hosts');
+    Route::get('proxmox/test', [ProxmoxController::class, 'test'])->name('proxmox.test');
 
     // Inventory CRUD (create, store, destroy) — index/show already in shared group
     Route::get('inventory_items/create', [InventoryItemController::class, 'create'])->name('inventory_items.create');
