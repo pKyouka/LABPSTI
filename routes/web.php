@@ -123,8 +123,11 @@ Route::middleware('auth')->group(function () {
     Route::post('borrow_records/{borrowRecord}/return', [BorrowRecordController::class, 'markReturned'])->name('borrow_records.return');
 
     // Inventory — index/show open to all; create/store/destroy restricted below
+    // whereNumber: biar "create" tidak tertangkap param {inventoryItem} (404)
     Route::get('inventory_items', [InventoryItemController::class, 'index'])->name('inventory_items.index');
-    Route::get('inventory_items/{inventoryItem}', [InventoryItemController::class, 'show'])->name('inventory_items.show');
+    Route::get('inventory_items/{inventoryItem}', [InventoryItemController::class, 'show'])
+        ->whereNumber('inventoryItem')
+        ->name('inventory_items.show');
 
     // VM Borrow — index/show/store/destroy scoped per role in controller
     Route::get('vm_borrow', [VmBorrowController::class, 'index'])->name('vm_borrow.index');
