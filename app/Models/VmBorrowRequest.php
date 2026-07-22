@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VmBorrowRequest extends Model
 {
+    // Status/credentials/allocation set only via explicit controller updates (not request mass-assign).
     protected $fillable = [
         'user_id',
         'os_type',
@@ -14,23 +15,6 @@ class VmBorrowRequest extends Model
         'purpose',
         'duration_days',
         'start_date',
-        'end_date',
-        'status',
-        'host_id',
-        'host_ip',
-        'allocated_cpu',
-        'allocated_ram',
-        'allocated_storage',
-        'vm_username',
-        'vm_password',
-        'admin_notes',
-        'approved_by',
-        'reset_status',
-        'reset_reason',
-        'reset_requested_at',
-        'reset_approved_by',
-        'reset_rejected_by',
-        'reset_rejection_reason',
     ];
 
     protected $attributes = [

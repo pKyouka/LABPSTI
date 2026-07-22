@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 class BorrowRecord extends Model
 {
+    // Approval/status/pdf hashes set only via explicit controller forceFill.
     protected $fillable = [
         'inventory_item_id',
         'user_name',
@@ -15,22 +16,9 @@ class BorrowRecord extends Model
         'quantity',
         'borrowed_at',
         'due_at',
-        'returned_at',
         'purpose',
         'notes',
         'request_pdf_path',
-        'approval_pdf_path',
-        'approval_pdf_md5',
-        'approval_pdf_sha256',
-        'status',
-        'approval_status',
-        'approved_by',
-        'approved_at',
-        'ready_at',
-        'pickup_at',
-        'rejected_by',
-        'rejected_at',
-        'rejection_reason',
     ];
 
     protected $casts = [

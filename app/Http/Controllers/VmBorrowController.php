@@ -153,11 +153,11 @@ class VmBorrowController extends Controller
             'host_id' => 'nullable|exists:vm_hosts,id',
         ]);
 
-        $vmBorrow->update([
+        $vmBorrow->forceFill([
             'status'      => 'on-review',
             'host_id'     => $data['host_id'] ?? null,
             'approved_by' => Auth::id(),
-        ]);
+        ])->save();
 
         // Notify the student
         $vmBorrow->user->notify(new VmBorrowRequestUpdated($vmBorrow));
@@ -182,9 +182,9 @@ class VmBorrowController extends Controller
 
         $data = $request->validate([
             'host_id'          => 'nullable|exists:vm_hosts,id',
-            'host_ip'          => 'required|string|max:255',
-            'vm_username'      => 'required|string|max:255',
-            'vm_password'      => 'required|string|max:255',
+            'host_ip'          => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9.:\\[\\]-]+$/'],
+            'vm_username'      => ['required', 'string', 'max:32', 'regex:/^[a-z_][a-z0-9_-]{0,31}$/'],
+            'vm_password'      => 'required|string|min:8|max:128',
             'admin_notes'      => 'nullable|string|max:1000',
             'duration_days'    => 'required|integer|min:1|max:365',
             'allocated_cpu'    => 'required|integer|min:1|max:128',
@@ -212,7 +212,7 @@ class VmBorrowController extends Controller
             $host->deductResources($cpu, $ram, $storage);
         }
 
-        $vmBorrow->update([
+        $vmBorrow->forceFill([
             'status'           => 'approved',
             'host_id'          => $data['host_id'] ?? null,
             'host_ip'          => $data['host_ip'],
@@ -225,7 +225,7 @@ class VmBorrowController extends Controller
             'duration_days'    => $data['duration_days'],
             'end_date'         => \Carbon\Carbon::parse($vmBorrow->start_date)->addDays((int) $data['duration_days']),
             'approved_by'      => Auth::id(),
-        ]);
+        ])->save();
 
         $hostName = $host ? $host->name : 'Host';
         $message = "VM telah berhasil diaktifkan di {$hostName}. Kredensial telah diberikan kepada peminjam.";
@@ -338,13 +338,13 @@ class VmBorrowController extends Controller
             $newHost->deductResources($newCpu, $newRam, $newStorage);
         }
 
-        $vmBorrow->update([
+        $vmBorrow->forceFill([
             'host_id'          => $newHostId,
             'host_ip'          => $data['host_ip'],
             'allocated_cpu'    => $newCpu,
             'allocated_ram'    => $newRam,
             'allocated_storage'=> $newStorage,
-        ]);
+        ])->save();
 
         $hostName = $newHost ? $newHost->name : ($oldHost ? $oldHost->name : 'Host');
         return redirect()->route('vm_borrow.show', $vmBorrow)
@@ -365,11 +365,11 @@ class VmBorrowController extends Controller
             'admin_notes' => 'required|string|max:1000',
         ]);
 
-        $vmBorrow->update([
+        $vmBorrow->forceFill([
             'status'      => 'rejected',
             'admin_notes' => $request->admin_notes,
             'approved_by' => Auth::id(),
-        ]);
+        ])->save();
 
         // Notify the student
         $vmBorrow->user->notify(new VmBorrowRequestUpdated($vmBorrow));
@@ -394,11 +394,11 @@ class VmBorrowController extends Controller
             'reset_reason' => 'nullable|string|max:1000',
         ]);
 
-        $vmBorrow->update([
+        $vmBorrow->forceFill([
             'reset_status' => 'pending',
             'reset_reason' => $data['reset_reason'] ?? null,
             'reset_requested_at' => now(),
-        ]);
+        ])->save();
 
         // Notify all admins
         $admins = \App\Models\User::where('role', 'admin')->get();
@@ -417,11 +417,11 @@ class VmBorrowController extends Controller
             return back()->with('error', 'Tidak ada permintaan reset pending untuk VM ini.');
         }
 
-        $vmBorrow->update([
+        $vmBorrow->forceFill([
             'reset_status' => 'approved',
             'reset_approved_by' => Auth::id(),
             'reset_approved_at' => now(),
-        ]);
+        ])->save();
 
         // Notify the student
         $vmBorrow->user->notify(new ResetRequestUpdated($vmBorrow));
@@ -443,12 +443,12 @@ class VmBorrowController extends Controller
             'reset_rejection_reason' => 'required|string|max:1000',
         ]);
 
-        $vmBorrow->update([
+        $vmBorrow->forceFill([
             'reset_status' => 'rejected',
             'reset_rejected_by' => Auth::id(),
             'reset_rejected_at' => now(),
             'reset_rejection_reason' => $request->reset_rejection_reason,
-        ]);
+        ])->save();
 
         // Notify the student
         $vmBorrow->user->notify(new ResetRequestUpdated($vmBorrow));

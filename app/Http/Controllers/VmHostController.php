@@ -12,7 +12,12 @@ class VmHostController extends Controller
      */
     public function publicIndex()
     {
-        $hosts = VmHost::orderBy('name')->get();
+        // Public page: active hosts only, no internal notes.
+        $hosts = VmHost::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'ip_address', 'cpu_total', 'cpu_used', 'ram_total', 'ram_used', 'storage_total', 'storage_used', 'is_active']);
+
         return view('vm_hosts.public-index', compact('hosts'));
     }
 

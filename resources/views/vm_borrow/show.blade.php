@@ -605,7 +605,7 @@
                             </div>
                             <div>
                                 <x-input-label for="vm_password" value="Password VM" />
-                                <x-text-input id="vm_password" type="text" name="vm_password" :value="old('vm_password')" placeholder="••••••••" required />
+                                <x-text-input id="vm_password" type="password" name="vm_password" autocomplete="new-password" placeholder="••••••••" required />
                                 <x-input-error :messages="$errors->get('vm_password')" />
                             </div>
                         </div>

@@ -11,11 +11,24 @@
     vm_bridge: "{{ vm_network_bridge | default('vmbr0') }}"
 
   tasks:
+    - name: Validate request inputs
+      assert:
+        that:
+          - (request_id | string) is match('^[0-9]+$')
+          - os_type | lower is in ['debian', 'ubuntu']
+          - (os_version | string) is match('^[0-9.]+$')
+          - (vm_username | string) is match('^[a-z_][a-z0-9_-]{0,31}$')
+          - vm_password | length >= 8
+          - vm_password | length <= 128
+        fail_msg: "Input Ansible tidak lolos validasi keamanan."
+
     - name: Download community-script for OS
       get_url:
         url: "https://community-scripts.org/script/{{ os_type | lower }}"
         dest: "/tmp/create-vm-{{ request_id }}.sh"
         mode: '0755'
+        # Only allow known OS script endpoints
+        validate_certs: true
       register: script_download
 
     - name: Ensure script downloaded successfully
@@ -24,24 +37,42 @@
       when: script_download.status_code != 200
 
     - name: Create VM using community-script
-      command: >
-        /tmp/create-vm-{{ request_id }}.sh
-        --id {{ vm_id }}
-        --name "{{ vm_name }}"
-        --memory {{ vm_memory }}
-        --cores {{ vm_cores }}
-        --disk {{ vm_disk_size }}
-        --bridge {{ vm_bridge }}
-        --version "{{ os_version }}"
-        --password "{{ vm_password }}"
-        --ssh-keys "{{ ssh_public_key }}"
+      command:
+        argv:
+          - "/tmp/create-vm-{{ request_id }}.sh"
+          - "--id"
+          - "{{ vm_id | string }}"
+          - "--name"
+          - "{{ vm_name }}"
+          - "--memory"
+          - "{{ vm_memory | string }}"
+          - "--cores"
+          - "{{ vm_cores | string }}"
+          - "--disk"
+          - "{{ vm_disk_size | string }}"
+          - "--bridge"
+          - "{{ vm_bridge }}"
+          - "--version"
+          - "{{ os_version }}"
+          - "--password"
+          - "{{ vm_password }}"
+          - "--ssh-keys"
+          - "{{ ssh_public_key }}"
       register: vm_create_result
+      no_log: true
       changed_when: "'VM created' in vm_create_result.stdout"
       failed_when: vm_create_result.rc != 0
 
     - name: Get VM IP address
-      command: >
-        qm guest exec {{ vm_id }} -- hostname -I
+      command:
+        argv:
+          - qm
+          - guest
+          - exec
+          - "{{ vm_id | string }}"
+          - "--"
+          - hostname
+          - "-I"
       register: vm_ip_result
       until: vm_ip_result.rc == 0
       retries: 30
@@ -51,23 +82,39 @@
       set_fact:
         vm_ip_address: "{{ vm_ip_result.stdout_lines[0].split(' ')[0] }}"
 
-    - name: Set user password inside VM
-      command: >
-        qm guest exec {{ vm_id }} -- bash -c "echo '{{ vm_username }}:{{ vm_password }}' | chpasswd"
+    # Base64 payload avoids shell metacharacters in password (no quote injection).
+    - name: Encode chpasswd payload
+      set_fact:
+        chpasswd_b64: "{{ (vm_username ~ ':' ~ vm_password) | b64encode }}"
+      no_log: true
       when: vm_create_result is success
 
-    - name: Save VM info to file
+    - name: Set user password inside VM
+      command:
+        argv:
+          - qm
+          - guest
+          - exec
+          - "{{ vm_id | string }}"
+          - "--"
+          - bash
+          - "-c"
+          - "echo {{ chpasswd_b64 }} | base64 -d | chpasswd"
+      no_log: true
+      when: vm_create_result is success
+
+    - name: Save VM info to file (no plaintext password)
       copy:
         content: |
           VM_ID={{ vm_id }}
           VM_NAME={{ vm_name }}
           VM_IP={{ vm_ip_address }}
           VM_USER={{ vm_username }}
-          VM_PASS={{ vm_password }}
           OS_TYPE={{ os_type }}
           OS_VERSION={{ os_version }}
           REQUEST_ID={{ request_id }}
         dest: "/root/vm-borrow-{{ request_id }}.env"
+        mode: '0600'
 
     - name: Cleanup temp script
       file:

@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 
 class Bulletin extends Model
 {
+    // Approval fields set only via explicit admin controller updates.
     protected $fillable = [
         'title',
         'content',
@@ -15,12 +16,6 @@ class Bulletin extends Model
         'category_id',
         'published_at',
         'user_id',
-        'approval_status',
-        'approved_by',
-        'approved_at',
-        'rejected_by',
-        'rejected_at',
-        'rejection_reason',
     ];
 
     protected $casts = [

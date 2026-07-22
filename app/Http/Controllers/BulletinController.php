@@ -37,8 +37,8 @@ class BulletinController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'content' => 'required',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'content' => 'required|string|max:20000',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'category_id' => 'required|exists:categories,id',
             'published_at' => 'nullable|date',
         ]);
@@ -47,26 +47,36 @@ class BulletinController extends Controller
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('bulletins', 'public');
+            // Only allow relative paths under bulletins/
+            if (! is_string($path) || ! str_starts_with($path, 'bulletins/')) {
+                abort(422, 'Upload gambar gagal.');
+            }
             $validated['image'] = $path;
         }
 
         $validated['user_id'] = $user->id;
 
+        $bulletin = new Bulletin($validated);
+
         if ($user->isAdmin()) {
-            $validated['approval_status'] = 'approved';
-            $validated['approved_by'] = $user->id;
-            $validated['approved_at'] = now();
+            $bulletin->forceFill([
+                'approval_status' => 'approved',
+                'approved_by' => $user->id,
+                'approved_at' => now(),
+            ]);
         } else {
-            $validated['approval_status'] = 'pending';
-            $validated['approved_by'] = null;
-            $validated['approved_at'] = null;
-            $validated['rejected_by'] = null;
-            $validated['rejected_at'] = null;
-            $validated['rejection_reason'] = null;
-            $validated['published_at'] = null;
+            $bulletin->forceFill([
+                'approval_status' => 'pending',
+                'approved_by' => null,
+                'approved_at' => null,
+                'rejected_by' => null,
+                'rejected_at' => null,
+                'rejection_reason' => null,
+                'published_at' => null,
+            ]);
         }
 
-        Bulletin::create($validated);
+        $bulletin->save();
 
         $message = $user->isAdmin()
             ? 'Buletin berhasil dipublikasikan.'
@@ -90,8 +100,8 @@ class BulletinController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'content' => 'required',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'content' => 'required|string|max:20000',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'category_id' => 'required|exists:categories,id',
             'published_at' => 'nullable|date',
         ]);
@@ -99,24 +109,31 @@ class BulletinController extends Controller
         $validated['content'] = strip_tags($validated['content']);
 
         if ($request->hasFile('image')) {
-            if ($bulletin->image) {
+            if ($bulletin->image && str_starts_with((string) $bulletin->image, 'bulletins/')) {
                 Storage::disk('public')->delete($bulletin->image);
             }
             $path = $request->file('image')->store('bulletins', 'public');
+            if (! is_string($path) || ! str_starts_with($path, 'bulletins/')) {
+                abort(422, 'Upload gambar gagal.');
+            }
             $validated['image'] = $path;
         }
 
+        $bulletin->fill($validated);
+
         if (! $user->isAdmin()) {
-            $validated['approval_status'] = 'pending';
-            $validated['approved_by'] = null;
-            $validated['approved_at'] = null;
-            $validated['rejected_by'] = null;
-            $validated['rejected_at'] = null;
-            $validated['rejection_reason'] = null;
-            $validated['published_at'] = null;
+            $bulletin->forceFill([
+                'approval_status' => 'pending',
+                'approved_by' => null,
+                'approved_at' => null,
+                'rejected_by' => null,
+                'rejected_at' => null,
+                'rejection_reason' => null,
+                'published_at' => null,
+            ]);
         }
 
-        $bulletin->update($validated);
+        $bulletin->save();
 
         $message = $user->isAdmin()
             ? 'Buletin berhasil diperbarui.'
@@ -143,7 +160,7 @@ class BulletinController extends Controller
                 ->with('success', 'Buletin sudah diproses sebelumnya.');
         }
 
-        $bulletin->update([
+        $bulletin->forceFill([
             'approval_status' => 'approved',
             'approved_by' => Auth::id(),
             'approved_at' => now(),
@@ -151,7 +168,7 @@ class BulletinController extends Controller
             'rejected_at' => null,
             'rejection_reason' => null,
             'published_at' => $bulletin->published_at ?? now(),
-        ]);
+        ])->save();
 
         return redirect()->route('bulletins.index')
             ->with('success', 'Buletin berhasil di-ACC dan dipublikasikan.');
@@ -164,14 +181,14 @@ class BulletinController extends Controller
                 ->with('success', 'Buletin sudah diproses sebelumnya.');
         }
 
-        $bulletin->update([
+        $bulletin->forceFill([
             'approval_status' => 'rejected',
             'rejected_by' => Auth::id(),
             'rejected_at' => now(),
             'approved_by' => null,
             'approved_at' => null,
             'published_at' => null,
-        ]);
+        ])->save();
 
         return redirect()->route('bulletins.index')
             ->with('success', 'Buletin ditolak.');

@@ -20,7 +20,7 @@ class ProxmoxServerController extends Controller
             'user' => 'root@pam',
             'storage' => 'local-zfs',
             'bridge' => 'vmbr0',
-            'verify_ssl' => false,
+            'verify_ssl' => true,
         ];
 
         // host query boleh IP saja → wrap ke URL API
@@ -38,7 +38,7 @@ class ProxmoxServerController extends Controller
     {
         $data = $this->validated($request);
         $data['is_active'] = $request->boolean('is_active', true);
-        $data['verify_ssl'] = $request->boolean('verify_ssl', false);
+        $data['verify_ssl'] = $request->boolean('verify_ssl', true);
         $data['host'] = rtrim($data['host'], '/');
 
         $server = ProxmoxServer::create($data);
@@ -70,7 +70,7 @@ class ProxmoxServerController extends Controller
     {
         $data = $this->validated($request, $proxmoxServer);
         $data['is_active'] = $request->boolean('is_active', false);
-        $data['verify_ssl'] = $request->boolean('verify_ssl', false);
+        $data['verify_ssl'] = $request->boolean('verify_ssl', true);
         $data['host'] = rtrim($data['host'], '/');
 
         // Password kosong = biarkan yang lama
@@ -112,18 +112,18 @@ class ProxmoxServerController extends Controller
 
         return $request->validate([
             'name' => 'required|string|max:100',
-            'host' => 'required|string|max:255|regex:/^https?:\/\/.+/i',
-            'user' => 'required|string|max:100',
+            'host' => 'required|string|max:255|regex:/^https:\/\/.+/i',
+            'user' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9@._-]+$/'],
             'password' => $passwordRule,
-            'node' => 'nullable|string|max:64',
-            'storage' => 'required|string|max:64',
-            'bridge' => 'required|string|max:64',
+            'node' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9][A-Za-z0-9._-]*$/'],
+            'storage' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9][A-Za-z0-9._-]*$/'],
+            'bridge' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9][A-Za-z0-9._-]*$/'],
             'template_vmid' => 'nullable|integer|min:100|max:999999999',
             'verify_ssl' => 'boolean',
             'is_active' => 'boolean',
             'notes' => 'nullable|string|max:2000',
         ], [
-            'host.regex' => 'Host harus full URL, contoh: https://192.168.1.10:8006',
+            'host.regex' => 'Host harus full HTTPS URL, contoh: https://192.168.1.10:8006',
         ]);
     }
 }

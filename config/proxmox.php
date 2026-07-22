@@ -26,7 +26,8 @@ return [
 
     'bridge' => env('PROXMOX_BRIDGE', 'vmbr0'),
 
-    'verify_ssl' => filter_var(env('PROXMOX_VERIFY_SSL', false), FILTER_VALIDATE_BOOLEAN),
+    // Default true. Set PROXMOX_VERIFY_SSL=false only for lab certs (self-signed).
+    'verify_ssl' => filter_var(env('PROXMOX_VERIFY_SSL', true), FILTER_VALIDATE_BOOLEAN),
 
     'template_vmid' => env('PROXMOX_TEMPLATE_VMID'),
 

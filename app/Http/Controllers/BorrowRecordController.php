@@ -90,11 +90,11 @@ class BorrowRecordController extends Controller
             'user_name' => 'required|string|max:255',
             'user_id_number' => 'required|string|max:255',
             'inventory_item_id' => 'required|exists:inventory_items,id',
-            'quantity' => 'required|integer|min:1',
+            'quantity' => 'required|integer|min:1|max:1000',
             'borrowed_at' => 'required|date',
             'due_at' => 'nullable|date|after_or_equal:borrowed_at',
-            'purpose' => 'required|string',
-            'notes' => 'nullable|string',
+            'purpose' => 'required|string|max:2000',
+            'notes' => 'nullable|string|max:2000',
             'request_pdf' => 'required|file|mimes:pdf|max:5120',
         ]);
 
@@ -119,7 +119,7 @@ class BorrowRecordController extends Controller
                 ]);
             }
 
-            BorrowRecord::create([
+            $record = new BorrowRecord([
                 'inventory_item_id' => $item->id,
                 'user_name' => $validated['user_name'],
                 'user_id_number' => $validated['user_id_number'],
@@ -129,11 +129,13 @@ class BorrowRecordController extends Controller
                 'purpose' => $validated['purpose'],
                 'notes' => $validated['notes'] ?? null,
                 'request_pdf_path' => $requestPdfPath,
+            ]);
+            $record->forceFill([
                 'status' => $isAdmin ? 'dipinjam' : 'menunggu',
                 'approval_status' => $isAdmin ? 'approved' : 'pending',
                 'approved_by' => $isAdmin ? $user->id : null,
                 'approved_at' => $isAdmin ? now() : null,
-            ]);
+            ])->save();
 
             if ($isAdmin) {
                 $item->decrement('available_stock', (int) $validated['quantity']);
@@ -169,7 +171,7 @@ class BorrowRecordController extends Controller
                 ]);
             }
 
-            $borrowRecord->update([
+            $borrowRecord->forceFill([
                 'approval_status' => 'approved',
                 'approved_by' => Auth::id(),
                 'approved_at' => now(),
@@ -179,7 +181,7 @@ class BorrowRecordController extends Controller
                 'rejected_at' => null,
                 'rejection_reason' => null,
                 'status' => 'dipinjam',
-            ]);
+            ])->save();
 
             $item->decrement('available_stock', (int) $borrowRecord->quantity);
         });
@@ -187,11 +189,11 @@ class BorrowRecordController extends Controller
         $borrowRecord->refresh()->loadMissing('inventoryItem');
         $approvalPdf = $this->generateApprovalPdf($borrowRecord);
 
-        $borrowRecord->update([
+        $borrowRecord->forceFill([
             'approval_pdf_path' => $approvalPdf['path'],
             'approval_pdf_md5' => $approvalPdf['md5'],
             'approval_pdf_sha256' => $approvalPdf['sha256'],
-        ]);
+        ])->save();
 
         return redirect()->route('borrow_records.index')->with('success', 'Peminjaman berhasil di-ACC.');
     }
@@ -204,14 +206,14 @@ class BorrowRecordController extends Controller
             return redirect()->route('borrow_records.index')->with('success', 'Status peminjaman sudah diproses sebelumnya.');
         }
 
-        $borrowRecord->update([
+        $borrowRecord->forceFill([
             'approval_status' => 'rejected',
             'approved_by' => null,
             'approved_at' => null,
             'rejected_by' => Auth::id(),
             'rejected_at' => now(),
             'status' => 'ditolak',
-        ]);
+        ])->save();
 
         return redirect()->route('borrow_records.index')->with('success', 'Peminjaman ditolak.');
     }
@@ -297,6 +299,15 @@ class BorrowRecordController extends Controller
 
     private function downloadBorrowPdf(string $path, string $downloadName)
     {
+        // Reject path traversal / absolute paths.
+        if ($path === '' || str_contains($path, '..') || str_starts_with($path, '/') || str_contains($path, '\\')) {
+            abort(404);
+        }
+
+        if (! str_starts_with($path, 'borrow-records/')) {
+            abort(404);
+        }
+
         // Prefer private disk; fall back to legacy public files during migration.
         if (Storage::disk('local')->exists($path)) {
             return Storage::disk('local')->download($path, $downloadName);

@@ -30,9 +30,9 @@ class AnsibleService
         $result = $this->runPlaybook($playbook, $extraVars);
 
         if (!$result['success']) {
-            $request->update([
-                'admin_notes' => 'Gagal membuat VM otomatis: ' . substr($result['output'], 0, 500),
-            ]);
+            $request->forceFill([
+                'admin_notes' => 'Gagal membuat VM otomatis: '.substr($result['output'], 0, 500),
+            ])->save();
             Log::error('Ansible create VM failed', [
                 'request_id' => $request->id,
                 'output' => $result['output'],
@@ -51,9 +51,18 @@ class AnsibleService
         $vmId = $this->getVmIdFromRequest($request);
 
         $playbook = $this->ansibleDir . '/playbooks/destroy-vm.yml';
+        if ($vmId === null || ! ctype_digit((string) $vmId)) {
+            return [
+                'success' => false,
+                'output' => 'VM ID tidak ditemukan atau tidak valid.',
+                'ip_address' => null,
+                'return_code' => 1,
+            ];
+        }
+
         $extraVars = [
-            'vm_id' => $vmId,
-            'request_id' => $request->id,
+            'vm_id' => (int) $vmId,
+            'request_id' => (int) $request->id,
         ];
 
         $result = $this->runPlaybook($playbook, $extraVars);
@@ -73,46 +82,86 @@ class AnsibleService
      */
     protected function buildExtraVars(VmBorrowRequest $request): array
     {
+        $username = $this->sanitizeVmUsername($request->vm_username ?? 'student');
+        $password = $request->vm_password ?: bin2hex(random_bytes(12));
+
+        if (strlen($password) < 8 || strlen($password) > 128) {
+            throw new RuntimeException('Password VM tidak valid untuk provisioning.');
+        }
+
         return [
-            'request_id' => $request->id,
-            'os_type' => $request->os_type,
-            'os_version' => $request->os_version,
-            'vm_username' => $request->vm_username ?? 'student',
-            'vm_password' => $request->vm_password ?? bin2hex(random_bytes(8)),
+            'request_id' => (int) $request->id,
+            'os_type' => in_array($request->os_type, ['debian', 'ubuntu'], true) ? $request->os_type : 'ubuntu',
+            'os_version' => preg_replace('/[^0-9.]/', '', (string) $request->os_version) ?: '24.04',
+            'vm_username' => $username,
+            'vm_password' => $password,
             'ssh_public_key' => $this->sshPublicKey,
-            'vm_memory_mb' => config('ansible.vm_memory_mb', 2048),
-            'vm_cores_count' => config('ansible.vm_cores', 2),
-            'vm_disk_size_gb' => config('ansible.vm_disk_gb', 20),
-            'vm_network_bridge' => config('ansible.vm_bridge', 'vmbr0'),
+            'vm_memory_mb' => (int) config('ansible.vm_memory_mb', 2048),
+            'vm_cores_count' => (int) config('ansible.vm_cores', 2),
+            'vm_disk_size_gb' => (int) config('ansible.vm_disk_gb', 20),
+            'vm_network_bridge' => preg_replace('/[^A-Za-z0-9._-]/', '', (string) config('ansible.vm_bridge', 'vmbr0')) ?: 'vmbr0',
             'proxmox_host' => config('ansible.proxmox_host', 'localhost'),
-            'proxmox_node_name' => config('ansible.proxmox_node', 'pve'),
-            'vm_storage_name' => config('ansible.vm_storage', 'local-zfs'),
+            'proxmox_node_name' => preg_replace('/[^A-Za-z0-9._-]/', '', (string) config('ansible.proxmox_node', 'pve')) ?: 'pve',
+            'vm_storage_name' => preg_replace('/[^A-Za-z0-9._-]/', '', (string) config('ansible.vm_storage', 'local-zfs')) ?: 'local-zfs',
             'ssh_key_path' => config('ansible.ssh_key_path', '/root/.ssh/id_rsa'),
         ];
     }
 
     /**
-     * Eksekusi Ansible playbook via CLI.
+     * Username Linux aman (huruf kecil, angka, underscore/dash).
+     */
+    protected function sanitizeVmUsername(?string $username): string
+    {
+        $username = strtolower(trim((string) $username));
+        if ($username === '' || ! preg_match('/^[a-z_][a-z0-9_-]{0,31}$/', $username)) {
+            return 'student';
+        }
+
+        return $username;
+    }
+
+    /**
+     * Eksekusi Ansible playbook via CLI (proc_open, tanpa shell interpolation).
      */
     protected function runPlaybook(string $playbook, array $extraVars): array
     {
-        $inventory = escapeshellarg($this->inventoryFile);
-        $playbookEscaped = escapeshellarg($playbook);
-        $ansibleCfg = escapeshellarg($this->ansibleDir . '/ansible.cfg');
-        $extraVarsJson = escapeshellarg(json_encode($extraVars, JSON_UNESCAPED_SLASHES));
+        if (! is_file($playbook) || ! str_starts_with(realpath($playbook) ?: '', realpath($this->ansibleDir) ?: $this->ansibleDir)) {
+            throw new RuntimeException('Playbook Ansible tidak valid.');
+        }
 
-        // Single-level escaping only — do not wrap escapeshellarg() output again.
-        $command = 'ANSIBLE_CONFIG='.$ansibleCfg
-            .' ansible-playbook -i '.$inventory
-            .' '.$playbookEscaped
-            .' --extra-vars '.$extraVarsJson
-            .' 2>&1';
+        $env = array_merge($_ENV, [
+            'ANSIBLE_CONFIG' => $this->ansibleDir.DIRECTORY_SEPARATOR.'ansible.cfg',
+            'PATH' => getenv('PATH') ?: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+        ]);
 
-        $output = [];
-        $returnCode = 0;
-        exec($command, $output, $returnCode);
+        $cmd = [
+            'ansible-playbook',
+            '-i', $this->inventoryFile,
+            $playbook,
+            '--extra-vars', json_encode($extraVars, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
+        ];
 
-        $outputStr = implode("\n", $output);
+        $descriptors = [
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ];
+
+        $process = proc_open($cmd, $descriptors, $pipes, $this->ansibleDir, $env);
+
+        if (! is_resource($process)) {
+            throw new RuntimeException('Gagal menjalankan ansible-playbook.');
+        }
+
+        fclose($pipes[0]);
+        $stdout = stream_get_contents($pipes[1]) ?: '';
+        $stderr = stream_get_contents($pipes[2]) ?: '';
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        $returnCode = proc_close($process);
+
+        $outputStr = trim($stdout.($stderr !== '' ? "\n".$stderr : ''));
+        $output = $outputStr === '' ? [] : preg_split("/\r\n|\n|\r/", $outputStr);
 
         // Parse output untuk mendapatkan IP address
         $ipAddress = null;
@@ -162,10 +211,20 @@ class AnsibleService
             mkdir($keyDir, 0700, true);
         }
 
-        $keyPathEscaped = escapeshellarg($keyPath);
-        exec("ssh-keygen -t ed25519 -f {$keyPathEscaped} -N '' -q", $output, $rc);
-        if ($rc === 0 && file_exists($keyPath)) {
-            return trim(file_get_contents($keyPath));
+        $cmd = ['ssh-keygen', '-t', 'ed25519', '-f', $keyPath, '-N', '', '-q'];
+        $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+        $process = proc_open($cmd, $descriptors, $pipes, null, null);
+
+        if (is_resource($process)) {
+            fclose($pipes[0]);
+            stream_get_contents($pipes[1]);
+            stream_get_contents($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            $rc = proc_close($process);
+            if ($rc === 0 && file_exists($keyPath)) {
+                return trim((string) file_get_contents($keyPath));
+            }
         }
 
         return '';

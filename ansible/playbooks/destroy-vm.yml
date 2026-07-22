@@ -6,9 +6,19 @@
     vm_id_to_destroy: "{{ vm_id }}"
 
   tasks:
+    - name: Validate destroy inputs
+      assert:
+        that:
+          - (vm_id_to_destroy | string) is match('^[0-9]+$')
+          - (request_id | string) is match('^[0-9]+$')
+        fail_msg: "VM ID / request_id tidak valid."
+
     - name: Stop VM if running
-      command: >
-        qm stop {{ vm_id_to_destroy }}
+      command:
+        argv:
+          - qm
+          - stop
+          - "{{ vm_id_to_destroy | string }}"
       register: vm_stop
       failed_when: false
       changed_when: "'stopped' in vm_stop.stdout"
@@ -19,8 +29,12 @@
       when: vm_stop.changed
 
     - name: Destroy VM
-      command: >
-        qm destroy {{ vm_id_to_destroy }} --purge
+      command:
+        argv:
+          - qm
+          - destroy
+          - "{{ vm_id_to_destroy | string }}"
+          - "--purge"
       register: vm_destroy
       changed_when: vm_destroy.rc == 0
       failed_when: vm_destroy.rc != 0

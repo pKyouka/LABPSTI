@@ -61,7 +61,7 @@ class LabUsageRecordController extends Controller
             'category_id' => 'required|exists:categories,id',
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after_or_equal:start_time',
-            'purpose' => 'required|string',
+            'purpose' => 'required|string|max:2000',
         ]);
 
         if (! $user->isAdmin()) {

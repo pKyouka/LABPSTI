@@ -120,7 +120,7 @@ class ProxmoxService
 
     public function getNodeStatus(string $node): array
     {
-        return $this->get("nodes/{$node}/status") ?? [];
+        return $this->get('nodes/'.$this->safeSegment($node).'/status') ?? [];
     }
 
     /**
@@ -164,20 +164,20 @@ class ProxmoxService
 
     public function getVmStatus(string $node, int $vmid, string $type = 'qemu'): array
     {
-        $path = $type === 'lxc'
-            ? "nodes/{$node}/lxc/{$vmid}/status/current"
-            : "nodes/{$node}/qemu/{$vmid}/status/current";
+        $node = $this->safeSegment($node);
+        $type = $this->safeVmType($type);
+        $vmid = $this->safeVmid($vmid);
 
-        return $this->get($path) ?? [];
+        return $this->get("nodes/{$node}/{$type}/{$vmid}/status/current") ?? [];
     }
 
     public function getVmConfig(string $node, int $vmid, string $type = 'qemu'): array
     {
-        $path = $type === 'lxc'
-            ? "nodes/{$node}/lxc/{$vmid}/config"
-            : "nodes/{$node}/qemu/{$vmid}/config";
+        $node = $this->safeSegment($node);
+        $type = $this->safeVmType($type);
+        $vmid = $this->safeVmid($vmid);
 
-        return $this->get($path) ?? [];
+        return $this->get("nodes/{$node}/{$type}/{$vmid}/config") ?? [];
     }
 
     /**
@@ -185,14 +185,14 @@ class ProxmoxService
      */
     public function createVm(array $params): array
     {
-        $node = $params['node'] ?? $this->defaultNode();
-        $vmid = $params['vmid'] ?? $this->getNextId();
-        $name = $params['name'] ?? ('vm-'.$vmid);
-        $cores = (int) ($params['cores'] ?? config('proxmox.defaults.cores'));
-        $memory = (int) ($params['memory'] ?? config('proxmox.defaults.memory'));
-        $diskGb = (int) ($params['disk'] ?? config('proxmox.defaults.disk'));
-        $storage = $params['storage'] ?? $this->defaultStorage();
-        $bridge = $params['bridge'] ?? $this->defaultBridge();
+        $node = $this->safeSegment($params['node'] ?? $this->defaultNode());
+        $vmid = isset($params['vmid']) ? $this->safeVmid($params['vmid']) : $this->getNextId();
+        $name = $this->safeVmName($params['name'] ?? ('vm-'.$vmid));
+        $cores = max(1, min(128, (int) ($params['cores'] ?? config('proxmox.defaults.cores'))));
+        $memory = max(512, min(1048576, (int) ($params['memory'] ?? config('proxmox.defaults.memory'))));
+        $diskGb = max(1, min(10240, (int) ($params['disk'] ?? config('proxmox.defaults.disk'))));
+        $storage = $this->safeSegment($params['storage'] ?? $this->defaultStorage());
+        $bridge = $this->safeSegment($params['bridge'] ?? $this->defaultBridge());
 
         $body = [
             'vmid' => $vmid,
@@ -202,20 +202,15 @@ class ProxmoxService
             'scsihw' => 'virtio-scsi-pci',
             'scsi0' => "{$storage}:{$diskGb}",
             'net0' => "virtio,bridge={$bridge}",
-            'ostype' => $params['ostype'] ?? 'l26',
-            'agent' => $params['agent'] ?? '1',
+            'ostype' => 'l26',
+            'agent' => '1',
         ];
 
-        if (! empty($params['iso'])) {
-            // format: local:iso/debian-12.iso,media=cdrom
-            $body['ide2'] = $params['iso'].',media=cdrom';
-            $body['boot'] = 'order=ide2;scsi0';
-        } else {
-            $body['boot'] = 'order=scsi0';
-        }
+        // ISO path not accepted from user input (path injection risk).
+        $body['boot'] = 'order=scsi0';
 
         if (! empty($params['description'])) {
-            $body['description'] = $params['description'];
+            $body['description'] = mb_substr((string) $params['description'], 0, 500);
         }
 
         $upid = $this->post("nodes/{$node}/qemu", $body);
@@ -233,28 +228,28 @@ class ProxmoxService
      */
     public function cloneTemplate(array $params): array
     {
-        $node = $params['node'] ?? $this->defaultNode();
-        $templateId = (int) ($params['template_vmid'] ?? $this->defaultTemplateVmid());
+        $node = $this->safeSegment($params['node'] ?? $this->defaultNode());
+        $templateId = $this->safeVmid($params['template_vmid'] ?? $this->defaultTemplateVmid());
 
         if (! $templateId) {
             throw new RuntimeException('Template VMID belum dikonfigurasi di server Proxmox ini.');
         }
 
-        $vmid = $params['vmid'] ?? $this->getNextId();
-        $name = $params['name'] ?? ('vm-'.$vmid);
+        $vmid = isset($params['vmid']) ? $this->safeVmid($params['vmid']) : $this->getNextId();
+        $name = $this->safeVmName($params['name'] ?? ('vm-'.$vmid));
 
         $body = [
             'newid' => $vmid,
             'name' => $name,
-            'full' => $params['full'] ?? 1,
+            'full' => 1,
             'target' => $node,
         ];
 
         if (! empty($params['description'])) {
-            $body['description'] = $params['description'];
+            $body['description'] = mb_substr((string) $params['description'], 0, 500);
         }
 
-        $storage = $params['storage'] ?? $this->defaultStorage();
+        $storage = $this->safeSegment($params['storage'] ?? $this->defaultStorage());
         if ($storage) {
             $body['storage'] = $storage;
         }
@@ -262,8 +257,8 @@ class ProxmoxService
         $upid = $this->post("nodes/{$node}/qemu/{$templateId}/clone", $body);
 
         // Resize resources after clone (async — best-effort)
-        $cores = $params['cores'] ?? null;
-        $memory = $params['memory'] ?? null;
+        $cores = isset($params['cores']) ? max(1, min(128, (int) $params['cores'])) : null;
+        $memory = isset($params['memory']) ? max(512, min(1048576, (int) $params['memory'])) : null;
         if ($cores || $memory) {
             $config = array_filter([
                 'cores' => $cores,
@@ -287,21 +282,37 @@ class ProxmoxService
 
     public function startVm(string $node, int $vmid, string $type = 'qemu'): mixed
     {
+        $node = $this->safeSegment($node);
+        $type = $this->safeVmType($type);
+        $vmid = $this->safeVmid($vmid);
+
         return $this->post("nodes/{$node}/{$type}/{$vmid}/status/start");
     }
 
     public function stopVm(string $node, int $vmid, string $type = 'qemu'): mixed
     {
+        $node = $this->safeSegment($node);
+        $type = $this->safeVmType($type);
+        $vmid = $this->safeVmid($vmid);
+
         return $this->post("nodes/{$node}/{$type}/{$vmid}/status/stop");
     }
 
     public function shutdownVm(string $node, int $vmid, string $type = 'qemu'): mixed
     {
+        $node = $this->safeSegment($node);
+        $type = $this->safeVmType($type);
+        $vmid = $this->safeVmid($vmid);
+
         return $this->post("nodes/{$node}/{$type}/{$vmid}/status/shutdown");
     }
 
     public function rebootVm(string $node, int $vmid, string $type = 'qemu'): mixed
     {
+        $node = $this->safeSegment($node);
+        $type = $this->safeVmType($type);
+        $vmid = $this->safeVmid($vmid);
+
         return $this->post("nodes/{$node}/{$type}/{$vmid}/status/reboot");
     }
 
@@ -310,6 +321,10 @@ class ProxmoxService
      */
     public function deleteVm(string $node, int $vmid, string $type = 'qemu', bool $purge = true): mixed
     {
+        $node = $this->safeSegment($node);
+        $type = $this->safeVmType($type);
+        $vmid = $this->safeVmid($vmid);
+
         try {
             $status = $this->getVmStatus($node, $vmid, $type);
             if (($status['status'] ?? '') === 'running') {
@@ -553,5 +568,43 @@ class ProxmoxService
         $id = $this->server?->id ?? 'env';
 
         return 'proxmox.ticket.'.$id.'.'.md5($this->baseUrl.'|'.$this->user);
+    }
+
+    /**
+     * Path segment aman untuk API Proxmox (node/storage/bridge names).
+     */
+    protected function safeSegment(?string $value): string
+    {
+        $value = trim((string) $value);
+        if ($value === '' || ! preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/', $value)) {
+            throw new RuntimeException('Nama node/storage/bridge Proxmox tidak valid.');
+        }
+
+        return $value;
+    }
+
+    protected function safeVmType(string $type): string
+    {
+        return in_array($type, ['qemu', 'lxc'], true) ? $type : throw new RuntimeException('Tipe VM tidak valid.');
+    }
+
+    protected function safeVmid(int|string|null $vmid): int
+    {
+        $id = (int) $vmid;
+        if ($id < 100 || $id > 999_999_999) {
+            throw new RuntimeException('VMID Proxmox tidak valid.');
+        }
+
+        return $id;
+    }
+
+    protected function safeVmName(string $name): string
+    {
+        $name = trim($name);
+        if ($name === '' || ! preg_match('/^[A-Za-z0-9][A-Za-z0-9.\-_]{0,63}$/', $name)) {
+            throw new RuntimeException('Nama VM Proxmox tidak valid.');
+        }
+
+        return $name;
     }
 }

@@ -347,7 +347,7 @@ class ProxmoxController extends Controller
             'storage' => (string) config('proxmox.storage', 'local-zfs'),
             'bridge' => (string) config('proxmox.bridge', 'vmbr0'),
             'template_vmid' => config('proxmox.template_vmid') ?: null,
-            'verify_ssl' => (bool) config('proxmox.verify_ssl', false),
+            'verify_ssl' => (bool) config('proxmox.verify_ssl', true),
             'is_active' => true,
             'notes' => 'Diimpor otomatis dari .env',
         ]);
