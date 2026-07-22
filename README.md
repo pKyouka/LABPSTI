@@ -1,59 +1,164 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# LABPSTI
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem informasi laboratorium Program Studi Teknologi Informasi — **UNISA Yogyakarta**.
 
-## About Laravel
+Mengelola inventaris alat, peminjaman barang, penggunaan lab, buletin lab, serta peminjaman & provisioning Virtual Machine (Proxmox).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Fitur
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Modul | Deskripsi |
+|--------|-----------|
+| **Landing & lab publik** | Halaman beranda, inventaris publik, kabar berita, status host VM |
+| **Inventaris** | CRUD barang lab, stok, kategori, riwayat pinjam |
+| **Peminjaman alat** | Pengajuan + ACC admin, PDF surat, pengembalian stok |
+| **Penggunaan lab** | Catatan pemakaian lab per kategori |
+| **Buletin** | Konten lab (mahasiswa ajukan → admin ACC) |
+| **Peminjaman VM** | Request OS, review, kredensial, alokasi resource host |
+| **Service request VM** | Port, software, storage, reset, dsb. |
+| **Proxmox** | Multi-server, sync host, power VM, clone/create |
+| **Laporan** | Harian / mingguan / bulanan + export Excel/PDF |
+| **User & notifikasi** | Role admin/mahasiswa, notifikasi in-app |
 
-## Learning Laravel
+### Role
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- **Admin** — full akses (ACC, Proxmox, user, laporan, inventaris)
+- **Mahasiswa** — login SSO UNISA / NIM; ajukan pinjam alat, lab usage, VM, buletin
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## Stack
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+| Layer | Teknologi |
+|--------|-----------|
+| Backend | PHP 8.2+, Laravel 12 |
+| Frontend | Blade, Tailwind CSS, Alpine.js, Vite |
+| Auth | Session + SSO eksternal UNISA (`loginall.php`) + admin lokal |
+| DB | MySQL / MariaDB (sqlite opsional dev) |
+| PDF / Excel | DomPDF, PhpSpreadsheet |
+| Infra VM | Proxmox API, Ansible playbook (opsional) |
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Setup lokal
 
-## Contributing
+### Prasyarat
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- PHP 8.2+ (ext: `mbstring`, `openssl`, `pdo`, `tokenizer`, `xml`, `ctype`, `json`, `bcmath`, `fileinfo`)
+- Composer 2
+- Node.js 18+ & npm
+- MySQL/MariaDB **atau** SQLite
 
-## Code of Conduct
+### Instalasi
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+git clone <repo-url> LABPSTI
+cd LABPSTI
 
-## Security Vulnerabilities
+composer install
+cp .env.example .env
+php artisan key:generate
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# sesuaikan DB di .env, lalu:
+php artisan migrate
+php artisan db:seed          # opsional — admin default & data demo
 
-## License
+npm install
+npm run build                # atau: npm run dev
+php artisan serve
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Buka `http://localhost:8000`.
+
+### Akun seed (jika pakai seeder)
+
+| Role | Kredensial tipikal |
+|------|--------------------|
+| Admin | email `@lab.com` + password dari seeder |
+| Mahasiswa | lewat SSO / NIM eksternal |
+
+> Ganti password default seeder sebelum dipakai di lingkungan bersama.
+
+---
+
+## Konfigurasi penting (`.env`)
+
+| Variabel | Kegunaan |
+|----------|----------|
+| `APP_ENV` / `APP_DEBUG` | Production: `production` / `false` |
+| `APP_URL` | URL publik (pakai `https://…` di production) |
+| `UNISA_AUTH_LOGIN_URL` | Endpoint login eksternal |
+| `SIMLITABMAS_*` | DB view mahasiswa (nama dari NIM) |
+| `SESSION_ENCRYPT` | Default `true` |
+| `SESSION_SECURE_COOKIE` | `true` di HTTPS |
+| `PROXMOX_*` | Fallback legacy; kredensial utama di menu **Host & Proxmox** (DB, encrypted) |
+
+Lihat `.env.example` untuk daftar lengkap.
+
+---
+
+## Deploy
+
+Workflow GitHub Actions (`.github/workflows/deploy.yml`) pull + `composer install` + `npm run build` + `migrate` lewat SSH.
+
+Checklist production singkat:
+
+1. `APP_DEBUG=false`, `APP_ENV=production`
+2. HTTPS + `SESSION_SECURE_COOKIE=true`
+3. Secret di server env / secret manager — **jangan commit `.env`**
+4. `php artisan config:cache` & `route:cache` setelah deploy
+5. Rotate password Proxmox/DB jika pernah bocor di mesin dev
+
+---
+
+## Keamanan (ringkas)
+
+Sudah diterapkan di codebase:
+
+- Mass assignment ketat (status/approval/kredensial lewat `forceFill` di controller)
+- Rate limit login & reset password
+- Security headers (CSP, X-Frame, nosniff, HSTS di HTTPS)
+- Session encryption default on
+- Validasi ketat username/password VM & path API Proxmox
+- Ansible lewat `proc_open` + sanitize input (bukan string shell mentah)
+- PDF peminjaman di disk private + cek path traversal
+- Password Proxmox & VM di DB: cast `encrypted`
+
+Unit check sanitizer: `php vendor/phpunit/phpunit/phpunit --filter SecurityHelpersTest`
+
+---
+
+## Struktur singkat
+
+```
+app/
+  Http/Controllers/   # web controllers
+  Models/             # Eloquent
+  Services/           # ProxmoxService, AnsibleService
+  Notifications/      # notifikasi in-app
+ansible/              # playbook create/destroy VM
+resources/views/      # Blade UI
+routes/web.php        # rute publik + auth + admin
+```
+
+---
+
+## Perintah berguna
+
+```bash
+php artisan migrate
+php artisan db:seed
+php artisan serve
+npm run dev              # HMR Vite
+npm run build
+php artisan test         # butuh driver DB test (sqlite/mysql)
+./vendor/bin/pint        # format PHP
+```
+
+---
+
+## Lisensi
+
+Kode aplikasi laboratorium UNISA — penggunaan internal sesuai kebijakan institusi.  
+Framework Laravel berlisensi [MIT](https://opensource.org/licenses/MIT).
