@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 class SecurityHeaders
@@ -21,16 +22,23 @@ class SecurityHeaders
         $response->headers->remove('X-Powered-By');
 
         if (! $response->headers->has('Content-Security-Policy')) {
-            $csp  = "default-src 'self'; ";
-            $csp .= "script-src 'self' 'unsafe-inline'; ";
-            $csp .= "style-src 'self' 'unsafe-inline' https://fonts.bunny.net; ";
-            $csp .= "img-src 'self' data: blob: https://fonts.bunny.net; ";
-            $csp .= "font-src 'self' data: https://fonts.bunny.net; ";
-            $csp .= "connect-src 'self'; ";
-            $csp .= "frame-ancestors 'self'; ";
-            $csp .= "base-uri 'self'; ";
-            $csp .= "form-action 'self'";
-            $response->headers->set('Content-Security-Policy', $csp);
+            // DEV: disable CSP entirely to avoid false-positives with Alpine.js / Vite HMR
+            if (app()->environment('local')) {
+                // no CSP in dev
+            } else {
+                $nonce = 'nonce-' . Str::random(32);
+                $csp  = "default-src 'self'; ";
+                $csp .= "script-src 'self' 'unsafe-inline' {$nonce}; ";
+                $csp .= "style-src 'self' 'unsafe-inline' https://fonts.bunny.net; ";
+                $csp .= "img-src 'self' data: blob: https://fonts.bunny.net; ";
+                $csp .= "font-src 'self' data: https://fonts.bunny.net; ";
+                $csp .= "connect-src 'self' https://fonts.bunny.net; ";
+                $csp .= "frame-ancestors 'self'; ";
+                $csp .= "base-uri 'self'; ";
+                $csp .= "form-action 'self'";
+                $response->headers->set('Content-Security-Policy', $csp);
+                $response->headers->set('Content-Security-Policy-Nonce', $nonce);
+            }
         }
 
         if ($request->secure()) {
