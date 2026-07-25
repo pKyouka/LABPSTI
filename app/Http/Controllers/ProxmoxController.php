@@ -19,22 +19,24 @@ class ProxmoxController extends Controller
 
         $servers = ProxmoxServer::orderBy('name')->get();
         $filterHost = $request->query('host');
-
         $activeServer = $this->resolveServer($request, $servers);
         $configured = (bool) $activeServer;
-
         $error = null;
         $connection = null;
         $nodes = [];
         $vms = [];
+
         $hostsByName = VmHost::orderBy('name')->get()->keyBy(fn (VmHost $h) => strtolower($h->name));
 
         if ($activeServer) {
             $svc = $this->proxmox->forServer($activeServer);
+
             try {
                 $connection = $svc->testConnection();
+
                 $nodes = collect($svc->getNodes())->map(function (array $n) use ($svc, $hostsByName) {
                     $status = [];
+
                     try {
                         $status = $svc->getNodeStatus($n['node']);
                     } catch (\Throwable) {
@@ -69,6 +71,7 @@ class ProxmoxController extends Controller
         }
 
         $nodeNames = collect($nodes)->pluck('name')->map(fn ($n) => strtolower($n))->all();
+
         $orphanHosts = $hostsByName
             ->reject(fn (VmHost $h) => in_array(strtolower($h->name), $nodeNames, true))
             ->values();
@@ -81,9 +84,16 @@ class ProxmoxController extends Controller
         }
 
         return view('proxmox.index', compact(
-            'servers', 'activeServer', 'configured',
-            'connection', 'nodes', 'vms', 'error',
-            'hostsByName', 'orphanHosts', 'filterHost'
+            'servers',
+            'activeServer',
+            'configured',
+            'connection',
+            'nodes',
+            'vms',
+            'error',
+            'hostsByName',
+            'orphanHosts',
+            'filterHost'
         ));
     }
 
@@ -91,7 +101,6 @@ class ProxmoxController extends Controller
     {
         $servers = ProxmoxServer::active()->orderBy('name')->get();
         $activeServer = $this->resolveServer($request, $servers);
-
         $nodes = [];
         $nextId = null;
         $error = null;
@@ -108,6 +117,7 @@ class ProxmoxController extends Controller
             $storage = $svc->defaultStorage();
             $bridge = $svc->defaultBridge();
             $defaultNode = $svc->defaultNode();
+
             try {
                 $nodes = collect($svc->getNodes())->pluck('node')->all();
                 $nextId = $svc->getNextId();
@@ -240,6 +250,7 @@ class ProxmoxController extends Controller
 
         try {
             $server = ProxmoxServer::findOrFail($data['server_id']);
+
             // Prefix server name bila multi-server agar hostname unik
             $multi = ProxmoxServer::count() > 1;
             $hosts = $this->proxmox->forServer($server)->syncHosts(prefixServer: $multi);
@@ -256,10 +267,9 @@ class ProxmoxController extends Controller
     public function test(Request $request)
     {
         $serverId = $request->query('server');
+
         try {
-            $server = $serverId
-                ? ProxmoxServer::findOrFail($serverId)
-                : ProxmoxServer::active()->orderBy('name')->first();
+            $server = $serverId ? ProxmoxServer::findOrFail($serverId) : ProxmoxServer::active()->orderBy('name')->first();
 
             if (! $server) {
                 return response()->json(['ok' => false, 'error' => 'Tidak ada server Proxmox.'], 422);
@@ -284,6 +294,7 @@ class ProxmoxController extends Controller
 
         try {
             $svc = $this->proxmox->forServer(ProxmoxServer::findOrFail($data['server_id']));
+
             match ($action) {
                 'start' => $svc->startVm($data['node'], $data['vmid'], $data['type']),
                 'stop' => $svc->stopVm($data['node'], $data['vmid'], $data['type']),
@@ -305,16 +316,19 @@ class ProxmoxController extends Controller
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, ProxmoxServer>  $servers
+     * @param \Illuminate\Support\Collection<int, ProxmoxServer> $servers
      */
     protected function resolveServer(Request $request, $servers): ?ProxmoxServer
     {
         $id = $request->query('server') ?? $request->input('server_id');
+
         if ($id) {
             $found = $servers->firstWhere('id', (int) $id);
+
             if ($found) {
                 return $found;
             }
+
             // fallback fetch bila collection beda scope
             return ProxmoxServer::find($id);
         }
@@ -335,6 +349,10 @@ class ProxmoxController extends Controller
         $password = (string) config('proxmox.password');
 
         if ($host === '' || $password === '') {
+            return;
+        }
+
+        if (! str_starts_with($host, 'https://')) {
             return;
         }
 

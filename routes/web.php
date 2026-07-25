@@ -149,17 +149,17 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
     // Borrow approve/reject — admin only
-    Route::post('borrow_records/{borrowRecord}/approve', [BorrowRecordController::class, 'approve'])->name('borrow_records.approve');
-    Route::post('borrow_records/{borrowRecord}/reject', [BorrowRecordController::class, 'reject'])->name('borrow_records.reject');
+    Route::post('borrow_records/{borrowRecord}/approve', [BorrowRecordController::class, 'approve'])->middleware('throttle:10,1')->name('borrow_records.approve');
+    Route::post('borrow_records/{borrowRecord}/reject', [BorrowRecordController::class, 'reject'])->middleware('throttle:10,1')->name('borrow_records.reject');
 
     // VM admin actions
-    Route::post('vm_borrow/{vmBorrow}/move-to-review', [VmBorrowController::class, 'moveToReview'])->name('vm_borrow.moveToReview');
-    Route::post('vm_borrow/{vmBorrow}/approve', [VmBorrowController::class, 'approve'])->name('vm_borrow.approve');
-    Route::post('vm_borrow/{vmBorrow}/reject', [VmBorrowController::class, 'reject'])->name('vm_borrow.reject');
-    Route::post('vm_borrow/{vmBorrow}/approve-reset', [VmBorrowController::class, 'approveReset'])->name('vm_borrow.approve_reset');
-    Route::post('vm_borrow/{vmBorrow}/reject-reset', [VmBorrowController::class, 'rejectReset'])->name('vm_borrow.reject_reset');
-    Route::post('vm_borrow/{vmBorrow}/edit-resources', [VmBorrowController::class, 'editResources'])->name('vm_borrow.edit_resources');
-    Route::post('vm_borrow/{vmBorrow}/service-request/{serviceRequest}/update', [VmServiceRequestController::class, 'updateStatus'])->name('vm_borrow.service_request.update');
+    Route::post('vm_borrow/{vmBorrow}/move-to-review', [VmBorrowController::class, 'moveToReview'])->middleware('throttle:10,1')->name('vm_borrow.moveToReview');
+    Route::post('vm_borrow/{vmBorrow}/approve', [VmBorrowController::class, 'approve'])->middleware('throttle:10,1')->name('vm_borrow.approve');
+    Route::post('vm_borrow/{vmBorrow}/reject', [VmBorrowController::class, 'reject'])->middleware('throttle:10,1')->name('vm_borrow.reject');
+    Route::post('vm_borrow/{vmBorrow}/approve-reset', [VmBorrowController::class, 'approveReset'])->middleware('throttle:10,1')->name('vm_borrow.approve_reset');
+    Route::post('vm_borrow/{vmBorrow}/reject-reset', [VmBorrowController::class, 'rejectReset'])->middleware('throttle:10,1')->name('vm_borrow.reject_reset');
+    Route::post('vm_borrow/{vmBorrow}/edit-resources', [VmBorrowController::class, 'editResources'])->middleware('throttle:10,1')->name('vm_borrow.edit_resources');
+    Route::post('vm_borrow/{vmBorrow}/service-request/{serviceRequest}/update', [VmServiceRequestController::class, 'updateStatus'])->middleware('throttle:10,1')->name('vm_borrow.service_request.update');
 
     // User Management
     Route::resource('users', UserController::class);

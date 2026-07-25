@@ -20,21 +20,17 @@ class SecurityHeaders
         $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
         $response->headers->remove('X-Powered-By');
 
-        // CSP: allow self + inline styles (Tailwind/Alpine) + same-origin scripts.
-        // Tighten further when assets move fully to hashed Vite bundles only.
         if (! $response->headers->has('Content-Security-Policy')) {
-            $response->headers->set(
-                'Content-Security-Policy',
-                "default-src 'self'; "
-                ."script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-                ."style-src 'self' 'unsafe-inline' https://fonts.bunny.net; "
-                ."img-src 'self' data: blob:; "
-                ."font-src 'self' data: https://fonts.bunny.net; "
-                ."connect-src 'self'; "
-                ."frame-ancestors 'self'; "
-                ."base-uri 'self'; "
-                ."form-action 'self'"
-            );
+            $csp  = "default-src 'self'; ";
+            $csp .= "script-src 'self' 'unsafe-inline'; ";
+            $csp .= "style-src 'self' 'unsafe-inline' https://fonts.bunny.net; ";
+            $csp .= "img-src 'self' data: blob: https://fonts.bunny.net; ";
+            $csp .= "font-src 'self' data: https://fonts.bunny.net; ";
+            $csp .= "connect-src 'self'; ";
+            $csp .= "frame-ancestors 'self'; ";
+            $csp .= "base-uri 'self'; ";
+            $csp .= "form-action 'self'";
+            $response->headers->set('Content-Security-Policy', $csp);
         }
 
         if ($request->secure()) {

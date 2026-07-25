@@ -98,6 +98,9 @@ class BorrowRecordController extends Controller
             'request_pdf' => 'required|file|mimes:pdf|max:5120',
         ]);
 
+        // Validate PDF MIME type via finfo (defense-in-depth against mimes bypass)
+        $this->validateUploadPdf($request->file('request_pdf'));
+
         $isAdmin = $user->isAdmin();
 
         if (! $user->isAdmin()) {
@@ -318,5 +321,30 @@ class BorrowRecordController extends Controller
         }
 
         abort(404);
+    }
+
+    /**
+     * Validate uploaded PDF is actually a PDF via finfo magic bytes.
+     */
+    private function validateUploadPdf(\Illuminate\Http\UploadedFile $file): void
+    {
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($file->getRealPath());
+        $allowedMimes = ['application/pdf'];
+        if (! in_array($mime, $allowedMimes, true)) {
+            abort(422, 'File yang diupload bukan PDF valid.');
+        }
+        // Magic bytes check
+        $handle = fopen($file->getRealPath(), 'rb');
+        $header = fread($handle, 8);
+        fclose($handle);
+        if (! str_starts_with($header, "%PDF")) {
+            abort(422, 'File yang diupload bukan PDF valid.');
+        }
+        // Extension check
+        $ext = strtolower($file->getClientOriginalExtension());
+        if ($ext !== 'pdf') {
+            abort(422, 'Ekstensi file tidak diizinkan.');
+        }
     }
 }

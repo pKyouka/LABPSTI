@@ -9,14 +9,14 @@ class VmHostController extends Controller
 {
     /**
      * Display all hosts (public — no login required)
+     * Only show hostname and status; hide internal IP and resource details from public.
      */
     public function publicIndex()
     {
-        // Public page: active hosts only, no internal notes.
         $hosts = VmHost::query()
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'ip_address', 'cpu_total', 'cpu_used', 'ram_total', 'ram_used', 'storage_total', 'storage_used', 'is_active']);
+            ->get(['id', 'name', 'is_active']);
 
         return view('vm_hosts.public-index', compact('hosts'));
     }

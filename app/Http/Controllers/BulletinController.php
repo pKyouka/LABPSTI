@@ -7,6 +7,7 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class BulletinController extends Controller
 {
@@ -46,6 +47,7 @@ class BulletinController extends Controller
         $validated['content'] = strip_tags($validated['content']);
 
         if ($request->hasFile('image')) {
+            $this->validateUploadedImage($request->file('image'));
             $path = $request->file('image')->store('bulletins', 'public');
             // Only allow relative paths under bulletins/
             if (! is_string($path) || ! str_starts_with($path, 'bulletins/')) {
@@ -112,6 +114,7 @@ class BulletinController extends Controller
             if ($bulletin->image && str_starts_with((string) $bulletin->image, 'bulletins/')) {
                 Storage::disk('public')->delete($bulletin->image);
             }
+            $this->validateUploadedImage($request->file('image'));
             $path = $request->file('image')->store('bulletins', 'public');
             if (! is_string($path) || ! str_starts_with($path, 'bulletins/')) {
                 abort(422, 'Upload gambar gagal.');
@@ -194,14 +197,34 @@ class BulletinController extends Controller
             ->with('success', 'Buletin ditolak.');
     }
 
-    private function ensureCanManage(Bulletin $bulletin): void
-    {
+    private function ensureCanManage(Bulletin $bulletin): void {
         $user = Auth::user();
-
-        if ($user->isAdmin()) {
-            return;
-        }
-
+        if ($user->isAdmin()) { return; }
         abort_if((int) $bulletin->user_id !== (int) $user->id, 403);
+    }
+
+    /**
+     * Validasi gambar upload: MIME akurat + magic bytes + ekstensi (defense-in-depth).
+     */
+    private function validateUploadedImage(\Illuminate\Http\UploadedFile $file): void {
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($file->getRealPath());
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (! in_array($mime, $allowedMimes, true)) {
+            abort(422, 'Format gambar tidak didukung.');
+        }
+        $handle = fopen($file->getRealPath(), 'rb');
+        $header = fread($handle, 12);
+        fclose($handle);
+        $validHeaders = ["\xFF\xD8\xFF", "\x89PNG\r\n\x1A\n", 'GIF8', 'RIFF'];
+        $ok = false;
+        foreach ($validHeaders as $exp) {
+            if (str_starts_with($header, $exp)) { $ok = true; break; }
+        }
+        if (! $ok) { abort(422, 'File gambar tidak valid.'); }
+        $ext = strtolower($file->getClientOriginalExtension());
+        if (! in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+            abort(422, 'Ekstensi file tidak diizinkan.');
+        }
     }
 }
