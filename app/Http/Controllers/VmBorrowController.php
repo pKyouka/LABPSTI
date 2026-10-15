@@ -130,7 +130,7 @@ class VmBorrowController extends Controller
     {
         if ($vmBorrow->status !== 'pending' && $vmBorrow->status !== 'on-review') {
             return redirect()->route('vm_borrow.show', $vmBorrow)
-                ->with('success', 'Permintaan ini sudah diproses sebelumnya.');
+                ->with('error', 'Permintaan ini sudah diproses sebelumnya.');
         }
         return null;
     }
@@ -364,6 +364,18 @@ class VmBorrowController extends Controller
         $request->validate([
             'admin_notes' => 'required|string|max:1000',
         ]);
+
+        // ponytail: pulihkan resource jika sempat teralokasi, teardown vm proxmox manual sampai otomatisasi aktif
+        if ($vmBorrow->host_id && ($vmBorrow->allocated_cpu || $vmBorrow->allocated_ram || $vmBorrow->allocated_storage)) {
+            $host = VmHost::find($vmBorrow->host_id);
+            if ($host) {
+                $host->restoreResources(
+                    (int) ($vmBorrow->allocated_cpu ?? 0),
+                    (int) ($vmBorrow->allocated_ram ?? 0),
+                    (int) ($vmBorrow->allocated_storage ?? 0)
+                );
+            }
+        }
 
         $vmBorrow->forceFill([
             'status'      => 'rejected',

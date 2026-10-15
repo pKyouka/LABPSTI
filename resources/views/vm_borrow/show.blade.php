@@ -416,20 +416,28 @@
             </div>
         @endif
 
-        {{-- Admin Actions — Phase 2: on-review → approved (berikan kredensial) --}}
+        {{-- Admin Actions — Phase 2: on-review → approved (berikan kredensial) atau tolak --}}
         @if(Auth::user()->isAdmin() && $vmBorrow->status === 'on-review')
-            <div class="bg-white rounded-2xl border border-blue-200 shadow-fluent-sm overflow-hidden" x-data="{ showForm: true }">
-                <div class="px-5 py-4 bg-blue-50/50 border-b border-blue-100 flex items-center justify-between gap-3">
+            <div class="bg-white rounded-2xl border border-blue-200 shadow-fluent-sm overflow-hidden" x-data="{ action: '{{ $errors->has('admin_notes') ? 'reject' : 'approve' }}' }">
+                <div class="px-5 py-4 bg-blue-50/50 border-b border-blue-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
                         <h3 class="text-base font-semibold text-blue-800">Tindakan Admin — Tahap 2</h3>
-                        <p class="text-sm text-blue-600">VM sudah selesai dibuat? Berikan kredensial akses ke peminjam.</p>
+                        <p class="text-sm text-blue-600">VM sudah selesai dibuat? Berikan kredensial. Jika ada kendala saat review, permintaan dapat ditolak.</p>
                     </div>
-                    <button type="button" @click="showForm = !showForm" class="fluent-btn fluent-btn-primary fluent-btn-sm">
-                        <span x-show="!showForm">Tampilkan Form</span>
-                        <span x-show="showForm">Sembunyikan</span>
-                    </button>
+                    <div class="flex gap-2">
+                        <button @click="action = (action === 'approve') ? null : 'approve'"
+                            class="fluent-btn fluent-btn-sm"
+                            :class="action === 'approve' ? 'fluent-btn-primary' : 'fluent-btn-ghost'">
+                            ✓ Berikan Kredensial
+                        </button>
+                        <button @click="action = (action === 'reject') ? null : 'reject'"
+                            class="fluent-btn fluent-btn-sm"
+                            :class="action === 'reject' ? 'fluent-btn-danger' : 'fluent-btn-ghost'">
+                            ✕ Tolak
+                        </button>
+                    </div>
                 </div>
-                <div x-show="showForm" x-transition class="p-5">
+                <div x-show="action === 'approve'" x-transition class="p-5">
                     <form action="{{ route('vm_borrow.approve', $vmBorrow) }}" method="POST" class="space-y-4" x-data="vmApprovalForm()">
                         @csrf
                         @if($hosts->isNotEmpty())
@@ -657,6 +665,41 @@
                             }
                         }
                     </script>
+                </div>
+
+                {{-- Reject Confirmation & Action (Tahap Review) --}}
+                <div x-show="action === 'reject'" x-transition class="p-5 border-t border-neutral-100">
+                    <div>
+                        <div class="flex items-start gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-semibold text-red-800">Tolak Permintaan (Tahap Review)</h4>
+                                <p class="text-sm text-neutral-500 mt-0.5">Harap berikan alasan penolakan jika terjadi kendala pada saat pembuatan VM atau review.</p>
+                            </div>
+                        </div>
+                        <div class="bg-neutral-50 rounded-xl p-4 mb-4 text-sm space-y-2">
+                            <div class="flex justify-between"><span class="text-neutral-500">Peminjam</span><span class="font-medium text-neutral-800">{{ $vmBorrow->user->display_name }}</span></div>
+                            <div class="flex justify-between"><span class="text-neutral-500">OS</span><span class="font-medium text-neutral-800 capitalize">{{ $vmBorrow->os_type }} {{ $vmBorrow->os_version }}</span></div>
+                            <div class="flex justify-between"><span class="text-neutral-500">Durasi Diminta</span><span class="font-medium text-neutral-800">{{ $vmBorrow->duration_days }} hari</span></div>
+                            @if($vmBorrow->host)
+                                <div class="flex justify-between"><span class="text-neutral-500">Host Ditugaskan</span><span class="font-medium text-neutral-800">{{ $vmBorrow->host->name }}</span></div>
+                            @endif
+                        </div>
+                        <form action="{{ route('vm_borrow.reject', $vmBorrow) }}" method="POST" class="space-y-4">
+                            @csrf
+                            <div>
+                                <x-input-label for="admin_notes_reject_review" value="Alasan Penolakan" />
+                                <textarea id="admin_notes_reject_review" name="admin_notes" rows="4" class="fluent-textarea" required placeholder="Jelaskan alasan penolakan permintaan VM ini...">{{ old('admin_notes') }}</textarea>
+                                <x-input-error :messages="$errors->get('admin_notes')" />
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" @click="action = 'approve'" class="fluent-btn fluent-btn-ghost fluent-btn-sm">Batal</button>
+                                <button type="submit" class="fluent-btn fluent-btn-danger fluent-btn-sm" onclick="return confirm('Tolak permintaan VM dari {{ $vmBorrow->user->display_name }}?')">Tolak Permintaan</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         @endif
